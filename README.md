@@ -23,6 +23,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Extensible:** Easily add custom tools like `HumanInTheLoop` or `ConsoleLogger`.
 * **Local Git Versioning:** Every line of AI-generated code is automatically version-controlled.
 * **Cost & Token Optimization Analyzer:** Built-in telemetry tracks API costs down to the fraction of a cent and generates a diagnostic report at the end of every run, actively warning you if agents are stuck in loops or suffering from context bloat.
+* **SKILLs System:** Uses SKILLs - modular, reusable agent instructions and domain knowledge files. SKILLs can be attached to agents or workflows to extend capabilities, enforce coding standards, or inject project-specific expertise.
 
 ### AI Agents
 

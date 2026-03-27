@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-03-27
+
+### 🚀 Added
+
+* **SKILLs System:** Introduced SKILLs - modular, reusable agent instructions and domain knowledge files. SKILLs can be attached to agents or workflows to extend capabilities, enforce coding standards, or inject project-specific expertise. See the documentation for usage patterns and authoring guidelines.
+
+### 🔧 Internal
+
+* **Python Version:** Minimum required Python version is now 3.14. All code has been updated to use modern built-in generics (e.g., `list`, `dict`), the `@override` decorator, and other Python 3.14+ features. Legacy `typing` imports (`Dict`, `List`, `Optional`) have been removed.
+
 ## [0.7.1] - 2026-03-26
 
 ### 🚀 Added
