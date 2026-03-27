@@ -1,9 +1,10 @@
 import subprocess
 from typing import override
 from pathlib import Path
+from devteam.utils import WithLogging
 from .base_extension import CrewExtension
 
-class GitCommitter(CrewExtension):
+class GitCommitter(WithLogging, CrewExtension):
     """Extension that commits workspace changes to a Git repository."""
 
     def __init__(self, workspace_dir: Path):
@@ -20,15 +21,23 @@ class GitCommitter(CrewExtension):
 
     def _init_repo(self):
         if not (self.workspace_dir / '.git').exists():
-            self._run_git('init')
+            result = self._run_git('init')
+            if result.returncode != 0:
+                self.logger.warning("git init failed: %s", result.stderr.strip())
+                return
             self._run_git('config', 'user.name', 'DevTeam')
             self._run_git('config', 'user.email', 'devteam@local')
 
     def _commit(self, message: str):
-        self._run_git('add', '-A')
-        status = self._run_git('status', '--porcelain')
-        if status.stdout.strip():
-            self._run_git('commit', '-m', message)
+        result = self._run_git('add', '-A')
+        if result.returncode != 0:
+            self.logger.warning("git add failed: %s", result.stderr.strip())
+            return
+        result = self._run_git('status', '--porcelain')
+        if result.stdout.strip():
+            result = self._run_git('commit', '-m', message)
+            if result.returncode != 0:
+                self.logger.warning("git commit failed: %s", result.stderr.strip())
 
     @override
     def on_start(self, thread_id: str, initial_state: dict):
