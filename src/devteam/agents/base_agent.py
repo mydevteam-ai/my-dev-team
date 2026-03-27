@@ -68,6 +68,17 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         """Lifecycle Hook: performs actions AFTER the LLM runs."""
         return final_state
 
+    def _handle_intermediate_tools(self, tool_name: str, tool_args: dict) -> str | None:
+        """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
+        match tool_name:
+            case 'LoadSkill':
+                skill_name = tool_args.get('skill_name')
+                skill_content = skills.load_skill(skill_name)
+                self.logger.info(f"Loaded skill: {skill_name}. LLM is re-evaluating...")
+                self.logger.debug(f"\n--- Skill Content Start ---\n{skill_content[:1000]}\n--- Skill Content End ---")
+                return skill_content
+        return None
+
     async def process(self, state: dict) -> dict:
         """Invoke LLM and use tools to provide structured results."""
         self.logger.info("Executing...")
@@ -75,7 +86,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         inputs = self._build_inputs(state)
         conversation_history = []
         try:
-            while True: # The loop allows the agent to re-prompt if needed, e.g. after loading a skill
+            while True:
                 if conversation_history:
                     inputs['messages'] = inputs.get('messages', []) + conversation_history
                 self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
@@ -84,14 +95,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                 if not ai_message.tool_calls:
                     raise ValueError("The model did not call any tool.")
                 tool_call = ai_message.tool_calls[0]
-                tool_name = tool_call['name']
-                if tool_name == 'LoadSkill':
-                    skill_name = tool_call['args'].get('skill_name')
-                    skill_content = skills.load_skill(skill_name)
-                    tool_msg = ToolMessage(content=skill_content, tool_call_id=tool_call['id'])
+                if intermediate_result := self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
+                    tool_msg = ToolMessage(content=intermediate_result, tool_call_id=tool_call['id'])
                     conversation_history.append(tool_msg)
-                    self.logger.info(f"Loaded skill: {skill_name}. LLM is re-evaluating...")
-                    self.logger.debug(f"\n--- Skill Content Start ---\n{skill_content[:1000]}\n--- Skill Content End ---")
                     continue
                 parsed_data = self._parse_outputs(ai_message)
                 break
