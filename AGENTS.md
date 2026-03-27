@@ -15,7 +15,7 @@
 ## Repository Structure
 
 ```
-my-dev-team/
+mydevteam/
 ├── pyproject.toml              # Build config, dependencies, entry points, pylint settings
 ├── pytest.ini                  # Pytest configuration
 ├── requirements.txt            # Pinned runtime dependencies

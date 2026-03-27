@@ -1,4 +1,5 @@
 from typing import override
+from devteam.utils import sanitizer
 from .schemas import CodeJudgeResponse, SubmitWinner
 from .base_agent import BaseAgent
 
@@ -13,7 +14,7 @@ class CodeJudge(BaseAgent[CodeJudgeResponse]):
         drafts_formatted = ""
         for idx, draft in enumerate(drafts):
             draft_idx = f"draft_{idx}"
-            safe_draft = self.sanitize_for_prompt(draft, [draft_idx, 'drafts'])
+            safe_draft = sanitizer.sanitize_for_prompt(draft, [draft_idx, 'drafts'])
             drafts_formatted += f"<{draft_idx}>\n{safe_draft}\n</{draft_idx}>\n\n"
         inputs['drafts'] = drafts_formatted
         return inputs

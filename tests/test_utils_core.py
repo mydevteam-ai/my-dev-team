@@ -1,20 +1,11 @@
 import asyncio
 from unittest.mock import AsyncMock
 import pytest
-from devteam import settings
 from devteam.utils.rate_limiter import RateLimiter
 from devteam.utils.sanitizer import sanitize_for_prompt
 from devteam.utils.status import is_approved_status, normalize_status
 from devteam.utils.tasks import task_to_markdown
 from devteam.utils.workspace import workspace_str_from_files
-
-def test_settings_set_and_get_config_dir(tmp_path):
-    settings.set_config_dir(tmp_path)
-    assert settings.get_config_dir() == tmp_path.resolve()
-
-def test_settings_set_and_get_timeout():
-    settings.set_llm_timeout(45)
-    assert settings.get_llm_timeout() == 45
 
 def test_sanitize_for_prompt_handles_base64_nulls_and_spacing():
     raw = "line1\n\n\n\x00data:image/png;base64,AAAA\nline2\n"

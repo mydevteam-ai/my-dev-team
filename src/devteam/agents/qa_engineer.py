@@ -1,7 +1,7 @@
 from typing import override
 from pathlib import Path
 from devteam.tools import DockerSandbox
-from devteam.utils import status, workspace
+from devteam.utils import sanitizer, status, workspace
 from .schemas import ApproveCode, QAEngineerResponse, ReportIssues
 from .base_agent import BaseAgent
 
@@ -17,7 +17,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
         if workspace_files := state.get('workspace_files', {}):
             workspace_str = workspace.workspace_str_from_files(workspace_files)
             if state.get('raw_test_results', ''):
-                inputs['test_results'] = self.sanitize_for_prompt(state['raw_test_results'], ['test_results'])
+                inputs['test_results'] = sanitizer.sanitize_for_prompt(state['raw_test_results'], ['test_results'])
         else:
             workspace_str = "No files exist in the workspace."
         inputs['workspace'] = workspace_str.strip()

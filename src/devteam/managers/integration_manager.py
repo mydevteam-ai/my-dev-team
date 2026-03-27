@@ -7,10 +7,10 @@ class IntegrationManager:
 
     logger: Logger
 
-    def integration_node(self, state: dict) -> dict:
+    def _integration_node(self, state: dict) -> dict:
         return {}
 
-    def route_integration(self, state: dict) -> str:
+    def _route_integration(self, state: dict) -> str:
         if state.get('final_report', ''):
             return END
         if not state.get('test_results'):

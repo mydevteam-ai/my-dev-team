@@ -1,4 +1,5 @@
 from logging import Logger
+from typing import Callable
 from langchain_core.messages import HumanMessage
 from devteam.utils import status, tasks
 
@@ -7,8 +8,9 @@ class ExecutionManager:
 
     logger: Logger
     max_revision_count: int
+    communication: Callable
 
-    def execution_node(self, state: dict) -> dict:
+    def _execution_node(self, state: dict) -> dict:
         # TODO: In this node we need to determine whether to take next task for developer, or this is a returned task, then we need to check if we exceeded the maximum revisions
         # We can come here:
         # 1) From planning node -> simply take first task for developer
@@ -60,7 +62,7 @@ class ExecutionManager:
             'current_agent': 'officer' # Case no. 4a or 4c
         }
 
-    def officer_node(self, state: dict) -> dict:
+    def _officer_node(self, state: dict) -> dict:
         """Take next task for developer or pass to integration."""
         pending = state.get('pending_tasks', [])
         idx = state.get('current_task_index', 0)
@@ -87,5 +89,5 @@ class ExecutionManager:
             'messages': self._cleanup_messages(state.get('messages'))
         }
 
-    def route_execution(self, state: dict) -> str:
+    def _route_execution(self, state: dict) -> str:
         return state.get('current_agent', 'officer')

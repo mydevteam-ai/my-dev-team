@@ -37,22 +37,22 @@ def load_skills_catalog() -> list[dict]:
 
 @lru_cache(maxsize=8)
 def load_skill(skill_name: str) -> str:
-        """Reads the full markdown content of a requested skill."""
-        safe_skill_name = Path(skill_name).name
-        skill_path = Path(settings.skills_dir) / safe_skill_name / 'SKILL.md'
+    """Reads the full markdown content of a requested skill."""
+    safe_skill_name = Path(skill_name).name
+    skill_path = Path(settings.skills_dir) / safe_skill_name / 'SKILL.md'
 
-        if not skill_path.exists():
-            error_msg = f"System Error: The knowledge module '{skill_name}' does not exist. Please check the exact spelling in your <available_modules> list and try again, or proceed with your general knowledge."
-            print(error_msg)
-            return error_msg
+    if not skill_path.exists():
+        error_msg = f"System Error: The knowledge module '{skill_name}' does not exist. Please check the exact spelling in your <available_modules> list and try again, or proceed with your general knowledge."
+        print(error_msg)
+        return error_msg
 
-        try:
-            content = skill_path.read_text(encoding='utf-8')
-            if content.startswith('---'):
-                end_marker = content.find('---', 3)
-                if end_marker != -1:
-                    content = content[end_marker + 3:].strip()
-            return content
-        except Exception as e:
-            error_msg = f"System Error: Failed to read module '{skill_name}' due to a file error. Proceed using your base knowledge."
-            return error_msg
+    try:
+        content = skill_path.read_text(encoding='utf-8')
+        if content.startswith('---'):
+            end_marker = content.find('---', 3)
+            if end_marker != -1:
+                content = content[end_marker + 3:].strip()
+        return content
+    except Exception: # pylint: disable=broad-exception-caught
+        error_msg = f"System Error: Failed to read module '{skill_name}' due to a file error. Proceed using your base knowledge."
+        return error_msg

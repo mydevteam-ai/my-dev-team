@@ -8,8 +8,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
-from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog
-from devteam.utils.sanitizer import sanitize_for_prompt
+from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
 from .schemas import LoadSkill
 
 class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
@@ -33,28 +32,24 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         self.model_category = config.get('model', self.model_category)
         self.temperature = config.get('temperature', self.temperature)
 
-    @staticmethod
-    def sanitize_for_prompt(content: str, tags: list[str] | str = None) -> str:
-        return sanitize_for_prompt(content, tags)
-
     @cached_property
-    def _inputs(self) -> list[str]:
+    def inputs(self) -> list[str]:
         return self.config.get('inputs', [])
 
     @cached_property
-    def _outputs(self) -> list[str]:
+    def outputs(self) -> list[str]:
         return self.config.get('outputs', [])
 
     def _build_inputs(self, state: dict) -> dict:
         inputs = {}
-        for key in self._inputs:
+        for key in self.inputs:
             val = state.get(key, '')
             if key == 'messages': # Do not sanitize messages
                 inputs[key] = val
             elif key == 'skills':
-                inputs[key] = self.sanitize_for_prompt(self._skills_catalog, 'skills')
+                inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
             else:
-                inputs[key] = self.sanitize_for_prompt(str(val), key) if val else ''
+                inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
         return inputs
 
     def _update_state(self, parsed_data: T, current_state: dict) -> dict:
@@ -74,8 +69,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             case 'LoadSkill':
                 skill_name = tool_args.get('skill_name')
                 skill_content = skills.load_skill(skill_name)
-                self.logger.info(f"Loaded skill: {skill_name}. LLM is re-evaluating...")
-                self.logger.debug(f"\n--- Skill Content Start ---\n{skill_content[:1000]}\n--- Skill Content End ---")
+                self.logger.info("Loaded skill: %s. LLM is re-evaluating...", skill_name)
+                self.logger.debug("Skill Content:\n%s", skill_content[:1000])
                 return skill_content
         return None
 

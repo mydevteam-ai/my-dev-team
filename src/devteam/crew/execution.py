@@ -1,7 +1,7 @@
 from logging import Logger
 from langchain_core.messages import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
-from devteam.utils import sanitize_for_prompt
+from devteam.utils import sanitizer
 from .event_emitter import EventEmitter
 from .final_result import FinalResult
 
@@ -47,7 +47,7 @@ class Execution(EventEmitter):
             self.emit_event('resume', thread_id, state_update=state_update)
             initial_state = None
         elif requirements:
-            safe_requirements = sanitize_for_prompt(requirements, ['requirements'])
+            safe_requirements = sanitizer.sanitize_for_prompt(requirements, ['requirements'])
             content = (
                 "Here are the new project requirements:\n\n"
                 "<requirements>\n"

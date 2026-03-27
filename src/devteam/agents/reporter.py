@@ -1,4 +1,4 @@
-from devteam.utils import workspace
+from devteam.utils import sanitizer, workspace
 from .schemas import ReporterResponse, SubmitReport
 from .base_agent import BaseAgent
 
@@ -15,5 +15,5 @@ class Reporter(BaseAgent[ReporterResponse]):
         inputs['workspace'] = workspace_str
         communication_log = state.get('communication_log', [])
         history_str = '\n\n'.join(communication_log)
-        inputs['history'] = self.sanitize_for_prompt(history_str, ['history'])
+        inputs['history'] = sanitizer.sanitize_for_prompt(history_str, ['history'])
         return inputs

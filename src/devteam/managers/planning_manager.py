@@ -6,7 +6,7 @@ class PlanningManager:
 
     logger: Logger
 
-    def planning_node(self, state: dict) -> dict:
+    def _planning_node(self, state: dict) -> dict:
         if len(state.get('pending_tasks', [])) > 0: # Architect has finished, let's proceed to development
             return {
                 'current_phase': 'development',
@@ -18,7 +18,7 @@ class PlanningManager:
             }
         return {} # Sentinel - in theory should never happen
 
-    def route_planning(self, state: dict) -> str:
+    def _route_planning(self, state: dict) -> str:
         if state.get('clarification_question'):
             return 'human'
         if not state.get('specs'):
