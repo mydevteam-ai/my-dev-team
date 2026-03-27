@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 from devteam.utils.rate_limiter import RateLimiter
 from devteam.utils.sanitizer import sanitize_for_prompt
-from devteam.utils.status import is_approved_status, normalize_status
+from devteam.utils.status import is_approved, normalize_status
 from devteam.utils.tasks import task_to_markdown
 from devteam.utils.workspace import workspace_str_from_files
 
@@ -51,8 +51,8 @@ def test_normalize_status(value, expected):
         ("", False),
     ],
 )
-def test_is_approved_status(value, expected):
-    assert is_approved_status(value) is expected
+def test_is_approved(value, expected):
+    assert is_approved(value) is expected
 
 def test_task_to_markdown_includes_expected_sections():
     task = {

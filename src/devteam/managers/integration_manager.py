@@ -15,7 +15,7 @@ class IntegrationManager:
             return END
         if not state.get('test_results'):
             return 'final_qa'
-        if status.is_approved_status(state.get('test_results')):
+        if status.is_approved(state.get('test_results')):
             self.logger.debug("Integration tests passed. Proceeding to reporter.")
             return 'reporter'
         self.logger.error("Integration bugs found! Halting release.")

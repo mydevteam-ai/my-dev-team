@@ -29,14 +29,14 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
     @override
     def _update_state(self, parsed_data: FinalQAResponse, current_state: dict) -> dict:
         results = parsed_data.test_results
-        if status.is_approved_status(results):
+        if status.is_approved(results):
             results = 'APPROVED'
         status_str = 'APPROVED' if results == 'APPROVED' else 'INTEGRATION BUGS FOUND'
         updates = {
             'test_results': results,
             'communication_log': self.communication(f"{status_str}\n{results}")
         }
-        if not status.is_approved_status(results):
+        if not status.is_approved(results):
             updates['current_task'] = "FINAL INTEGRATION: Fix the overarching bugs identified in the Final QA test results."
             updates['revision_count'] = 0
         return updates

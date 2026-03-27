@@ -3,5 +3,5 @@ def normalize_status(value: str) -> str:
         return ''
     return value.strip().strip('.').upper()
 
-def is_approved_status(value: str) -> bool:
+def is_approved(value: str) -> bool:
     return normalize_status(value) in {'APPROVED', 'PASSED'}

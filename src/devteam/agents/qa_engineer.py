@@ -43,7 +43,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
     @override
     def _update_state(self, parsed_data: QAEngineerResponse, current_state: dict) -> dict:
         results = parsed_data.test_results
-        if status.is_approved_status(results):
+        if status.is_approved(results):
             results = 'APPROVED'
         status_str = 'APPROVED' if results == 'APPROVED' else 'BUGS FOUND'
         return {

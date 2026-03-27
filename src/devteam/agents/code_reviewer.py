@@ -29,7 +29,7 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
     @override
     def _update_state(self, parsed_data: CodeReviewerResponse, current_state: dict) -> dict:
         feedback = parsed_data.review_feedback
-        if status.is_approved_status(feedback):
+        if status.is_approved(feedback):
             feedback = 'APPROVED'
         status_str = 'APPROVED' if feedback == 'APPROVED' else 'REQUESTED CHANGES'
         return {
