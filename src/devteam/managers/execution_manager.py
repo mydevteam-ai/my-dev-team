@@ -22,29 +22,34 @@ class ExecutionManager:
             return {
                 'current_agent': 'reviewer'
             }
-        if not state.get('review_feedback', ''): # Case no. 2 : Weird case when no feedback from reviewer
+        if not state.get('review_feedback', ''): # Case no. 3 : Reviewer hasn't run yet (e.g. resuming after error)
             return {
                 'current_agent': 'reviewer'
             }
-        if not status.is_approved_status(review_feedback := state.get('review_feedback', '')) and current_revision < self.max_revision_count: # Case no. 3b
-            instruction = (
-                    "The Code Reviewer rejected your implementation. "
-                    "Please read the feedback below, fix the code and use your tools to update the workspace.\n\n"
-                    f"### Reviewer Feedback ###\n{review_feedback}"
-                )
-            return {
-                'current_agent': 'developer',
-                'revision_count': current_revision + 1,
-                'review_feedback': '',
-                'test_results': '',
-                'messages': [HumanMessage(content=instruction)],
-                'communication_log': self.communication(f"Revision {current_revision + 1} requested by reviewer.")
-            }
-        if not state.get('test_results', ''): # Case no. 3a
+        if not status.is_approved(review_feedback := state.get('review_feedback', '')):
+            if current_revision < self.max_revision_count: # Case no. 3b : Reviewer rejected, retry
+                instruction = (
+                        "The Code Reviewer rejected your implementation. "
+                        "Please read the feedback below, fix the code and use your tools to update the workspace.\n\n"
+                        f"### Reviewer Feedback ###\n{review_feedback}"
+                    )
+                return {
+                    'current_agent': 'developer',
+                    'revision_count': current_revision + 1,
+                    'review_feedback': '',
+                    'test_results': '',
+                    'messages': [HumanMessage(content=instruction)],
+                    'communication_log': self.communication(f"Revision {current_revision + 1} requested by reviewer.")
+                }
+            self.logger.warning("Max revisions reached with a rejected review. Running QA on best attempt.") # Case no. 3c
             return {
                 'current_agent': 'qa'
             }
-        if not status.is_approved_status(test_results := state.get('test_results', '')) and current_revision < self.max_revision_count: # Case no. 4b
+        if not state.get('test_results', ''): # Case no. 3a : Review approved, send to QA
+            return {
+                'current_agent': 'qa'
+            }
+        if not status.is_approved(test_results := state.get('test_results', '')) and current_revision < self.max_revision_count: # Case no. 4b
             instruction = (
                     "The QA rejected your implementation. "
                     "Please read the feedback below, fix the code and use your tools to update the workspace.\n\n"
