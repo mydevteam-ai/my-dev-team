@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Any
+from typing import TypedDict
 import yaml
 from rich.panel import Panel
 from rich.table import Table
@@ -11,6 +11,12 @@ from devteam import settings
 from .with_logging import WithLogging
 from .cost_optimization import CostOptimization
 
+class CallRecord(TypedDict):
+    agent: str
+    input_tokens: int
+    output_tokens: int
+    iteration: int
+
 class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
     """Tracks token usage and estimates costs across all agent LLM calls"""
     def __init__(self):
@@ -18,7 +24,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.input_tokens = 0
         self.output_tokens = 0
         self.total_cost = 0.0
-        self.call_history: list[dict[str, Any]] = []
+        self.call_history: list[CallRecord] = []
         self.agent_calls = defaultdict(int)
 
     def on_llm_end(self, response: LLMResult, **kwargs) -> None:
@@ -35,12 +41,12 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             'unknown'
         )
         self.agent_calls[agent_name] += 1
-        self.call_history.append({
-            'agent': agent_name,
-            'input_tokens': metadata['input_tokens'],
-            'output_tokens': metadata['output_tokens'],
-            'iteration': self.agent_calls[agent_name]
-        })
+        self.call_history.append(CallRecord(
+            agent=agent_name,
+            input_tokens=metadata['input_tokens'],
+            output_tokens=metadata['output_tokens'],
+            iteration=self.agent_calls[agent_name]
+        ))
 
     def _extract_metadata(self, response) -> dict:
         input_tokens = 0

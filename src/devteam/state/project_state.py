@@ -1,9 +1,14 @@
 import operator
-from typing import Any, TypedDict, Annotated, NotRequired, Literal
+from typing import TypedDict, Annotated, NotRequired, Literal
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
 
 type ProjectPhase = Literal['planning', 'development', 'integration', 'complete']
+
+class PendingTask(TypedDict):
+    task_name: str
+    user_story: str
+    acceptance_criteria: list[str]
 
 class ProjectState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
@@ -14,7 +19,7 @@ class ProjectState(TypedDict):
     human_answer: str
     clarification_question: str
     runtime: str
-    pending_tasks: list[dict[str, Any]]
+    pending_tasks: list[PendingTask]
     workspace_files: dict[str, str]
     current_task_index: int
     current_task: str
