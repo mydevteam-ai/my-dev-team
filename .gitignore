@@ -18,3 +18,5 @@ venv/
 workspaces/
 
 TODO.md
+
+.claude/

@@ -28,9 +28,9 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
         workflow.add_conditional_edges('officer', self._central_router)
         return workflow.compile(checkpointer=memory, interrupt_before=interrupt_before or ['human'])
 
-    def _manager_node(self, state: dict) -> dict:
+    def _manager_node(self, state: ProjectState) -> dict:
         self.logger.debug("Project Manager is reviewing the project state...")
-        match state.get('current_phase', 'planning'):
+        match state.current_phase:
             case 'planning':
                 return self._planning_node(state)
             case 'development':
@@ -39,10 +39,10 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
                 return self._integration_node(state)
         return {} # Sentinel - in theory should never happen
 
-    def _central_router(self, state: dict) -> str:
-        if state.get('abort_requested'):
+    def _central_router(self, state: ProjectState) -> str:
+        if state.abort_requested:
             return END
-        match state.get('current_phase', 'planning'):
+        match state.current_phase:
             case 'planning':
                 return self._route_planning(state)
             case 'development':
@@ -51,7 +51,7 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
                 return self._route_integration(state)
         return END # Sentinel - in theory should never happen
 
-    def _dummy_human_node(self, state: dict) -> dict:
+    def _dummy_human_node(self, state: ProjectState) -> dict:
         self.logger.debug("Human input received. Resuming workflow...")
         return {'clarification_question': ''}
 

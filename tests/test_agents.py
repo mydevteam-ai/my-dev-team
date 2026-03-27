@@ -6,6 +6,7 @@ from devteam.agents.qa_engineer import QAEngineer
 from devteam.agents.qa_final import FinalQAEngineer
 from devteam.agents.reporter import Reporter
 from devteam.agents.system_architect import SystemArchitect
+from devteam.state import ProjectState
 
 from devteam.agents.schemas import (
     CodeReviewerResponse,
@@ -32,11 +33,7 @@ class TestCodeReviewer:
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("Code Reviewer", ["specs", "current_task"])
         agent = CodeReviewer(config, "prompt {specs} {current_task} {workspace}", "reviewer")
-        state = {
-            "specs": "spec",
-            "current_task": "task",
-            "workspace_files": sample_workspace_files,
-        }
+        state = ProjectState(specs="spec", current_task="task", workspace_files=sample_workspace_files)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
         assert "--- FILE: tests/test_main.py ---" in inputs["workspace"]
@@ -44,7 +41,7 @@ class TestCodeReviewer:
     def test_build_inputs_no_workspace(self):
         config = make_config("Code Reviewer", [])
         agent = CodeReviewer(config, "prompt {workspace}", "reviewer")
-        state = {"workspace_files": {}}
+        state = ProjectState()
         inputs = agent._build_inputs(state)
         assert "No files exist" in inputs["workspace"]
 
@@ -52,7 +49,7 @@ class TestCodeReviewer:
         config = make_config("Code Reviewer")
         agent = CodeReviewer(config, "prompt", "reviewer")
         parsed = CodeReviewerResponse(review_feedback="APPROVED")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["review_feedback"] == "APPROVED"
         assert "APPROVED" in result["communication_log"][0]
 
@@ -60,7 +57,7 @@ class TestCodeReviewer:
         config = make_config("Code Reviewer")
         agent = CodeReviewer(config, "prompt", "reviewer")
         parsed = CodeReviewerResponse(review_feedback="- [main.py] - Bug: missing import")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["review_feedback"] == "- [main.py] - Bug: missing import"
         assert "REQUESTED CHANGES" in result["communication_log"][0]
 
@@ -68,7 +65,7 @@ class TestCodeReviewer:
         config = make_config("Code Reviewer")
         agent = CodeReviewer(config, "prompt", "reviewer")
         parsed = CodeReviewerResponse(review_feedback="  APPROVED.  ")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["review_feedback"] == "APPROVED"
 
 # --- SeniorDeveloper Tests ---
@@ -96,18 +93,14 @@ class TestSeniorDeveloper:
     def test_build_inputs_no_workspace(self):
         config = make_config("Developer", ["specs", "current_task"])
         agent = SeniorDeveloper(config, "prompt {specs} {current_task} {workspace}", "developer")
-        state = {"specs": "spec", "current_task": "build it", "workspace_files": {}}
+        state = ProjectState(specs="spec", current_task="build it")
         inputs = agent._build_inputs(state)
         assert "No files exist yet" in inputs["workspace"]
 
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("Developer", ["specs", "current_task"])
         agent = SeniorDeveloper(config, "prompt {specs} {current_task} {workspace}", "developer")
-        state = {
-            "specs": "spec",
-            "current_task": "task",
-            "workspace_files": sample_workspace_files
-        }
+        state = ProjectState(specs="spec", current_task="task", workspace_files=sample_workspace_files)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
 
@@ -118,8 +111,7 @@ class TestSeniorDeveloper:
             WorkspaceFile(path="src/app.py", content="app code"),
             WorkspaceFile(path="tests/test_app.py", content="test code"),
         ])
-        current_state = {"workspace_files": {}, "revision_count": 0}
-        result = agent._update_state(parsed, current_state)
+        result = agent._update_state(parsed, ProjectState())
         assert "src/app.py" in result["workspace_files"]
         assert "tests/test_app.py" in result["workspace_files"]
         assert result["review_feedback"] == ""
@@ -131,11 +123,7 @@ class TestSeniorDeveloper:
         parsed = DeveloperResponse(workspace_files=[
             WorkspaceFile(path="new.py", content="new file"),
         ])
-        current_state = {
-            "workspace_files": {"old.py": "old code"},
-            "revision_count": 0,
-        }
-        result = agent._update_state(parsed, current_state)
+        result = agent._update_state(parsed, ProjectState(workspace_files={"old.py": "old code"}))
         assert "old.py" in result["workspace_files"]
         assert "new.py" in result["workspace_files"]
 
@@ -154,18 +142,14 @@ class TestQAEngineer:
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("QA Engineer", ["specs", "current_task"])
         agent = QAEngineer(config, "prompt {specs} {current_task} {workspace}", "qa")
-        state = {
-            "specs": "spec",
-            "current_task": "task",
-            "workspace_files": sample_workspace_files,
-        }
+        state = ProjectState(specs="spec", current_task="task", workspace_files=sample_workspace_files)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
 
     def test_build_inputs_empty_workspace(self):
         config = make_config("QA Engineer", [])
         agent = QAEngineer(config, "prompt {workspace}", "qa")
-        state = {"workspace_files": {}}
+        state = ProjectState()
         inputs = agent._build_inputs(state)
         assert "No files exist" in inputs["workspace"]
 
@@ -173,7 +157,7 @@ class TestQAEngineer:
         config = make_config("QA Engineer")
         agent = QAEngineer(config, "prompt", "qa")
         parsed = QAEngineerResponse(test_results="PASSED")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["test_results"] == "APPROVED"
         assert "APPROVED" in result["communication_log"][0]
 
@@ -181,7 +165,7 @@ class TestQAEngineer:
         config = make_config("QA Engineer")
         agent = QAEngineer(config, "prompt", "qa")
         parsed = QAEngineerResponse(test_results="Bug found: missing null check")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["test_results"] == "Bug found: missing null check"
         assert "BUGS FOUND" in result["communication_log"][0]
 
@@ -191,7 +175,7 @@ class TestFinalQAEngineer:
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("Final QA", ["specs"])
         agent = FinalQAEngineer(config, "prompt {specs} {workspace}", "final_qa")
-        state = {"specs": "spec", "workspace_files": sample_workspace_files}
+        state = ProjectState(specs="spec", workspace_files=sample_workspace_files)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
 
@@ -199,7 +183,7 @@ class TestFinalQAEngineer:
         config = make_config("Final QA")
         agent = FinalQAEngineer(config, "prompt", "final_qa")
         parsed = FinalQAResponse(test_results="PASSED")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["test_results"] == "APPROVED"
         assert "APPROVED" in result["communication_log"][0]
 
@@ -207,7 +191,7 @@ class TestFinalQAEngineer:
         config = make_config("Final QA")
         agent = FinalQAEngineer(config, "prompt", "final_qa")
         parsed = FinalQAResponse(test_results="Integration bug in auth")
-        result = agent._update_state(parsed, {})
+        result = agent._update_state(parsed, ProjectState())
         assert result["test_results"] == "Integration bug in auth"
         assert "FINAL INTEGRATION" in result["current_task"]
 
@@ -217,11 +201,7 @@ class TestReporter:
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("Reporter", ["specs"])
         agent = Reporter(config, "prompt {specs} {workspace} {history}", "reporter")
-        state = {
-            "specs": "spec",
-            "workspace_files": sample_workspace_files,
-            "communication_log": ["Log entry 1", "Log entry 2"],
-        }
+        state = ProjectState(specs="spec", workspace_files=sample_workspace_files, communication_log=["Log entry 1", "Log entry 2"])
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
         assert "Log entry 1" in inputs["history"]
@@ -230,7 +210,7 @@ class TestReporter:
     def test_build_inputs_empty_workspace(self):
         config = make_config("Reporter", [])
         agent = Reporter(config, "prompt {workspace} {history}", "reporter")
-        state = {"workspace_files": {}, "communication_log": []}
+        state = ProjectState()
         inputs = agent._build_inputs(state)
         assert "No files were generated" in inputs["workspace"]
 

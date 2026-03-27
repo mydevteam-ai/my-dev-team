@@ -3,6 +3,8 @@ import asyncio
 import logging
 import subprocess
 import sys
+import warnings
+warnings.filterwarnings('ignore', message="Core Pydantic V1 functionality", category=UserWarning, module='langchain_core')
 from pathlib import Path
 from dotenv import load_dotenv
 from rich import print # pylint: disable=redefined-builtin

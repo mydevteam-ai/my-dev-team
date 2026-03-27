@@ -1,4 +1,5 @@
 from typing import override
+from devteam.state import ProjectState
 from devteam.utils import status, workspace
 from .schemas import ApproveCode, FinalQAResponse, ReportIssues
 from .base_agent import BaseAgent
@@ -8,11 +9,11 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
     tools = [ApproveCode, ReportIssues]
 
     @override
-    def _build_inputs(self, state: dict) -> dict:
+    def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
         workspace_str = ''
-        if workspace_files := state.get('workspace_files', {}):
-            workspace_str = workspace.workspace_str_from_files(workspace_files)
+        if state.workspace_files:
+            workspace_str = workspace.workspace_str_from_files(state.workspace_files)
         else:
             workspace_str = "No files exist in the workspace."
         inputs['workspace'] = workspace_str.strip()
@@ -27,7 +28,7 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
         raise ValueError(f"Unexpected tool call: {tool_name}")
 
     @override
-    def _update_state(self, parsed_data: FinalQAResponse, current_state: dict) -> dict:
+    def _update_state(self, parsed_data: FinalQAResponse, current_state: ProjectState) -> dict:
         results = parsed_data.test_results
         if status.is_approved(results):
             results = 'APPROVED'

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔧 Internal
 
+* **`ProjectState` migrated to Pydantic `BaseModel`:** `ProjectState` was rewritten from a `TypedDict` to a `BaseModel`. All fields now have explicit defaults, and LangGraph performs runtime validation on every state update.
+
 * **Python Version:** Minimum required Python version is now 3.14. All code has been updated to use modern built-in generics (e.g., `list`, `dict`), the `@override` decorator, and other Python 3.14+ features. Legacy `typing` imports (`Dict`, `List`, `Optional`) have been removed.
 
 ## [0.7.1] - 2026-03-26

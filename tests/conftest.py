@@ -1,26 +1,10 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+from devteam.state import ProjectState
 
 @pytest.fixture
 def sample_state():
-    """A minimal ProjectState-like dictionary for testing."""
-    return {
-        'current_phase': 'planning',
-        'requirements': 'Build a REST API',
-        'specs': '',
-        'human_answer': '',
-        'clarification_question': '',
-        'pending_tasks': [],
-        'workspace_files': {},
-        'current_task_index': 0,
-        'current_task': '',
-        'review_feedback': '',
-        'test_results': '',
-        'revision_count': 0,
-        'final_report': '',
-        'integration_bugs': [],
-        'communication_log': [],
-    }
+    return ProjectState(requirements='Build a REST API')
 
 @pytest.fixture
 def sample_workspace_files():

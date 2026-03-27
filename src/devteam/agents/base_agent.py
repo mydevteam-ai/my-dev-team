@@ -43,7 +43,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     def _build_inputs(self, state: dict) -> dict:
         inputs = {}
         for key in self.inputs:
-            val = state.get(key, '')
+            val = getattr(state, key, '')
             if key == 'messages': # Do not sanitize messages
                 inputs[key] = val
             elif key == 'skills':
@@ -53,7 +53,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return inputs
 
     def _update_state(self, parsed_data: T, current_state: dict) -> dict:
-        return parsed_data.model_dump()
+        return parsed_data.model_dump(exclude_none=True)
 
     async def _pre_process(self, state: dict) -> dict:
         """Lifecycle Hook: performs actions BEFORE the LLM runs."""

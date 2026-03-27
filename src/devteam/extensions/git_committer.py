@@ -1,10 +1,9 @@
 import subprocess
 from typing import override
 from pathlib import Path
-from devteam.utils import WithLogging
 from .base_extension import CrewExtension
 
-class GitCommitter(WithLogging, CrewExtension):
+class GitCommitter(CrewExtension):
     """Extension that commits workspace changes to a Git repository."""
 
     def __init__(self, workspace_dir: Path):
