@@ -1,6 +1,7 @@
-from typing import Any
 from langchain_core.messages import RemoveMessage
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 from devteam.state import ProjectState
 from devteam.utils import CommunicationLog, WithLogging
 from .planning_manager import PlanningManager
@@ -13,7 +14,7 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
     def __init__(self, agents: dict):
         self.agents = agents
 
-    def build_graph(self, memory: Any = None, interrupt_before: list[str] = None) -> StateGraph:
+    def build_graph(self, memory: BaseCheckpointSaver = None, interrupt_before: list[str] = None) -> CompiledStateGraph:
         workflow = StateGraph(ProjectState)
         workflow.add_node('human', self.dummy_human_node)
         workflow.add_node('manager', self.manager_node)

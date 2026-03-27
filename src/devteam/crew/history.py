@@ -1,10 +1,10 @@
-from typing import Any
 from langgraph.graph import END
+from langgraph.graph.state import CompiledStateGraph
 
 class History:
     """Mixin for show history functionality."""
 
-    app: Any # type: ignore
+    app: CompiledStateGraph
 
     async def get_history(self, thread_id: str) -> list[dict]:
         config = {'configurable': {'thread_id': thread_id}}

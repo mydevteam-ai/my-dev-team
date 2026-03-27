@@ -1,10 +1,10 @@
 import asyncio
 from functools import cached_property
-from typing import Any
 import traceback
 import yaml
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
@@ -119,7 +119,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return [LoadSkill] + (self.tools or [])
 
     @cached_property
-    def llm(self) -> Any:
+    def llm(self) -> Runnable:
         llm = self.llm_factory.create(
             category=self.model_category,
             temperature=self.temperature,
@@ -135,10 +135,10 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         ])
 
     @cached_property
-    def chain(self) -> Any:
+    def chain(self) -> Runnable:
         return self._build_prompt() | self.llm
 
-    async def _invoke_llm(self, **kwargs) -> Any:
+    async def _invoke_llm(self, **kwargs) -> AIMessage:
         if self.rate_limiter:
             await self.rate_limiter.wait_if_needed()
         try:

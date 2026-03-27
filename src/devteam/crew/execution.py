@@ -1,6 +1,6 @@
 from logging import Logger
-from typing import Any
 from langchain_core.messages import HumanMessage
+from langgraph.graph.state import CompiledStateGraph
 from devteam.utils import sanitize_for_prompt
 from .event_emitter import EventEmitter
 from .final_result import FinalResult
@@ -8,7 +8,7 @@ from .final_result import FinalResult
 class Execution(EventEmitter):
     """Mixin to manage asynchronous execution."""
 
-    app: Any # type: ignore
+    app: CompiledStateGraph
     logger: Logger
 
     async def _inject_feedback(self, config: dict, feedback: str, feedback_source: str = 'reviewer') -> dict:
