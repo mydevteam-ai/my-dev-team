@@ -38,21 +38,21 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return sanitize_for_prompt(content, tags)
 
     @cached_property
-    def inputs(self) -> list[str]:
+    def _inputs(self) -> list[str]:
         return self.config.get('inputs', [])
 
     @cached_property
-    def outputs(self) -> list[str]:
+    def _outputs(self) -> list[str]:
         return self.config.get('outputs', [])
 
     def _build_inputs(self, state: dict) -> dict:
         inputs = {}
-        for key in self.inputs:
+        for key in self._inputs:
             val = state.get(key, '')
             if key == 'messages': # Do not sanitize messages
                 inputs[key] = val
             elif key == 'skills':
-                inputs[key] = self.sanitize_for_prompt(self.skills_catalog, 'skills')
+                inputs[key] = self.sanitize_for_prompt(self._skills_catalog, 'skills')
             else:
                 inputs[key] = self.sanitize_for_prompt(str(val), key) if val else ''
         return inputs
@@ -115,24 +115,24 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return final_state
 
     @cached_property
-    def skills_catalog(self) -> str:
+    def _skills_catalog(self) -> str:
         if catalog := skills.load_skills_catalog():
             return '\n'.join(f"- `{item['name']}`: {item['description']}" for item in catalog)
         return "No skills available."
 
     @cached_property
-    def all_tools(self) -> list[type[BaseModel]]:
+    def _all_tools(self) -> list[type[BaseModel]]:
         return [LoadSkill] + (self.tools or [])
 
     @cached_property
-    def llm(self) -> Runnable:
+    def _llm(self) -> Runnable:
         llm = self.llm_factory.create(
             category=self.model_category,
             temperature=self.temperature,
             node_name=self.node_name,
             json_mode=False
         )
-        return llm.bind_tools(self.all_tools)
+        return llm.bind_tools(self._all_tools)
 
     def _build_prompt(self) -> ChatPromptTemplate:
         return ChatPromptTemplate.from_messages([
@@ -141,15 +141,15 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         ])
 
     @cached_property
-    def chain(self) -> Runnable:
-        return self._build_prompt() | self.llm
+    def _chain(self) -> Runnable:
+        return self._build_prompt() | self._llm
 
     async def _invoke_llm(self, **kwargs) -> AIMessage:
         if self.rate_limiter:
             await self.rate_limiter.wait_if_needed()
         try:
             response = await asyncio.wait_for(
-                self.chain.ainvoke(kwargs), timeout=settings.llm_timeout
+                self._chain.ainvoke(kwargs), timeout=settings.llm_timeout
             )
         except asyncio.TimeoutError:
             raise TimeoutError(
