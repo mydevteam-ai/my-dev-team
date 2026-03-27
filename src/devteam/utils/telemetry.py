@@ -53,11 +53,13 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         output_tokens = 0
         model_provider = 'unknown'
         model_name = 'unknown'
-        for generation in (x for row in response.generations for x in row):
+        for idx, generation in enumerate(x for row in response.generations for x in row):
             model_provider = generation.message.response_metadata.get('model_provider', 'unknown')
             model_name = generation.message.response_metadata.get('model_name', 'unknown')
-            input_tokens += generation.message.usage_metadata.get('input_tokens', 0)
-            output_tokens += generation.message.usage_metadata.get('output_tokens', 0)
+            usage = generation.message.usage_metadata or {}
+            if idx == 0:  # Prompt tokens are shared across all generations — only count once
+                input_tokens = usage.get('input_tokens', 0)
+            output_tokens += usage.get('output_tokens', 0)
         self.logger.debug("Generation: %s/%s %i %i", model_provider, model_name, input_tokens, output_tokens)
         return {
             'model_provider': model_provider,
