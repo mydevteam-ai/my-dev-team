@@ -1,3 +1,4 @@
+import asyncio
 from typing import override
 from pathlib import Path
 from devteam.tools import DockerSandbox
@@ -52,7 +53,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
 
     async def _pre_process(self, state: dict) -> dict:
         if self.sandbox and state.get('workspace_files'):
-            state['raw_test_results'] = self._run_tests(state)
+            state['raw_test_results'] = await asyncio.to_thread(self._run_tests, state)
         return state
 
     def with_sandbox(self, sandbox: DockerSandbox):
