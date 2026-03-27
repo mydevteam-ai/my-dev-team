@@ -1,3 +1,4 @@
+from typing import override
 from devteam.utils import status, workspace
 from .schemas import ApproveCode, CodeReviewerResponse, ReportIssues
 from .base_agent import BaseAgent
@@ -6,6 +7,7 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
     output_schema = CodeReviewerResponse
     tools = [ApproveCode, ReportIssues]
 
+    @override
     def _build_inputs(self, state: dict) -> dict:
         inputs = super()._build_inputs(state)
         workspace_str = ''
@@ -16,6 +18,7 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
         inputs['workspace'] = workspace_str.strip()
         return inputs
 
+    @override
     def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> CodeReviewerResponse:
         if tool_name == 'ApproveCode':
             return CodeReviewerResponse(review_feedback='APPROVED')
@@ -23,6 +26,7 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
             return CodeReviewerResponse(review_feedback=tool_args['feedback'])
         raise ValueError(f"Unexpected tool call: {tool_name}")
 
+    @override
     def _update_state(self, parsed_data: CodeReviewerResponse, current_state: dict) -> dict:
         feedback = parsed_data.review_feedback
         if status.is_approved_status(feedback):

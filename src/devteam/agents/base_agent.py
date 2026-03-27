@@ -1,6 +1,6 @@
 import asyncio
 from functools import cached_property
-from typing import Any, Generic, TypeVar
+from typing import Any
 import traceback
 import yaml
 from langchain_core.messages import ToolMessage
@@ -12,9 +12,7 @@ from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog
 from devteam.utils.sanitizer import sanitize_for_prompt
 from .schemas import LoadSkill
 
-T = TypeVar('T', bound=BaseModel)
-
-class BaseAgent(CommunicationLog, WithLogging, Generic[T]):
+class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
 
     model_category: str = 'reasoning'

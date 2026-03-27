@@ -1,3 +1,4 @@
+from typing import override
 from devteam.utils import status, workspace
 from .schemas import ApproveCode, FinalQAResponse, ReportIssues
 from .base_agent import BaseAgent
@@ -6,6 +7,7 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
     output_schema = FinalQAResponse
     tools = [ApproveCode, ReportIssues]
 
+    @override
     def _build_inputs(self, state: dict) -> dict:
         inputs = super()._build_inputs(state)
         workspace_str = ''
@@ -16,6 +18,7 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
         inputs['workspace'] = workspace_str.strip()
         return inputs
 
+    @override
     def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> FinalQAResponse:
         if tool_name == 'ApproveCode':
             return FinalQAResponse(test_results='PASSED')
@@ -23,6 +26,7 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
             return FinalQAResponse(test_results=tool_args['feedback'])
         raise ValueError(f"Unexpected tool call: {tool_name}")
 
+    @override
     def _update_state(self, parsed_data: FinalQAResponse, current_state: dict) -> dict:
         results = parsed_data.test_results
         if status.is_approved_status(results):

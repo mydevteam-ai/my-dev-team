@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Any, Dict, List
+from typing import Any
 import yaml
 from rich.panel import Panel
 from rich.table import Table
@@ -18,7 +18,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.input_tokens = 0
         self.output_tokens = 0
         self.total_cost = 0.0
-        self.call_history: List[Dict[str, Any]] = []
+        self.call_history: list[dict[str, Any]] = []
         self.agent_calls = defaultdict(int)
 
     def on_llm_end(self, response: LLMResult, **kwargs) -> None:

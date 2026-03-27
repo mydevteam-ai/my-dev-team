@@ -1,3 +1,4 @@
+from typing import override
 from functools import cached_property
 from pathlib import Path
 from devteam.utils import task_to_markdown
@@ -14,6 +15,7 @@ class WorkspaceSaver(CrewExtension):
     def live_dir(self) -> Path:
         return self.workspace_dir / 'workspace'
 
+    @override
     def on_start(self, thread_id: str, initial_state: dict):
         self.base_dir = self._get_target_dir(initial_state)
         self.base_dir.mkdir(parents=True, exist_ok=True)
@@ -86,6 +88,7 @@ class WorkspaceSaver(CrewExtension):
         report_file = self.base_dir / 'final_report.md'
         report_file.write_text(report, encoding='utf-8')
 
+    @override
     def on_step(self, thread_id: str, state_update: dict, full_state: dict):
         for node_name, node_update in state_update.items():
             self.base_dir = self._get_target_dir(full_state)

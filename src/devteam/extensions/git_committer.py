@@ -1,4 +1,5 @@
 import subprocess
+from typing import override
 from pathlib import Path
 from .base_extension import CrewExtension
 
@@ -29,11 +30,13 @@ class GitCommitter(CrewExtension):
         if status.stdout.strip():
             self._run_git('commit', '-m', message)
 
+    @override
     def on_start(self, thread_id: str, initial_state: dict):
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
         self._init_repo()
         self._commit('Initial commit')
 
+    @override
     def on_step(self, thread_id: str, state_update: dict, full_state: dict):
         for node_name, node_update in state_update.items():
             if node_name != 'developer':

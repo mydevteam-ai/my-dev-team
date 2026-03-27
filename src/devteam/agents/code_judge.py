@@ -1,3 +1,4 @@
+from typing import override
 from .schemas import CodeJudgeResponse, SubmitWinner
 from .base_agent import BaseAgent
 
@@ -5,6 +6,7 @@ class CodeJudge(BaseAgent[CodeJudgeResponse]):
     output_schema = CodeJudgeResponse
     tools = [SubmitWinner]
 
+    @override
     def _build_inputs(self, state: dict) -> dict:
         inputs = super()._build_inputs(state)
         drafts = state.get('code_drafts', [])
@@ -16,6 +18,7 @@ class CodeJudge(BaseAgent[CodeJudgeResponse]):
         inputs['drafts'] = drafts_formatted
         return inputs
 
+    @override
     def _update_state(self, parsed_data: CodeJudgeResponse, current_state: dict) -> dict:
         try:
             winner_index = parsed_data.winner_index

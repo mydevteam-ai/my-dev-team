@@ -1,11 +1,11 @@
-from typing import Any, Dict, List
+from typing import Any
 from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
 class CostOptimization:
-    call_history: List[Dict[str, Any]]
-    agent_calls: Dict[str, int]
+    call_history: list[dict[str, Any]]
+    agent_calls: dict[str, int]
 
     def get_optimization_panel(self, panel_width: int = 75) -> Panel:
         warnings_data = []

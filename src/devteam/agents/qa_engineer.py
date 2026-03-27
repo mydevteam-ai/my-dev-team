@@ -1,3 +1,4 @@
+from typing import override
 from pathlib import Path
 from devteam.tools import DockerSandbox
 from devteam.utils import status, workspace
@@ -9,6 +10,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
     tools = [ApproveCode, ReportIssues]
     sandbox: DockerSandbox = None
 
+    @override
     def _build_inputs(self, state: dict) -> dict:
         inputs = super()._build_inputs(state)
         workspace_str = ''
@@ -29,6 +31,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
         self.logger.debug("Sandbox Output:\n%s", test_results)
         return test_results
 
+    @override
     def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> QAEngineerResponse:
         if tool_name == 'ApproveCode':
             return QAEngineerResponse(test_results='PASSED')
@@ -36,6 +39,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
             return QAEngineerResponse(test_results=tool_args['feedback'])
         raise ValueError(f"Unexpected tool call: {tool_name}")
 
+    @override
     def _update_state(self, parsed_data: QAEngineerResponse, current_state: dict) -> dict:
         results = parsed_data.test_results
         if status.is_approved_status(results):

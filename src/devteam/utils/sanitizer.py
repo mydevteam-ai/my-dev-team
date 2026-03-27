@@ -1,5 +1,4 @@
 import re
-from typing import List, Optional
 
 def normalize_workspace_content(text: str) -> str:
     """Normalize double-escaped newlines from LLM JSON responses."""

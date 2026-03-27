@@ -1,3 +1,4 @@
+from typing import override
 from rich import print # pylint: disable=redefined-builtin
 from rich.panel import Panel
 from rich.text import Text
@@ -22,6 +23,7 @@ def _format_value(key: str, value) -> str:
     return text
 
 class ConsoleLogger(CrewExtension):
+    @override
     def on_start(self, thread_id: str, initial_state: dict):
         print(f"\n[bold green]🚀 STARTING THREAD: {thread_id}[/bold green]")
         if 'requirements' in initial_state and 'pending_tasks' not in initial_state:
@@ -31,11 +33,13 @@ class ConsoleLogger(CrewExtension):
         elif 'code' in initial_state and 'final_report' in initial_state:
             print("[dim]Phase: 📦 Release & Integration[/dim]")
 
+    @override
     def on_resume(self, thread_id: str, state_update: dict):
         print(f"[bold cyan] 🔄 RESUMING THREAD: {thread_id}[/bold cyan]")
         if state_update and len(state_update) > 0:
             print("[dim]Injecting human feedback[/dim]")
 
+    @override
     def on_step(self, thread_id: str, state_update: dict, full_state: dict):
         for node_name, node_output in state_update.items():
             if not isinstance(node_output, dict):
@@ -55,6 +59,7 @@ class ConsoleLogger(CrewExtension):
             latest_log = logs[-1]
             print(f"  [bold]➜[/bold] {latest_log.splitlines()[0]}")
 
+    @override
     def on_finish(self, thread_id: str, final_state: dict):
         print(f"\n[bold green]✅ FINISHED THREAD: {thread_id}[/bold green]")
         if tasks := final_state.get('pending_tasks'):

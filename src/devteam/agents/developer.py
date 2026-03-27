@@ -1,3 +1,4 @@
+from typing import override
 from devteam.utils import workspace
 from .schemas import DeveloperResponse, SubmitCode
 from .base_agent import BaseAgent
@@ -6,6 +7,7 @@ class SeniorDeveloper(BaseAgent[DeveloperResponse]):
     output_schema = DeveloperResponse
     tools = [SubmitCode]
 
+    @override
     def _build_inputs(self, state: dict) -> dict:
         inputs = super()._build_inputs(state)
         if workspace_files := state.get('workspace_files', {}):
@@ -15,6 +17,7 @@ class SeniorDeveloper(BaseAgent[DeveloperResponse]):
         inputs['workspace'] = workspace_str
         return inputs
 
+    @override
     def _update_state(self, parsed_data: DeveloperResponse, current_state: dict) -> dict:
         workspace_files = current_state.get('workspace_files', {}).copy()
         for file_obj in parsed_data.workspace_files:
