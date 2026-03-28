@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Parallel Task Execution (Fan-Out):** Development tasks are now dispatched in parallel based on their `dependencies` field. Tasks with no unmet dependencies are fanned out simultaneously as independent LangGraph branches using the `Send` API, and each branch runs its full developer → reviewer → QA cycle concurrently. Tasks with dependencies are dispatched automatically once all prerequisites complete, enabling dependency-level pipelining across the entire backlog.
 
+* **New `planning` LLM category:** Added a dedicated `planning` model category to `llms.yaml` for agents that perform task decomposition and architectural reasoning. This separates long-horizon planning workloads from deep code-focused `reasoning` tasks, allowing each provider to route them to the most suitable model. The System Architect's config was updated from `model: reasoning` to `model: planning`.
+
 ### ⚙️ Changed
 
 * **System Architect prompt updated:** The architect is now explicitly instructed to maximize the number of independent (dependency-free) tasks and only add a dependency when it is a hard prerequisite, in order to expose as much parallelism as possible to the execution engine.

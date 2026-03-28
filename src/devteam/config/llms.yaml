@@ -1,16 +1,19 @@
 providers:
     groq:
         reasoning: 'qwen/qwen3-32b'
+        planning: 'openai/gpt-oss-120b'
         code-generator: 'openai/gpt-oss-120b'
         code-analyzer: 'openai/gpt-oss-120b'
         fast-utility: 'llama-3.1-8b-instant'
     ollama:
         reasoning: 'qwen3:8b'
+        planning: 'qwen2.5-coder:7b'
         code-generator: 'qwen2.5-coder:7b'
         code-analyzer: 'qwen2.5-coder:7b'
         fast-utility: 'gemma3:4b'
     openai:
         reasoning: 'o1-preview'
+        planning: 'gpt-4o'
         code-generator: 'gpt-4o'
         code-analyzer: 'gpt-4o'
         fast-utility: 'gpt-4o-mini'
