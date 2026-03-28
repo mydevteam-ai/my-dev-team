@@ -41,7 +41,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
         raise ValueError(f"Unexpected tool call: {tool_name}")
 
     @override
-    def _update_state(self, parsed_data: QAEngineerResponse, current_state: dict) -> dict:
+    def _update_state(self, parsed_data: QAEngineerResponse, current_state: ProjectState) -> dict:
         results = parsed_data.test_results
         if status.is_approved(results):
             results = 'APPROVED'
@@ -51,7 +51,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
             'communication_log': self.communication(f"{status_str}\n{results}")
         }
 
-    async def _pre_process(self, state: ProjectState) -> dict:
+    async def _pre_process(self, state: ProjectState) -> ProjectState:
         if self.sandbox and state.workspace_files:
             state.raw_test_results = await asyncio.to_thread(self._run_tests, state)
         return state

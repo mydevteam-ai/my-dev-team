@@ -8,6 +8,7 @@ from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
+from devteam.state import ProjectState
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
 from .schemas import LoadSkill
 
@@ -40,26 +41,26 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     def outputs(self) -> list[str]:
         return self.config.get('outputs', [])
 
-    def _build_inputs(self, state: dict) -> dict:
+    def _build_inputs(self, state: ProjectState) -> dict:
         inputs = {}
         for key in self.inputs:
-            val = getattr(state, key, '')
             if key == 'messages': # Do not sanitize messages
-                inputs[key] = val
+                inputs[key] = state.messages
             elif key == 'skills':
                 inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
             else:
+                val = getattr(state, key)
                 inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
         return inputs
 
-    def _update_state(self, parsed_data: T, current_state: dict) -> dict:
+    def _update_state(self, parsed_data: T, current_state: ProjectState) -> dict:
         return parsed_data.model_dump(exclude_none=True)
 
-    async def _pre_process(self, state: dict) -> dict:
+    async def _pre_process(self, state: ProjectState) -> ProjectState:
         """Lifecycle Hook: performs actions BEFORE the LLM runs."""
         return state
 
-    async def _post_process(self, state: dict, final_state: dict) -> dict:
+    async def _post_process(self, state: ProjectState, final_state: dict) -> dict:
         """Lifecycle Hook: performs actions AFTER the LLM runs."""
         return final_state
 
@@ -74,12 +75,12 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                 return skill_content
         return None
 
-    async def process(self, state: dict) -> dict:
+    async def process(self, state: ProjectState) -> dict:
         """Invoke LLM and use tools to provide structured results."""
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
-        original_messages = list(inputs.get('messages', []))
+        original_messages = list(state.messages)
         last_error = ''
         for attempt in range(self.max_retries + 1):
             if attempt > 0:

@@ -14,7 +14,5 @@ class Reporter(BaseAgent[ReporterResponse]):
         else:
             workspace_str = "No files were generated."
         inputs['workspace'] = workspace_str
-        communication_log = state.communication_log
-        history_str = '\n\n'.join(communication_log)
-        inputs['history'] = sanitizer.sanitize_for_prompt(history_str, ['history'])
+        inputs['history'] = sanitizer.sanitize_for_prompt('\n\n'.join(state.communication_log), ['history'])
         return inputs
