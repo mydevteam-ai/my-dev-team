@@ -34,6 +34,10 @@ class DevelopmentTask(BaseModel):
         min_length=1,
         description="A bulleted list of specific, testable conditions that must be met for this task to be considered complete."
     )
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="A list of task names that must be completed before this task can begin. Leave empty if this task has no dependencies."
+    )
 
 class SystemArchitectResponse(BaseModel):
     runtime: str = Field(description="The primary runtime environment for this project (e.g. 'python', 'node', 'java')")

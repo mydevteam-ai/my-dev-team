@@ -10,6 +10,7 @@ class PendingTask(TypedDict):
     task_name: str
     user_story: str
     acceptance_criteria: list[str]
+    dependencies: list[str]
 
 class ProjectState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
