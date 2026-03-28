@@ -1,5 +1,6 @@
-from .project_state import ProjectState
+from .project_state import ProjectState, PendingTask
 
 __all__ = [
-    'ProjectState'
+    'ProjectState',
+    'PendingTask'
 ]

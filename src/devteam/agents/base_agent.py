@@ -77,6 +77,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
 
     async def process(self, state: ProjectState) -> dict:
         """Invoke LLM and use tools to provide structured results."""
+        if isinstance(state, dict):
+            state = ProjectState(**state)
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
