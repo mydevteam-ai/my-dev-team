@@ -8,6 +8,7 @@ class FinalResult(BaseModel):
     final_report: str | None = None
     workspace_files: dict[str, str] = Field(default_factory=dict)
     integration_bugs: list[str] = Field(default_factory=list)
+    failed_tasks: list[str] = Field(default_factory=list)
     abort_requested: bool = False
     error: bool = False
     error_message: str | None = None

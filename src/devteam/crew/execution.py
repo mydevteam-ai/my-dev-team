@@ -70,11 +70,6 @@ class Execution(EventEmitter):
                 state_object = await self.app.aget_state(config)
                 full_state = state_object.values
                 self.emit_event('step', thread_id, state_update=state_update, full_state=full_state)
-                if full_state.get('error') is True:
-                    traceback_str = full_state.get('error_message', 'Unknown Error')
-                    self.logger.error("Workflow halted due to error:\n%s\n\nFix the issue and resume using: devteam --resume %s", traceback_str, thread_id)
-                    abort_requested = True
-                    break
                 if full_state.get('abort_requested'):
                     abort_requested = True
                     self.logger.debug("Abort requested during execution. Ending workflow.")

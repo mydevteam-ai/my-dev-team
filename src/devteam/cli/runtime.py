@@ -70,12 +70,13 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
                 feedback_source=feedback_source,
                 checkpoint_id=checkpoint_id,
             )
-        if final_state.error:
-            logging.error('🛑 Agent framework halted due to an internal error.')
-            return
         if final_state.abort_requested:
             logging.error('❌ Workflow aborted by user or validation failure.')
             return
+        if final_state.failed_tasks:
+            logging.warning('⚠️  %d task(s) were skipped due to agent errors:', len(final_state.failed_tasks))
+            for t in final_state.failed_tasks:
+                print(f'   - {t}')
         if final_state.success:
             print('\n🎉 PROJECT COMPLETED SUCCESSFULLY!')
             print(final_state.final_report or 'No report generated.')

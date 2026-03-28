@@ -1,4 +1,5 @@
-from unittest.mock import patch
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
 from devteam.agents.code_reviewer import CodeReviewer
 from devteam.agents.developer import SeniorDeveloper
 from devteam.agents.product_manager import ProductManager
@@ -213,6 +214,94 @@ class TestReporter:
         state = ProjectState()
         inputs = agent._build_inputs(state)
         assert "No files were generated" in inputs["workspace"]
+
+# --- BaseAgent Retry Tests ---
+
+class TestBaseAgentRetry:
+    def _make_agent(self, max_retries=2):
+        from devteam.agents.schemas import CodeReviewerResponse
+        config = make_config("Test Agent", [])
+        agent = CodeReviewer(config, "prompt", "reviewer")
+        agent.max_retries = max_retries
+        return agent
+
+    def _make_ai_message(self, tool_name: str, tool_args: dict):
+        msg = MagicMock()
+        msg.content = ''
+        msg.tool_calls = [{'name': tool_name, 'args': tool_args, 'id': 'tc1'}]
+        return msg
+
+    def test_succeeds_on_first_attempt(self):
+        agent = self._make_agent()
+        ai_msg = self._make_ai_message('ApproveCode', {})
+        agent._invoke_llm = AsyncMock(return_value=ai_msg)
+        result = asyncio.run(agent.process(ProjectState()))
+        assert agent._invoke_llm.call_count == 1
+        assert 'error' not in result
+
+    def test_retries_on_failure_then_succeeds(self):
+        agent = self._make_agent(max_retries=2)
+        ai_msg = self._make_ai_message('ApproveCode', {})
+        agent._invoke_llm = AsyncMock(side_effect=[
+            ValueError("timeout"),
+            ValueError("timeout"),
+            ai_msg,
+        ])
+        result = asyncio.run(agent.process(ProjectState()))
+        assert agent._invoke_llm.call_count == 3
+        assert 'error' not in result
+
+    def test_returns_error_after_exhausting_retries(self):
+        agent = self._make_agent(max_retries=1)
+        agent._invoke_llm = AsyncMock(side_effect=ValueError("persistent failure"))
+        result = asyncio.run(agent.process(ProjectState()))
+        assert agent._invoke_llm.call_count == 2  # 1 attempt + 1 retry
+        assert result.get('error') is True
+        assert 'persistent failure' in result.get('error_message', '')
+
+# --- ProjectManager Error Recovery Tests ---
+
+class TestProjectManagerErrorRecovery:
+    def _make_manager(self):
+        from devteam.managers.project_manager import ProjectManager
+        return ProjectManager(agents={})
+
+    def test_development_error_skips_task_and_clears_flag(self):
+        manager = self._make_manager()
+        state = ProjectState(
+            current_phase='development',
+            current_task_index=2,
+            current_task='Build the authentication module',
+            error=True,
+            error_message='LLM timed out after 120 seconds',
+        )
+        result = manager._manager_node(state)
+        assert result['error'] is False
+        assert result['error_message'] == ''
+        assert result['current_agent'] == 'officer'
+        assert len(result['failed_tasks']) == 1
+        assert 'Task 2' in result['failed_tasks'][0]
+
+    def test_planning_error_aborts_workflow(self):
+        manager = self._make_manager()
+        state = ProjectState(
+            current_phase='planning',
+            error=True,
+            error_message='LLM timed out',
+        )
+        result = manager._manager_node(state)
+        assert result.get('abort_requested') is True
+        assert 'error' not in result or result.get('current_agent') is None
+
+    def test_no_error_delegates_to_phase_logic(self):
+        manager = self._make_manager()
+        state = ProjectState(
+            current_phase='development',
+            current_agent='developer',
+            error=False,
+        )
+        result = manager._manager_node(state)
+        assert result.get('current_agent') == 'reviewer'
 
 # --- SystemArchitect Tests ---
 

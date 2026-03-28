@@ -28,7 +28,22 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
         workflow.add_conditional_edges('officer', self._central_router)
         return workflow.compile(checkpointer=memory, interrupt_before=interrupt_before or ['human'])
 
+    def _handle_agent_error(self, state: ProjectState) -> dict:
+        if state.current_phase == 'development':
+            task_label = f"Task {state.current_task_index}: {state.current_task[:60].strip()}"
+            self.logger.warning("Agent error on '%s'. Skipping to next task.", task_label)
+            return {
+                'error': False,
+                'error_message': '',
+                'current_agent': 'officer',
+                'failed_tasks': [task_label],
+            }
+        self.logger.error("Agent error in '%s' phase. Halting workflow.", state.current_phase)
+        return {'abort_requested': True}
+
     def _manager_node(self, state: ProjectState) -> dict:
+        if state.error:
+            return self._handle_agent_error(state)
         self.logger.debug("Project Manager is reviewing the project state...")
         match state.current_phase:
             case 'planning':

@@ -79,28 +79,37 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
-        conversation_history = []
-        try:
-            while True:
-                if conversation_history:
-                    inputs['messages'] = inputs.get('messages', []) + conversation_history
-                self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
-                ai_message = await self._invoke_llm(**inputs)
-                conversation_history.append(ai_message)
-                if not ai_message.tool_calls:
-                    raise ValueError("The model did not call any tool.")
-                tool_call = ai_message.tool_calls[0]
-                if intermediate_result := self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
-                    tool_msg = ToolMessage(content=intermediate_result, tool_call_id=tool_call['id'])
-                    conversation_history.append(tool_msg)
-                    continue
-                parsed_data = self._parse_outputs(ai_message)
+        original_messages = list(inputs.get('messages', []))
+        last_error = ''
+        for attempt in range(self.max_retries + 1):
+            if attempt > 0:
+                self.logger.warning("LLM call failed. Retrying (attempt %d/%d)...", attempt + 1, self.max_retries + 1)
+                inputs['messages'] = list(original_messages)
+            conversation_history = []
+            try:
+                while True:
+                    if conversation_history:
+                        inputs['messages'] = original_messages + conversation_history
+                    self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
+                    ai_message = await self._invoke_llm(**inputs)
+                    conversation_history.append(ai_message)
+                    if not ai_message.tool_calls:
+                        raise ValueError("The model did not call any tool.")
+                    tool_call = ai_message.tool_calls[0]
+                    if intermediate_result := self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
+                        tool_msg = ToolMessage(content=intermediate_result, tool_call_id=tool_call['id'])
+                        conversation_history.append(tool_msg)
+                        continue
+                    parsed_data = self._parse_outputs(ai_message)
+                    break
                 break
-        except Exception: # pylint: disable=broad-exception-caught
-            full_traceback = traceback.format_exc()
+            except Exception: # pylint: disable=broad-exception-caught
+                last_error = traceback.format_exc()
+                self.logger.error("Attempt %d/%d failed:\n%s", attempt + 1, self.max_retries + 1, last_error)
+        else:
             return {
                 'error': True,
-                'error_message': full_traceback,
+                'error_message': last_error,
             }
         final_state = self._update_state(parsed_data, state)
         final_state = await self._post_process(state, final_state)

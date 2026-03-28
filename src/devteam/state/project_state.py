@@ -31,6 +31,7 @@ class ProjectState(BaseModel):
     final_report: str = ''
     integration_bugs: list[str] = Field(default_factory=list)
     communication_log: Annotated[list[str], operator.add] = Field(default_factory=list)
+    failed_tasks: Annotated[list[str], operator.add] = Field(default_factory=list)
     raw_test_results: str = ''
     workspace_path: str = ''
     abort_requested: bool = False
