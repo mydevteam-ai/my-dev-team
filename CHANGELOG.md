@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - Unreleased
+
+### 🚀 Added
+
+* **Parallel Task Execution (Fan-Out):** Development tasks are now dispatched in parallel based on their `dependencies` field. Tasks with no unmet dependencies are fanned out simultaneously as independent LangGraph branches using the `Send` API, and each branch runs its full developer → reviewer → QA cycle concurrently. Tasks with dependencies are dispatched automatically once all prerequisites complete, enabling dependency-level pipelining across the entire backlog.
+
+### ⚙️ Changed
+
+* **System Architect prompt updated:** The architect is now explicitly instructed to maximize the number of independent (dependency-free) tasks and only add a dependency when it is a hard prerequisite, in order to expose as much parallelism as possible to the execution engine.
+
 ## [0.8.0] - 2026-03-28
 
 ### 🚀 Added
