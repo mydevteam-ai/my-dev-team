@@ -1,0 +1,3 @@
+Subject: NEW PROJECT: Python Hello World
+
+Write a "Hello World" console application in Python.

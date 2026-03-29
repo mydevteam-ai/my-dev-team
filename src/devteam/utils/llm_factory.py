@@ -19,11 +19,11 @@ class LLMFactory:
     def model_map(self) -> dict:
         return self.llm_config.get('providers', {})
 
-    def _select_model(self, capabilities: dict[str, float]) -> str:
-        """Select the best model for the requested capabilities using weighted scoring."""
+    def _select_model(self, capabilities: dict[str, float]) -> dict:
+        """Select the best model entry for the requested capabilities using weighted scoring."""
         models = self.model_map[self.provider]['models']
         total_weight = sum(capabilities.values()) or 1.0
-        best_model = models[0]['id']
+        best_model = models[0]
         best_score = -1.0
         for model in models:
             model_caps = model.get('capabilities', {})
@@ -33,7 +33,7 @@ class LLMFactory:
             ) / total_weight
             if score > best_score:
                 best_score = score
-                best_model = model['id']
+                best_model = model
         return best_model
 
     def create(self, capabilities: dict[str, float] | list[str], temperature: float, *, node_name: str, json_mode = True) -> BaseChatModel:
@@ -41,7 +41,8 @@ class LLMFactory:
         # pylint: disable=import-error,import-outside-toplevel
         if isinstance(capabilities, list):
             capabilities = {cap: 1.0 for cap in capabilities}
-        model_name = self._select_model(capabilities)
+        model = self._select_model(capabilities)
+        model_name = model['id']
         streaming = settings.llm_streaming
         node_tag = f'node:{node_name}'
         llm_tags = [node_tag]
@@ -51,6 +52,7 @@ class LLMFactory:
                     from langchain_ollama import ChatOllama
                 except ImportError:
                     raise ImportError("Missing package for Ollama provider. Install it with: pip install langchain-ollama") from None
+                thinking = model.get('thinking', True)
                 return ChatOllama(
                     model=model_name,
                     temperature=temperature,
@@ -58,7 +60,7 @@ class LLMFactory:
                     callbacks=self.callbacks,
                     tags=llm_tags,
                     format='json' if json_mode else None,
-                    reasoning=streaming and not json_mode # Stream reasoning if enabled via CLI and not in strict JSON mode
+                    reasoning=thinking and streaming and not json_mode
                 )
             case 'groq':
                 try:
