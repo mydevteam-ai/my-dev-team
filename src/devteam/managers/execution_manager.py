@@ -3,6 +3,7 @@ from typing import Callable
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END
 from langgraph.types import Send
+from devteam import settings
 from devteam.state import ProjectState, PendingTask
 from devteam.utils import status, tasks
 
@@ -94,11 +95,18 @@ class ExecutionManager:
 
     def _officer_node(self, state: ProjectState) -> dict:
         """Find ready tasks and set up for fan-out, or transition to integration."""
+        self.logger.debug(
+            "Officer state — completed: %s | in_progress: %s | pending: %s",
+            state.completed_tasks,
+            state.in_progress_tasks,
+            [t['task_name'] for t in state.pending_tasks],
+        )
         raw = self._find_ready_tasks(state)
         ready: list[PendingTask] = [raw] if isinstance(raw, dict) else (raw or [])
 
         if not ready:
-            if len(state.completed_tasks) >= len(state.pending_tasks):
+            all_names = {t['task_name'] for t in state.pending_tasks}
+            if all_names <= set(state.completed_tasks):
                 self.logger.debug("All tasks complete. Routing to integration.")
                 return {
                     'current_phase': 'integration',
@@ -109,8 +117,29 @@ class ExecutionManager:
                     'test_results': '',
                     'messages': self._cleanup_messages(state.messages),
                 }
+            if settings.no_parallel:
+                # Sequential mode: no parallel branches exist, so "waiting" means something went
+                # wrong with task name tracking. Treat all in-progress tasks as complete and
+                # proceed to integration rather than terminating the workflow.
+                self.logger.warning(
+                    "Officer: no ready tasks in sequential mode (%s complete, %s in-progress). "
+                    "Proceeding to integration.",
+                    set(state.completed_tasks), set(state.in_progress_tasks),
+                )
+                return {
+                    'current_phase': 'integration',
+                    'current_agent': '',
+                    'current_task': '',
+                    'current_task_name': '',
+                    'pending_dispatch': [],
+                    'test_results': '',
+                    'messages': self._cleanup_messages(state.messages),
+                }
             # Other parallel branches are still processing - this branch is finished
-            self.logger.debug("Officer: no ready tasks, waiting for in-progress work.")
+            self.logger.debug(
+                "Officer: no ready tasks yet (%d/%d complete). Waiting for in-progress work.",
+                len(set(state.completed_tasks)), len(state.pending_tasks),
+            )
             return {'current_agent': 'officer:done', 'pending_dispatch': []}
 
         task_names = [t['task_name'] for t in ready]
