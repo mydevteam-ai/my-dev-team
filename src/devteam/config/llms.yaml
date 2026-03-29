@@ -28,6 +28,12 @@ providers:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.5
+            - id: 'deepseek-r1:8b'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.7
+                  code-generation: 0.6
+                  code-analysis: 0.6
             - id: 'gemma3:4b'
               capabilities:
                   fast-utility: 1.0
