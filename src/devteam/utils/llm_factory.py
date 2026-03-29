@@ -47,7 +47,10 @@ class LLMFactory:
         llm_tags = [node_tag]
         match self.provider:
             case 'ollama':
-                from langchain_ollama import ChatOllama
+                try:
+                    from langchain_ollama import ChatOllama
+                except ImportError:
+                    raise ImportError("Missing package for Ollama provider. Install it with: pip install langchain-ollama") from None
                 return ChatOllama(
                     model=model_name,
                     temperature=temperature,
@@ -58,7 +61,10 @@ class LLMFactory:
                     reasoning=streaming and not json_mode # Stream reasoning if enabled via CLI and not in strict JSON mode
                 )
             case 'groq':
-                from langchain_groq import ChatGroq
+                try:
+                    from langchain_groq import ChatGroq
+                except ImportError:
+                    raise ImportError("Missing package for Groq provider. Install it with: pip install langchain-groq") from None
                 llm = ChatGroq(
                     model=model_name,
                     temperature=temperature,
@@ -71,7 +77,10 @@ class LLMFactory:
                     return llm.bind(response_format={'type': 'json_object'})
                 return llm
             case 'openai':
-                from langchain_openai import ChatOpenAI
+                try:
+                    from langchain_openai import ChatOpenAI
+                except ImportError:
+                    raise ImportError("Missing package for OpenAI provider. Install it with: pip install langchain-openai") from None
                 return ChatOpenAI(
                     model=model_name,
                     temperature=temperature,

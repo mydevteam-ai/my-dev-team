@@ -124,6 +124,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                     parsed_data = self._parse_outputs(ai_message)
                     break
                 break
+            except ImportError as e:
+                self.logger.error("%s", e)
+                return {'error': True, 'error_message': str(e)}
             except Exception: # pylint: disable=broad-exception-caught
                 last_error = traceback.format_exc()
                 self.logger.error("Attempt %d/%d failed:\n%s", attempt + 1, self.max_retries + 1, last_error)
