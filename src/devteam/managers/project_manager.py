@@ -30,7 +30,7 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
 
     def _handle_agent_error(self, state: ProjectState) -> dict:
         if state.current_phase == 'development':
-            task_name = state.current_task_name or f"Task {state.current_task_index}"
+            task_name = state.current_task_name or "Unknown task"
             task_label = f"{task_name}: {state.current_task[:60].strip()}"
             self.logger.warning("Agent error on '%s'. Skipping to next task.", task_label)
             return {

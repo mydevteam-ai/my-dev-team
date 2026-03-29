@@ -28,7 +28,12 @@ class WorkspaceSaver(CrewExtension):
             case 'integration' | 'complete':
                 return self.workspace_dir / '90_integration'
             case 'development':
-                task_idx = full_state.get('current_task_index', 1)
+                task_name = full_state.get('current_task_name', '')
+                pending = full_state.get('pending_tasks', [])
+                task_idx = next(
+                    (i + 1 for i, t in enumerate(pending) if t.get('task_name') == task_name),
+                    len(full_state.get('completed_tasks', [])) + 1,
+                )
                 return self.workspace_dir / f'{task_idx:02d}_task'
         return self.workspace_dir / '00_planning'
 

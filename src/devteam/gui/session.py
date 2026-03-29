@@ -137,16 +137,13 @@ def _process_step_event(event: dict):
             if 'revision_count' in node_output:
                 st.session_state['revision_count'] = node_output['revision_count']
     pending = full_state.get('pending_tasks', [])
-    index = full_state.get('current_task_index', 0)
     current_phase = full_state.get('current_phase', '')
     if pending:
-        task_name = ''
-        if 0 < index <= len(pending):
-            task_name = pending[index - 1].get('task_name', f'Task {index}')
+        completed = full_state.get('completed_tasks', [])
         st.session_state['task_progress'] = {
-            'current': index,
+            'current': len(completed),
             'total': len(pending),
-            'name': task_name,
+            'name': full_state.get('current_task_name', ''),
         }
     if current_phase in ('integration', 'complete'):
         st.session_state['current_phase'] = 'Integration'

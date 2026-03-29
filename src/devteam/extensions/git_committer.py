@@ -55,6 +55,6 @@ class GitCommitter(CrewExtension):
             if not workspace_files:
                 continue
             revision = node_update.get('revision_count', 0)
-            task_index = full_state.get('current_task_index', 0)
+            task_index = len(full_state.get('completed_tasks', [])) + 1
             message = f"Task {task_index} - revision {revision}"
             self._commit(message)
