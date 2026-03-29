@@ -1,5 +1,6 @@
 import asyncio
 from functools import cached_property
+import json
 import traceback
 import yaml
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -72,6 +73,22 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         """Lifecycle Hook: performs actions AFTER the LLM runs."""
         return final_state
 
+    @staticmethod
+    def _coerce_tool_calls(ai_message: AIMessage) -> AIMessage:
+        """If tool_calls is empty but content is a JSON tool call, synthesize the tool call."""
+        if ai_message.tool_calls or not ai_message.content:
+            return ai_message
+        try:
+            data = json.loads(ai_message.content)
+            name = data.get('name')
+            args = data.get('arguments') or data.get('args') or {}
+            if name and isinstance(args, dict):
+                tool_call = {'name': name, 'args': args, 'id': 'coerced_0', 'type': 'tool_call'}
+                return AIMessage(content='', tool_calls=[tool_call])
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        return ai_message
+
     def _handle_intermediate_tools(self, tool_name: str, tool_args: dict) -> str | None:
         """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
         match tool_name:
@@ -112,6 +129,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                         inputs['messages'] = original_messages + conversation_history
                     self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
                     ai_message = await self._invoke_llm(**inputs)
+                    ai_message = self._coerce_tool_calls(ai_message)
                     conversation_history.append(ai_message)
                     if not ai_message.tool_calls:
                         no_tool_call_retry = True
