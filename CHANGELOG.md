@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Anthropic Provider Support:** Added `anthropic` as a supported LLM provider. Requires `ANTHROPIC_API_KEY` and `pip install langchain-anthropic`.
 
+* **Compound Providers:** Introduced compound providers - pseudo-providers in `llms.yaml` whose individual model entries carry a `provider` field pointing to the real backend. The factory resolves the effective provider per-model at instantiation time, enabling a single `--provider` flag to transparently mix models from different backends.
+
 ## [0.9.1] - 2026-03-29
 
 ### 🔧 Internal

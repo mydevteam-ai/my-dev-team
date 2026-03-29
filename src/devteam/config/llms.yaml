@@ -56,6 +56,32 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+    free:  # compound: groq free tier + ollama local models
+        models:
+            - id: 'qwen/qwen3-32b'
+              provider: groq
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.5
+            - id: 'openai/gpt-oss-120b'
+              provider: groq
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.7
+            - id: 'llama-3.1-8b-instant'
+              provider: groq
+              capabilities:
+                  fast-utility: 1.0
+                  reasoning: 0.3
+            - id: 'qwen2.5-coder:7b'
+              provider: ollama
+              thinking: false
+              capabilities:
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.5
     openai:
         models:
             - id: 'o1-preview'

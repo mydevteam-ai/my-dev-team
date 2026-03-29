@@ -18,7 +18,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--config', type=str, help='path to a custom configuration folder (overrides default one)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, help='resume a specific thread ID')
-    parser.add_argument('--provider', type=str, default='ollama', choices=['anthropic', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
+    parser.add_argument('--provider', type=str, default='ollama', choices=['anthropic', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
     parser.add_argument('--rpm', type=int, default=0, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
     parser.add_argument('--as-node', type=str, default='reviewer', choices=['pm', 'architect', 'reviewer', 'qa'], help='which agent should deliver this feedback (forces graph routing)')

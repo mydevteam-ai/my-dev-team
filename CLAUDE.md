@@ -76,6 +76,8 @@ Agents declare `capabilities` in their `.md` frontmatter - either a list (equal 
 
 Ollama models additionally require a `thinking: true/false` field; only models with `thinking: true` have the `reasoning` stream enabled.
 
+**Compound providers** are pseudo-providers defined in `llms.yaml` under `providers:` like any other, but each model entry carries a `provider:` field pointing to the real backend. The factory reads `model.get('provider', self.provider)` and dispatches to the correct `_instantiate()` branch. The built-in `free` compound provider combines Groq free-tier models with local Ollama models. Add new compound providers by adding a new key under `providers:` with per-model `provider:` fields — no factory changes needed.
+
 ### Agent Config Format (`config/agents/*.md`)
 
 Each agent is defined as a Markdown file with YAML frontmatter:
