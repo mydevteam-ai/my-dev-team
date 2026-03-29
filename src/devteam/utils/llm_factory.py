@@ -78,6 +78,18 @@ class LLMFactory:
                 if json_mode:
                     return llm.bind(response_format={'type': 'json_object'})
                 return llm
+            case 'anthropic':
+                try:
+                    from langchain_anthropic import ChatAnthropic
+                except ImportError:
+                    raise ImportError("Missing package for Anthropic provider. Install it with: pip install langchain-anthropic") from None
+                return ChatAnthropic(
+                    model=model_name,
+                    temperature=temperature,
+                    streaming=settings.llm_streaming,
+                    callbacks=self.callbacks,
+                    tags=llm_tags
+                )
             case 'openai':
                 try:
                     from langchain_openai import ChatOpenAI

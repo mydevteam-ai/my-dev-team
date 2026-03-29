@@ -127,6 +127,13 @@ mydevteam/
 
 ---
 
+## Changelog
+
+- Always add new changelog entries under the version number from `pyproject.toml` (e.g. if `pyproject.toml` has `version = "0.9.2"`, add entries under `## [0.9.2]`).
+- If that section does not exist yet, create it at the top of the version list with `- Unreleased` as the date.
+
+---
+
 ## Build & Run
 
 ```sh

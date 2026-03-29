@@ -35,6 +35,27 @@ providers:
               capabilities:
                   fast-utility: 1.0
                   reasoning: 0.3
+    anthropic:
+        models:
+            - id: 'claude-opus-4-6'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.9
+                  code-generation: 0.9
+                  code-analysis: 0.9
+            - id: 'claude-sonnet-4-6'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.8
+            - id: 'claude-haiku-4-5-20251001'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4
     openai:
         models:
             - id: 'o1-preview'
