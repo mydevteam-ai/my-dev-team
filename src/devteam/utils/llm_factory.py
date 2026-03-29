@@ -21,7 +21,7 @@ class LLMFactory:
 
     def _select_model(self, capabilities: dict[str, float]) -> str:
         """Select the best model for the requested capabilities using weighted scoring."""
-        models = self.model_map[self.provider]
+        models = self.model_map[self.provider]['models']
         total_weight = sum(capabilities.values()) or 1.0
         best_model = models[0]['id']
         best_score = -1.0
