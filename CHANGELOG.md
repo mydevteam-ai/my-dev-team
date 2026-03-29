@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-03-29
+
+### 🔧 Internal
+
+* **Tool Call Coercion Fallback:** Agents now gracefully handle models that output tool calls as plain-text JSON in the message content instead of using native tool calling (a known limitation of some smaller Ollama models).
+
+* **Per-model `thinking` flag for Ollama:** Each Ollama model entry in `llms.yaml` now carries an explicit `thinking` boolean. Only models that declare `thinking: true` (currently `qwen3:8b`) have the Ollama reasoning/thinking stream enabled.
+
 ## [0.9.0] - 2026-03-29
 
 ### 🚀 Added
