@@ -14,7 +14,7 @@ class ExecutionManager:
     communication: Callable
 
     def _find_ready_tasks(self, state: ProjectState) -> list[PendingTask]:
-        """Return tasks whose dependencies are all complete and haven't been dispatched yet."""
+        """Return all tasks whose dependencies are all complete and haven't been dispatched yet."""
         completed = set(state.completed_tasks)
         in_progress = set(state.in_progress_tasks)
         already_handled = completed | in_progress
@@ -23,6 +23,17 @@ class ExecutionManager:
             if task['task_name'] not in already_handled
             and all(dep in completed for dep in task.get('dependencies', []))
         ]
+
+    def _find_first_ready_task(self, state: ProjectState) -> PendingTask | None:
+        """Return the first task whose dependencies are met and hasn't been dispatched yet (sequential mode)."""
+        completed = set(state.completed_tasks)
+        already_handled = completed | set(state.in_progress_tasks)
+        return next(
+            (task for task in state.pending_tasks
+             if task['task_name'] not in already_handled
+             and all(dep in completed for dep in task.get('dependencies', []))),
+            None,
+        )
 
     def _execution_node(self, state: ProjectState) -> dict:
         # We can come here:
@@ -83,7 +94,8 @@ class ExecutionManager:
 
     def _officer_node(self, state: ProjectState) -> dict:
         """Find ready tasks and set up for fan-out, or transition to integration."""
-        ready = self._find_ready_tasks(state)
+        raw = self._find_ready_tasks(state)
+        ready: list[PendingTask] = [raw] if isinstance(raw, dict) else (raw or [])
 
         if not ready:
             if len(state.completed_tasks) >= len(state.pending_tasks):

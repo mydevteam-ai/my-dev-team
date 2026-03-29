@@ -83,6 +83,10 @@ mydevteam/
 3. **Local/project** imports last.
 4. Use **relative imports** within the same package (`from .schemas import ...`, `from .base_agent import BaseAgent`).
 5. No extra blank lines between import groups ? keep imports compact.
+6. Within the **local/project** group, order imports from least to most specific:
+   - `from devteam import ...` (top-level package symbols, e.g. `settings`)
+   - `from devteam.utils import ...` (utility sub-package)
+   - `from devteam.utils.something import ...` (specific utility module)
 
 ### Naming
 

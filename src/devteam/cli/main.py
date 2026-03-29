@@ -27,6 +27,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--timeout', type=int, default=120, help='maximum time (in seconds) to wait for an LLM response (default: 120)')
     parser.add_argument('--thinking', action='store_true', help='stream raw LLM thinking output to stderr')
     parser.add_argument('--no-docker', action='store_true', help='run QA engineer without Docker sandbox')
+    parallel_group = parser.add_mutually_exclusive_group()
+    parallel_group.add_argument('--parallel', action='store_true', help='run development tasks in parallel using fan-out' + ('' if settings.no_parallel else ' (default)'))
+    parallel_group.add_argument('--no-parallel', action='store_true', help='run development tasks sequentially, disabling parallel fan-out' + (' (default)' if settings.no_parallel else ''))
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -73,6 +76,10 @@ def main():
     settings.llm_timeout = args.timeout
     settings.llm_streaming = args.thinking
     settings.no_docker = args.no_docker
+    if args.parallel:
+        settings.no_parallel = False
+    elif args.no_parallel:
+        settings.no_parallel = True
     _validate_inputs(parser, args)
 
     if args.history:

@@ -7,5 +7,6 @@ class Settings:
     llm_timeout: int = 120  # seconds
     llm_streaming: bool = False
     no_docker: bool = False
+    no_parallel: bool = True
 
 settings = Settings()

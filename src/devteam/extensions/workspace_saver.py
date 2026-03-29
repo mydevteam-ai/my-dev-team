@@ -52,8 +52,8 @@ class WorkspaceSaver(CrewExtension):
             content.append(task_to_markdown(task, idx))
         tasks_file.write_text('\n'.join(content), encoding='utf-8')
 
-    def _save_current_task(self, current_task: str):
-        task_file = self._base_dir / 'task.md'
+    def _save_current_task(self, current_task: str, target_dir: Path | None = None):
+        task_file = (target_dir or self._base_dir) / 'task.md'
         task_file.write_text(current_task, encoding='utf-8')
 
     def _save_workspace(self, workspace_files: dict, current_rev: int):
@@ -106,9 +106,18 @@ class WorkspaceSaver(CrewExtension):
                     if pending := node_update.get('pending_tasks', []):
                         self._save_tasks(pending)
                 case 'officer':
-                    if node_update.get('current_agent') == 'developer' and node_update.get('revision_count', 0) == 0:
-                        if current_task := full_state.get('current_task', ''):
-                            self._save_current_task(current_task)
+                    if node_update.get('current_agent') == 'fanout':
+                        pending_tasks = full_state.get('pending_tasks', [])
+                        for task_name in node_update.get('pending_dispatch', []):
+                            task = next((t for t in pending_tasks if t.get('task_name') == task_name), None)
+                            if not task:
+                                continue
+                            task_idx = next(
+                                (i + 1 for i, t in enumerate(pending_tasks) if t.get('task_name') == task_name), 1
+                            )
+                            task_dir = self.workspace_dir / f'{task_idx:02d}_task'
+                            task_dir.mkdir(parents=True, exist_ok=True)
+                            self._save_current_task(task_to_markdown(task, task_idx), task_dir)
                 case 'developer':
                     workspace_files = node_update.get('workspace_files', {})
                     current_rev = full_state.get('revision_count', 0)
