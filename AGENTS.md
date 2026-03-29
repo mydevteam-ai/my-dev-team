@@ -48,6 +48,10 @@ mydevteam/
 - Max line length is **190** characters (configured in `pyproject.toml` under `[tool.pylint.format]`).
 - Docstrings are minimal and optional ? `missing-docstring` is disabled in pylint. When present, use one-line triple-double-quote style: `"""Brief description."""`
 
+### Text Style
+
+- Use a hyphen-minus (`-`) as a dash in all written text. Never use an em dash (`—`) or en dash (`–`).
+
 ### Quoting Convention
 
 **Double quotes (`"..."`) are reserved exclusively for human-readable, meaningful strings:**
