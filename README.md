@@ -16,7 +16,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Strict Test-Driven Development (TDD):** Testing is never an afterthought. Tasks are generated with embedded testing criteria, and the Developer writes unit tests alongside implementation code for immediate QA validation.
 * **State Recovery & Resiliency:** Powered by asynchronous SQLite checkpointing. If an API rate limit is hit or a workflow is interrupted, you can resume the exact thread without losing a single token of progress.
 * **Telemetry & Cost Tracking:** Automatically tallies prompt and completion tokens across the entire workflow. Calculates exact USD costs dynamically using LiteLLM's live pricing registry, printing a detailed receipt at the end of every run.
-* **Incremental Development:** The System Architect breaks down requirements into a manageable backlog of strictly formatted JSON tasks.
+* **Incremental Development:** The System Architect breaks down requirements into a manageable backlog of tasks with explicit dependency edges.
 * **Self-Healing Code:** The Developer, Reviewer, and QA Engineer agents continuously loop until unit tests pass and code meets specifications.
 * **Structured Outputs:** Powered by Pydantic and LangChain, ensuring zero "Markdown spillage" and robust state management.
 * **Tool-Calling Agents:** All agents use LLM-native tool calling to submit their work, enabling free-form reasoning and thinking before structured output.
@@ -112,6 +112,9 @@ devteam project.txt --no-docker
 # Run using OpenAI's flagship models, limited to 15 requests per minute
 devteam project.txt --provider openai --rpm 15
 
+# Run tasks in parallel (fan-out based on dependencies)
+devteam project.txt --provider openai --parallel
+
 # Resume an interrupted run exactly where it left off
 devteam --resume web_scraper_cli_20260312_083500
 ```
@@ -127,6 +130,8 @@ devteam --resume web_scraper_cli_20260312_083500
 * `--checkpoint`: Specific checkpoint ID to rewind to.
 * `--thinking`: Stream raw LLM thinking output to stderr in real-time.
 * `--no-docker`: Useful if Docker is not installed or you want to use LLM-based QA only.
+* `--parallel`: Enable parallel task fan-out - independent tasks (no unmet dependencies) are dispatched simultaneously as separate LangGraph branches.
+* `--no-parallel`: Force sequential execution, one task at a time (default).
 
 Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_API_KEY`) set in your `.env` file, or ensure your local Ollama instance is running.
 

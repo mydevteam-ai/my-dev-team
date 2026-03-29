@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚙️ Changed
 
+* **Sequential execution is the default:** Tasks run one at a time by default. Use `--parallel` to opt in to fan-out execution.
+
 * **System Architect prompt updated:** The architect is now explicitly instructed to maximize the number of independent (dependency-free) tasks and only add a dependency when it is a hard prerequisite, in order to expose as much parallelism as possible to the execution engine.
 
 ## [0.8.0] - 2026-03-28
