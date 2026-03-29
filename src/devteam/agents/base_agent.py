@@ -2,7 +2,7 @@ import asyncio
 from functools import cached_property
 import traceback
 import yaml
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel
@@ -92,10 +92,19 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         inputs = self._build_inputs(state)
         original_messages = list(state.messages)
         last_error = ''
+        no_tool_call_retry = False
         for attempt in range(self.max_retries + 1):
             if attempt > 0:
                 self.logger.warning("LLM call failed. Retrying (attempt %d/%d)...", attempt + 1, self.max_retries + 1)
                 inputs['messages'] = list(original_messages)
+                if no_tool_call_retry:
+                    tool_names = ', '.join(t.__name__ for t in self._all_tools)
+                    inputs['messages'] = inputs['messages'] + [HumanMessage(content=(
+                        f"You must respond by calling one of the available tools: {tool_names}. "
+                        "Do not return plain text — use a tool call to submit your response."
+                    ))]
+                    self.logger.debug("Injected tool-call reminder into retry messages.")
+            no_tool_call_retry = False
             conversation_history = []
             try:
                 while True:
@@ -105,6 +114,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                     ai_message = await self._invoke_llm(**inputs)
                     conversation_history.append(ai_message)
                     if not ai_message.tool_calls:
+                        no_tool_call_retry = True
                         raise ValueError("The model did not call any tool.")
                     tool_call = ai_message.tool_calls[0]
                     if intermediate_result := self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
