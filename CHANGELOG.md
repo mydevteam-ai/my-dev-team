@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Parallel Task Execution (Fan-Out):** Development tasks are now dispatched in parallel based on their `dependencies` field. Tasks with no unmet dependencies are fanned out simultaneously as independent LangGraph branches using the `Send` API, and each branch runs its full developer → reviewer → QA cycle concurrently. Tasks with dependencies are dispatched automatically once all prerequisites complete, enabling dependency-level pipelining across the entire backlog.
 
-* **New `planning` LLM category:** Added a dedicated `planning` model category to `llms.yaml` for agents that perform task decomposition and architectural reasoning. This separates long-horizon planning workloads from deep code-focused `reasoning` tasks, allowing each provider to route them to the most suitable model. The System Architect's config was updated from `model: reasoning` to `model: planning`.
+* **Capability-Based LLM Routing:** Replaced the flat category-to-model mapping in `LLMFactory` with a capability scoring system. Each model in `llms.yaml` now declares a set of named capabilities with 0–1 proficiency scores. Agents request one or more capabilities — optionally with weights — and the factory selects the highest-scoring model by computing a weighted sum across all requested capabilities. This allows agents to express nuanced requirements (e.g., `code-generation: 0.7, reasoning: 0.3`) rather than a single fixed category, and makes it trivial to add new models without redefining routing rules.
+
+* **New `planning` LLM capability:** Added a dedicated `planning` model category to `llms.yaml` for agents that perform task decomposition and architectural reasoning. This separates long-horizon planning workloads from deep code-focused `reasoning` tasks, allowing each provider to route them to the most suitable model. The System Architect's config was updated from `model: reasoning` to `model: planning`.
 
 ### ⚙️ Changed
 

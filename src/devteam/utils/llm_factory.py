@@ -19,10 +19,29 @@ class LLMFactory:
     def model_map(self) -> dict:
         return self.llm_config.get('providers', {})
 
-    def create(self, category: str, temperature: float, *, node_name: str, json_mode = True) -> BaseChatModel:
-        """Returns a configured LLM instance."""
+    def _select_model(self, capabilities: dict[str, float]) -> str:
+        """Select the best model for the requested capabilities using weighted scoring."""
+        models = self.model_map[self.provider]
+        total_weight = sum(capabilities.values()) or 1.0
+        best_model = models[0]['id']
+        best_score = -1.0
+        for model in models:
+            model_caps = model.get('capabilities', {})
+            score = sum(
+                weight * model_caps.get(cap, 0.0)
+                for cap, weight in capabilities.items()
+            ) / total_weight
+            if score > best_score:
+                best_score = score
+                best_model = model['id']
+        return best_model
+
+    def create(self, capabilities: dict[str, float] | list[str], temperature: float, *, node_name: str, json_mode = True) -> BaseChatModel:
+        """Returns a configured LLM instance for the requested capabilities."""
         # pylint: disable=import-error,import-outside-toplevel
-        model_name = self.model_map[self.provider].get(category, self.model_map[self.provider]['reasoning'])
+        if isinstance(capabilities, list):
+            capabilities = {cap: 1.0 for cap in capabilities}
+        model_name = self._select_model(capabilities)
         streaming = settings.llm_streaming
         node_tag = f'node:{node_name}'
         llm_tags = [node_tag]

@@ -1,22 +1,53 @@
 providers:
     groq:
-        reasoning: 'qwen/qwen3-32b'
-        planning: 'openai/gpt-oss-120b'
-        code-generator: 'openai/gpt-oss-120b'
-        code-analyzer: 'openai/gpt-oss-120b'
-        fast-utility: 'llama-3.1-8b-instant'
+        models:
+            - id: 'qwen/qwen3-32b'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.5
+            - id: 'openai/gpt-oss-120b'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.7
+            - id: 'llama-3.1-8b-instant'
+              capabilities:
+                  fast-utility: 1.0
+                  reasoning: 0.3
+                  code-generation: 0.3
     ollama:
-        reasoning: 'qwen3:8b'
-        planning: 'qwen2.5-coder:7b'
-        code-generator: 'qwen2.5-coder:7b'
-        code-analyzer: 'qwen2.5-coder:7b'
-        fast-utility: 'gemma3:4b'
+        models:
+            - id: 'qwen3:8b'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.5
+            - id: 'qwen2.5-coder:7b'
+              capabilities:
+                  planning: 0.9
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.5
+            - id: 'gemma3:4b'
+              capabilities:
+                  fast-utility: 1.0
+                  reasoning: 0.3
     openai:
-        reasoning: 'o1-preview'
-        planning: 'gpt-4o'
-        code-generator: 'gpt-4o'
-        code-analyzer: 'gpt-4o'
-        fast-utility: 'gpt-4o-mini'
-
-aliases:
-    'groq/compound': 'openai/gpt-oss-120b'
+        models:
+            - id: 'o1-preview'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.7
+            - id: 'gpt-4o'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.8
+            - id: 'gpt-4o-mini'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4

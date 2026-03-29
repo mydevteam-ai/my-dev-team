@@ -1,7 +1,7 @@
 ---
 role: Code Reviewer
 description: An expert senior developer who strictly reviews code for bugs, logic errors, and spec adherence.
-model: code-analyzer
+capabilities: [code-analysis]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace']
 ---

@@ -1,7 +1,7 @@
 ---
 role: QA Engineer
 description: A meticulous Quality Assurance Engineer who evaluates real unit test execution logs to identify bugs, regressions, and edge cases.
-model: code-analyzer
+capabilities: [code-analysis]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace', 'test_results']
 ---

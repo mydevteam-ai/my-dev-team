@@ -1,7 +1,7 @@
 ---
 role: Senior Developer
 description: An expert software engineer who incrementally builds features, writes tests, and manages project files across any tech stack.
-model: code-generator
+capabilities: [code-generation]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace', 'skills', 'messages']
 outputs: ['messages']

@@ -15,7 +15,7 @@ from .schemas import LoadSkill
 class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
 
-    model_category: str = 'reasoning'
+    capabilities: dict[str, float]
     temperature: float = 0.2
     max_retries: int = 2
     rate_limiter: RateLimiter = None
@@ -30,8 +30,16 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         self.rate_limiter = rate_limiter
         self.role = config.get('role', 'Agent')
         self.name = config.get('name', None)
-        self.model_category = config.get('model', self.model_category)
+        self.capabilities = self._resolve_capabilities(config)
         self.temperature = config.get('temperature', self.temperature)
+
+    @staticmethod
+    def _resolve_capabilities(config: dict) -> dict[str, float]:
+        """Read capabilities from config."""
+        caps = config.get('capabilities')
+        if isinstance(caps, list):
+            return {cap: 1.0 for cap in caps}
+        return dict(caps)
 
     @cached_property
     def inputs(self) -> list[str]:
@@ -134,7 +142,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     @cached_property
     def _llm(self) -> Runnable:
         llm = self.llm_factory.create(
-            category=self.model_category,
+            capabilities=self.capabilities,
             temperature=self.temperature,
             node_name=self.node_name,
             json_mode=False
@@ -180,7 +188,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return self.output_schema(**tool_args)
 
     @classmethod
-    def from_config(cls, node_name: str, config_path: str, *, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None, model_category: str = None, temperature: float = None):
+    def from_config(cls, node_name: str, config_path: str, *, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None, capabilities: dict[str, float] | list[str] = None, temperature: float = None):
         prompt_file = settings.config_dir / 'agents' / config_path
         try:
             content = prompt_file.read_text(encoding='utf-8')
@@ -191,8 +199,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             raise ValueError(f"Invalid format in {config_path}. Missing YAML frontmatter")
         config = yaml.safe_load(parts[1])
         prompt = parts[2].strip()
-        if model_category is not None:
-            config['model'] = model_category
+        if capabilities is not None:
+            config['capabilities'] = capabilities
         if temperature is not None:
             config['temperature'] = temperature
         return cls(config, prompt, node_name, llm_factory=llm_factory, rate_limiter=rate_limiter)

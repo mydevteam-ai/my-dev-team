@@ -12,7 +12,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 
 * **Multi-Agent Architecture:** Specialized AI agents handle distinct phases of the software development lifecycle.
 * **Local-First & Privacy-Focused:** You own your data. The orchestrator, memory checkpointer, and file system execute strictly on your local hardware. Your code and requirements never sit on a third-party dashboard.
-* **Semantic Model Routing:** Automatically routes tasks to the most cost-effective or capable LLMs based on the task type (reasoning, coding, or fast-utility).
+* **Semantic Model Routing:** Automatically routes tasks to the most cost-effective or capable LLMs based on the agent's requested capabilities.
 * **Strict Test-Driven Development (TDD):** Testing is never an afterthought. Tasks are generated with embedded testing criteria, and the Developer writes unit tests alongside implementation code for immediate QA validation.
 * **State Recovery & Resiliency:** Powered by asynchronous SQLite checkpointing. If an API rate limit is hit or a workflow is interrupted, you can resume the exact thread without losing a single token of progress.
 * **Telemetry & Cost Tracking:** Automatically tallies prompt and completion tokens across the entire workflow. Calculates exact USD costs dynamically using LiteLLM's live pricing registry, printing a detailed receipt at the end of every run.
@@ -179,24 +179,25 @@ stateDiagram-v2
 
 * **Final Delivery:** Once the **Project Officer** confirms all tasks are complete, the **Final QA Engineer** runs full-repository integration tests before the **Reporter** generates the final documentation.
 
-### Intelligent Model Routing (LLM Factory)
+### Semantic Model Routing (LLM Factory)
 
-**My Dev Team** doesn't just use one model for everything. It uses an advanced **Semantic Routing** architecture via `LLMFactory`.
+**My Dev Team** doesn't just use one model for everything. It uses a **capability scoring** architecture via `LLMFactory`.
 
-Instead of hardcoding a specific model (like `gpt-5.3-codex`), each agent requests a specific capability category and temperature. The Factory evaluates your chosen `--provider` and dynamically spins up the most cost-effective, capable model for that exact task.
+Instead of hardcoding a specific model (like `gpt-5.3-codex`), each agent declares the capabilities it needs and the factory scores every model configured for the active provider, selecting the best match.
 
-**The Categories:**
+**Built-in capabilities:**
 
-* `reasoning`: For the System Architect and Product Manager. Maps to deep-thinking models.
-* `code-generator`: For the Senior Developer. Maps to strict, syntax-heavy models.
-* `code-analyzer`: For the QA and Reviewer agents. Maps to deep-context evaluation models.
-* `fast-utility`: For the Reporter. Maps to blazing-fast, ultra-cheap models for simple text summarization.
+* `reasoning` - deep thinking, complex analysis (Product Manager, Code Judge)
+* `planning` - task decomposition, architecture (System Architect)
+* `code-generation` - writing implementation code (Senior Developer)
+* `code-analysis` - reading, reviewing, and testing code (Reviewer, QA Engineers)
+* `fast-utility` - lightweight summarization tasks (Reporter)
 
 ### Centralized Configuration
 
 Code and configuration are strictly separated to make the framework maintainable and extensible.
 
-* **Model Routing (`config/llms.yaml`):** All provider definitions (Groq, OpenAI, Ollama) and model routing logic (reasoning, coding, fast-utility) are centralized in a single YAML file, making it trivial to update models as new ones are released.
+* **Model Routing (`config/llms.yaml`):** All provider definitions (Groq, OpenAI, Ollama) and model capability scores are centralized in a single YAML file. To add a new model, declare its capabilities - no agent code needs to change.
 * **Agent Prompts (`config/agents/**`):** Every agent's persona, system instructions, and constraints are stored as clean Markdown files with YAML frontmatter. No massive, hardcoded prompt strings cluttering the Python logic!
 * **Sandbox Environments (`config/sandbox.yaml`):** Docker base images and test execution commands for various runtimes (Python, Node.js) are completely decoupled. You can easily add support for entirely new programming languages by simply defining the image and test command in YAML, without touching the core Python engine.
 
