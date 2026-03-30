@@ -18,23 +18,23 @@ def render_start_new_project_page():
         return
 
     uploaded_file = st.file_uploader('Upload your project requirements (.txt)', type=['txt'])
-    col1, col2 = st.columns(2)
-    with col1:
+    col_left, col_right = st.columns(2, gap='large')
+    with col_left:
         available_providers = get_providers_from_config()
         provider = st.selectbox('LLM Provider', available_providers)
-    with col2:
         rpm = st.number_input('Rate Limit (RPM, 0 = unlimited)', min_value=0, value=0, step=10)
-    col3, col4 = st.columns(2)
-    with col3:
         timeout = st.number_input('LLM Timeout (seconds)', min_value=10, value=120, step=10)
-    with col4:
+    with col_right:
+        st.markdown('<div style="height: 1.9rem"></div>', unsafe_allow_html=True)
         thinking = st.checkbox('🧠 Enable Thinking Stream', help='Stream LLM reasoning/thinking tokens in real-time on the dashboard.')
+        ask_approval = st.checkbox('✋ Ask for approval', help='Pause and ask for your approval before proceeding from planning to development.')
 
     if uploaded_file and st.button('🚀 Launch AI Team', type='primary'):
         content = uploaded_file.read().decode('utf-8')
         project_name, requirements = parse_spec_from_string(content)
 
         settings.llm_timeout = timeout
+        settings.ask_approval = ask_approval
         reset_execution_state()
         st.session_state['thinking_enabled'] = thinking
 

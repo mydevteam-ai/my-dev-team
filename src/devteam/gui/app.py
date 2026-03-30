@@ -1,9 +1,16 @@
+import warnings
+warnings.filterwarnings('ignore', message="Core Pydantic V1 functionality", category=UserWarning)
+
 import streamlit as st
 from devteam.utils import setup_logging
 from devteam.gui.session import drain_queue, init_session_state
 from devteam.gui import views
 
-setup_logging(console_level=None)
+@st.cache_resource
+def _init_logging():
+    setup_logging(console_level=None)
+
+_init_logging()
 
 def main():
     st.set_page_config(page_title='My AI Dev Team', page_icon='🚀', layout='wide')
