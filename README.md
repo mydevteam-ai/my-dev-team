@@ -80,6 +80,12 @@ Requirements:
 - Write unit tests for the parsing logic.
 ```
 
+Alternatively, the `examples/` folder contains sample project definitions you can use for testing:
+
+```sh
+devteam examples/calc_app_python.txt
+```
+
 ### Command Line Interface
 
 The fastest way to use the framework is via the terminal command included in the package.
