@@ -28,11 +28,8 @@ class WorkspaceSaver(CrewExtension):
             case 'integration' | 'complete':
                 return self.workspace_dir / '90_integration'
             case 'development':
-                task_name = full_state.get('current_task_name', '')
-                pending = full_state.get('pending_tasks', [])
-                task_idx = next(
-                    (i + 1 for i, t in enumerate(pending) if t.get('task_name') == task_name),
-                    len(full_state.get('completed_tasks', [])) + 1,
+                task_idx = full_state.get('current_task_index') or (
+                    len(full_state.get('completed_tasks', [])) + 1
                 )
                 return self.workspace_dir / f'{task_idx:02d}_task'
         return self.workspace_dir / '00_planning'
@@ -106,12 +103,11 @@ class WorkspaceSaver(CrewExtension):
                     if pending := node_update.get('pending_tasks', []):
                         self._save_tasks(pending)
                 case 'officer':
-                    if node_update.get('current_agent') == 'fanout':
+                    if node_update.get('current_agent') == 'developer':
+                        task_name = node_update.get('current_task_name', '')
                         pending_tasks = full_state.get('pending_tasks', [])
-                        for task_name in node_update.get('pending_dispatch', []):
-                            task = next((t for t in pending_tasks if t.get('task_name') == task_name), None)
-                            if not task:
-                                continue
+                        task = next((t for t in pending_tasks if t.get('task_name') == task_name), None)
+                        if task:
                             task_idx = next(
                                 (i + 1 for i, t in enumerate(pending_tasks) if t.get('task_name') == task_name), 1
                             )

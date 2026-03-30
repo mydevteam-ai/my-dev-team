@@ -118,9 +118,6 @@ devteam project.txt --no-docker
 # Run using OpenAI's flagship models, limited to 15 requests per minute
 devteam project.txt --provider openai --rpm 15
 
-# Run tasks in parallel (fan-out based on dependencies)
-devteam project.txt --provider openai --parallel
-
 # Review and approve the plan before development starts
 devteam project.txt --ask-approval
 
@@ -139,8 +136,6 @@ devteam --resume web_scraper_cli_20260312_083500
 * `--checkpoint`: Specific checkpoint ID to rewind to.
 * `--thinking`: Stream raw LLM thinking output to stderr in real-time.
 * `--no-docker`: Useful if Docker is not installed or you want to use LLM-based QA only.
-* `--parallel`: Enable parallel task fan-out - independent tasks (no unmet dependencies) are dispatched simultaneously as separate LangGraph branches.
-* `--no-parallel`: Force sequential execution, one task at a time (default).
 * `--ask-approval`: Enable interactive plan approval after the Product Manager produces the Technical Specification and again after the System Architect produces the task plan.
 
 Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_API_KEY`) set in your `.env` file, or ensure your local Ollama instance is running.

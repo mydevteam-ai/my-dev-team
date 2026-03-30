@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Plan Approval Mode:** Added an interactive approval gate to the planning phase. When enabled, the workflow pauses twice - once after the Product Manager produces the Technical Specification, and once after the System Architect produces the task plan - and prompts the user to review and either approve or request rework.
 
+### 🔧 Internal
+
+* **Removed parallel task execution:** The LangGraph `Send` fan-out mechanism has been removed. Tasks now always execute sequentially, one at a time. The `dependencies` field is retained in task definitions and is still used to determine execution order.
+
 ## [0.9.1] - 2026-03-29
 
 ### 🔧 Internal

@@ -23,7 +23,7 @@ def make_config(role="TestAgent", inputs=None):
     return {
         "role": role,
         "name": role.lower().replace(" ", "_"),
-        "model": "reasoning",
+        "capabilities": ["reasoning"],
         "temperature": 0.2,
         "inputs": inputs or [],
     }

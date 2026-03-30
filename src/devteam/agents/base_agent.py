@@ -145,9 +145,11 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             except ImportError as e:
                 self.logger.error("%s", e)
                 return {'error': True, 'error_message': str(e)}
-            except Exception: # pylint: disable=broad-exception-caught
+            except Exception as exc: # pylint: disable=broad-exception-caught
                 last_error = traceback.format_exc()
                 self.logger.error("Attempt %d/%d failed:\n%s", attempt + 1, self.max_retries + 1, last_error)
+                if 'attempted to call tool' in str(exc) or 'tool call validation' in str(exc):
+                    no_tool_call_retry = True
         else:
             return {
                 'error': True,
