@@ -8,5 +8,6 @@ class Settings:
     llm_streaming: bool = False
     no_docker: bool = False
     no_parallel: bool = True
+    ask_approval: bool = False
 
 settings = Settings()

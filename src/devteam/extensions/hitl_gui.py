@@ -28,11 +28,18 @@ class HumanInTheLoopGUI(CrewExtension):
     def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
         if next_node != 'human':
             return None
-        question = current_state.get('clarification_question', 'The team needs your input.')
+        if current_state.get('clarification_question'):
+            return self._request_clarification(thread_id, current_state)
+        if current_state.get('specs'):
+            return self._request_approval(thread_id, current_state)
+        return None
+
+    def _request_clarification(self, thread_id: str, current_state: dict) -> dict | None:
         self.event_queue.put({
             'type': 'hitl_request',
+            'mode': 'clarification',
             'thread_id': thread_id,
-            'question': question,
+            'question': current_state.get('clarification_question', 'The team needs your input.'),
             'ts': time.time(),
         })
         self._response_event.clear()
@@ -45,4 +52,47 @@ class HumanInTheLoopGUI(CrewExtension):
         return {
             'messages': [HumanMessage(content=self._response)],
             'communication_log': self.communication(self._response)
+        }
+
+    def _request_approval(self, thread_id: str, current_state: dict) -> dict | None:
+        pending_tasks = current_state.get('pending_tasks', [])
+        mode = 'approval_plan' if pending_tasks else 'approval_spec'
+        self.event_queue.put({
+            'type': 'hitl_request',
+            'mode': mode,
+            'thread_id': thread_id,
+            'specs': current_state.get('specs', ''),
+            'pending_tasks': pending_tasks,
+            'ts': time.time(),
+        })
+        self._response_event.clear()
+        self._response_event.wait()
+        if self._aborted:
+            return {
+                'abort_requested': True,
+                'communication_log': self.communication("Aborted during plan approval.")
+            }
+        if self._response == 'approved':
+            if mode == 'approval_spec':
+                return {
+                    'specs_approved': True,
+                    'communication_log': self.communication("Specifications approved by user.")
+                }
+            return {
+                'current_phase': 'development',
+                'tasks_approved': True,
+                'communication_log': self.communication("Task plan approved by user.")
+            }
+        # Rework feedback
+        if mode == 'approval_spec':
+            return {
+                'specs': '',
+                'specs_approved': False,
+                'messages': [HumanMessage(content=f"Specification feedback from user: {self._response}")],
+                'communication_log': self.communication(f"Specification rework requested: {self._response}")
+            }
+        return {
+            'pending_tasks': [],
+            'messages': [HumanMessage(content=f"Task plan feedback from user: {self._response}")],
+            'communication_log': self.communication(f"Task plan rework requested: {self._response}")
         }

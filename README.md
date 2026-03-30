@@ -121,6 +121,9 @@ devteam project.txt --provider openai --rpm 15
 # Run tasks in parallel (fan-out based on dependencies)
 devteam project.txt --provider openai --parallel
 
+# Review and approve the plan before development starts
+devteam project.txt --ask-approval
+
 # Resume an interrupted run exactly where it left off
 devteam --resume web_scraper_cli_20260312_083500
 ```
@@ -138,6 +141,7 @@ devteam --resume web_scraper_cli_20260312_083500
 * `--no-docker`: Useful if Docker is not installed or you want to use LLM-based QA only.
 * `--parallel`: Enable parallel task fan-out - independent tasks (no unmet dependencies) are dispatched simultaneously as separate LangGraph branches.
 * `--no-parallel`: Force sequential execution, one task at a time (default).
+* `--ask-approval`: Enable interactive plan approval after the Product Manager produces the Technical Specification and again after the System Architect produces the task plan.
 
 Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_API_KEY`) set in your `.env` file, or ensure your local Ollama instance is running.
 

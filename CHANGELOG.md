@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Compound Providers:** Introduced compound providers - pseudo-providers in `llms.yaml` whose individual model entries carry a `provider` field pointing to the real backend. The factory resolves the effective provider per-model at instantiation time, enabling a single `--provider` flag to transparently mix models from different backends.
 
+* **Plan Approval Mode:** Added an interactive approval gate to the planning phase. When enabled, the workflow pauses twice - once after the Product Manager produces the Technical Specification, and once after the System Architect produces the task plan - and prompts the user to review and either approve or request rework.
+
 ## [0.9.1] - 2026-03-29
 
 ### 🔧 Internal

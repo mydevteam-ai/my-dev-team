@@ -27,6 +27,8 @@ class ProjectState(BaseModel):
     current_agent: Annotated[str, _last_value] = ''
     requirements: str = ''
     specs: str = ''
+    specs_approved: bool = False
+    tasks_approved: bool = False
     human_answer: str = ''
     clarification_question: str = ''
     runtime: str = ''

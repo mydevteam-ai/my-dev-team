@@ -32,7 +32,10 @@ def init_session_state():
         'revision_count': 0,
         'crew_started': False,
         'hitl_pending': False,
+        'hitl_mode': 'clarification',
         'hitl_question': '',
+        'hitl_specs': '',
+        'hitl_tasks': [],
         'hitl_extension': None,
         'thinking_text': '',
         'thinking_active': False,
@@ -84,7 +87,10 @@ def process_event(event: dict):
 
     if event_type == 'hitl_request':
         st.session_state['hitl_pending'] = True
-        st.session_state['hitl_question'] = event.get('question', 'The team needs your input.')
+        st.session_state['hitl_mode'] = event.get('mode', 'clarification')
+        st.session_state['hitl_question'] = event.get('question', '')
+        st.session_state['hitl_specs'] = event.get('specs', '')
+        st.session_state['hitl_tasks'] = event.get('pending_tasks', [])
         return
 
     if event_type in ('finish', 'error'):
