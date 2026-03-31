@@ -1,5 +1,7 @@
 build/
 dist/
+gui/dist/
+gui/node_modules/
 *.egg-info/
 .eggs/
 *.egg

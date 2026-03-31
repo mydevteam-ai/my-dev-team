@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import logging
-import subprocess
 import sys
 import warnings
 warnings.filterwarnings('ignore', message="Core Pydantic V1 functionality", category=UserWarning, module='langchain_core')
@@ -57,9 +56,9 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
 def main_ui():
     """Entry point for the devteam-ui command."""
     load_dotenv()
-    app_path = Path(__file__).resolve().parents[1] / 'gui' / 'app.py'
+    from devteam.server import run as run_server
     try:
-        subprocess.run([sys.executable, '-m', 'streamlit', 'run', str(app_path)], check=False)
+        run_server()
     except KeyboardInterrupt:
         sys.exit(0)
 
