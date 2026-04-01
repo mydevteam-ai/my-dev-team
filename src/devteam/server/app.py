@@ -11,13 +11,13 @@ from queue import Empty, Queue
 
 import aiosqlite
 import yaml
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory, stream_with_context
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
-from devteam.utils import LLMFactory, StreamHandler, generate_thread_id
+from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def get_providers_from_config() -> list[str]:
 
 
 def _run_crew_in_thread(
-    project_name: str,
+    thread_id: str,
     requirements: str,
     provider: str,
     rpm: int,
@@ -91,7 +91,6 @@ def _run_crew_in_thread(
 ):
     """Async crew execution inside a dedicated thread / event loop."""
     async def _inner():
-        thread_id = generate_thread_id(project_name)
         project_folder = settings.workspace_dir / thread_id
         project_folder.mkdir(parents=True, exist_ok=True)
         db_path = project_folder / 'state.db'
@@ -118,7 +117,11 @@ def _run_crew_in_thread(
     try:
         loop.run_until_complete(_inner())
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        result_holder['error'] = str(exc)
+        msg = str(exc)
+        logger.exception("Worker thread failed: %s", msg)
+        result_holder['error'] = msg
+        event_queue.put({'type': 'error', 'ts': time.time(),
+                         'state': {'error': True, 'error_message': msg}})
     finally:
         loop.close()
 
@@ -157,7 +160,11 @@ def _run_resume_in_thread(
     try:
         loop.run_until_complete(_inner())
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        result_holder['error'] = str(exc)
+        msg = str(exc)
+        logger.exception("Resume thread failed: %s", msg)
+        result_holder['error'] = msg
+        event_queue.put({'type': 'error', 'ts': time.time(),
+                         'state': {'error': True, 'error_message': msg}})
     finally:
         loop.close()
 
@@ -233,9 +240,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         settings.llm_timeout = timeout
         settings.ask_approval = ask_approval
 
-        # Derive thread_id up front so we can return it immediately.
-        # generate_thread_id is deterministic from project name.
-        project_name = requirements.split('\n')[0][:60]
+        project_name, requirements = parse_spec_from_string(requirements)
         thread_id = generate_thread_id(project_name)
 
         event_queue: Queue = Queue()
@@ -244,7 +249,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
 
         worker = threading.Thread(
             target=_run_crew_in_thread,
-            args=(project_name, requirements, provider, rpm, event_queue, result_holder, hitl_ext, thinking),
+            args=(thread_id, requirements, provider, rpm, event_queue, result_holder, hitl_ext, thinking),
             daemon=True,
         )
         worker.start()
@@ -353,7 +358,10 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         last_index = int(request.args.get('from', 0))
 
         def generate():
+            # Immediate ping so the browser knows the connection is alive
+            yield ": connected\n\n"
             idx = last_index
+            heartbeat_counter = 0
             while True:
                 ctx.drain_queue()
                 snapshot = ctx.snapshot()
@@ -361,7 +369,6 @@ def create_app(gui_dist: Path | None = None) -> Flask:
                 while idx < len(snapshot):
                     event = snapshot[idx]
                     idx += 1
-                    # Serialize — skip non-serializable fields
                     try:
                         payload = _serialize_event(event)
                         yield f"data: {json.dumps(payload)}\n\n"
@@ -373,10 +380,19 @@ def create_app(gui_dist: Path | None = None) -> Flask:
                     yield "data: {\"type\": \"__done__\"}\n\n"
                     break
 
+                # Heartbeat comment every ~15 s to keep proxies from closing idle connections
+                heartbeat_counter += 1
+                if heartbeat_counter >= 60:
+                    yield ": heartbeat\n\n"
+                    heartbeat_counter = 0
+
                 time.sleep(0.25)
 
-        return Response(generate(), content_type='text/event-stream',
-                        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
+        return Response(
+            stream_with_context(generate()),
+            content_type='text/event-stream',
+            headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
+        )
 
     return app
 
@@ -426,8 +442,15 @@ def _msg_to_dict(msg) -> dict:
 
 def run(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
     """Start the Flask server."""
+    import sys
     from dotenv import load_dotenv
     load_dotenv()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+        stream=sys.stderr,
+    )
 
     gui_dist = Path(__file__).resolve().parents[3] / 'gui' / 'dist'
     if not gui_dist.exists():
