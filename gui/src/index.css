@@ -28,6 +28,27 @@
   @apply bg-slate-400;
 }
 
+/* Markdown prose */
+.md-prose h1, .md-prose h2, .md-prose h3, .md-prose h4 {
+  @apply font-bold text-slate-800 mt-4 mb-1.5;
+}
+.md-prose h1 { @apply text-lg; }
+.md-prose h2 { @apply text-base; }
+.md-prose h3 { @apply text-sm; }
+.md-prose h4 { @apply text-xs uppercase tracking-wide text-slate-500; }
+.md-prose p  { @apply mb-2 leading-relaxed; }
+.md-prose ul, .md-prose ol { @apply pl-5 mb-2 space-y-0.5; }
+.md-prose ul { @apply list-disc; }
+.md-prose ol { @apply list-decimal; }
+.md-prose li { @apply leading-relaxed; }
+.md-prose strong { @apply font-bold text-slate-900; }
+.md-prose em     { @apply italic; }
+.md-prose code   { @apply font-mono bg-slate-100 text-slate-700 px-1 py-0.5 rounded text-xs; }
+.md-prose pre    { @apply bg-slate-900 text-slate-200 p-3 rounded-lg overflow-x-auto my-2 text-xs font-mono; }
+.md-prose pre code { @apply bg-transparent text-inherit px-0 py-0; }
+.md-prose hr     { @apply border-slate-200 my-3; }
+.md-prose blockquote { @apply border-l-4 border-slate-300 pl-3 italic text-slate-500 my-2; }
+
 /* Thinking stream */
 .thinking-stream {
   font-family: 'Courier New', Courier, monospace;

@@ -1,7 +1,7 @@
 import { useApp } from '../store.jsx'
 import PhaseTracker from '../components/PhaseTracker'
 import NodeStatus from '../components/NodeStatus'
-import ArtifactsList from '../components/ArtifactsList'
+import LeftPanel from '../components/LeftPanel'
 import ChatWindow from '../components/ChatWindow'
 import HitlInput from '../components/HitlInput'
 import { CheckCircle, XCircle, AlertTriangle, LayoutDashboard } from 'lucide-react'
@@ -85,9 +85,9 @@ export default function Dashboard() {
 
           {/* Main grid: artifacts + chat */}
           <div className="flex-1 grid grid-cols-5 gap-4 min-h-0">
-            {/* Left: workspace artifacts */}
+            {/* Left: workspace / specs / report */}
             <div className="col-span-2 min-h-0">
-              <ArtifactsList />
+              <LeftPanel />
             </div>
             {/* Right: chat / log */}
             <div className="col-span-3 min-h-0">

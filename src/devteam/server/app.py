@@ -17,7 +17,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
-from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string
+from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +113,9 @@ def _run_crew_in_thread(
             result_holder['final_state'] = final_state
             result_holder['thread_id'] = thread_id
 
+    project_folder = settings.workspace_dir / thread_id
+    project_folder.mkdir(parents=True, exist_ok=True)
+    exec_log_handler = add_file_handler(project_folder / 'execution.log')
     loop = asyncio.new_event_loop()
     try:
         loop.run_until_complete(_inner())
@@ -124,6 +127,7 @@ def _run_crew_in_thread(
                          'state': {'error': True, 'error_message': msg}})
     finally:
         loop.close()
+        remove_file_handler(exec_log_handler)
 
 
 def _run_resume_in_thread(
@@ -156,6 +160,7 @@ def _run_resume_in_thread(
             result_holder['final_state'] = final_state
             result_holder['thread_id'] = thread_id
 
+    exec_log_handler = add_file_handler(settings.workspace_dir / thread_id / 'execution.log')
     loop = asyncio.new_event_loop()
     try:
         loop.run_until_complete(_inner())
@@ -167,6 +172,7 @@ def _run_resume_in_thread(
                          'state': {'error': True, 'error_message': msg}})
     finally:
         loop.close()
+        remove_file_handler(exec_log_handler)
 
 
 def _fetch_history(thread_id: str) -> list[dict]:
@@ -245,7 +251,9 @@ def create_app(gui_dist: Path | None = None) -> Flask:
 
         event_queue: Queue = Queue()
         result_holder: dict = {}
-        hitl_ext = HumanInTheLoopGUI(event_queue) if ask_approval else None
+        # Always present — handles PM clarification questions regardless of ask_approval.
+        # ask_approval only controls graph routing (whether spec/plan review pauses happen).
+        hitl_ext = HumanInTheLoopGUI(event_queue)
 
         worker = threading.Thread(
             target=_run_crew_in_thread,
@@ -279,7 +287,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
 
         event_queue: Queue = Queue()
         result_holder: dict = {}
-        hitl_ext = HumanInTheLoopGUI(event_queue) if ask_approval else None
+        hitl_ext = HumanInTheLoopGUI(event_queue)
 
         worker = threading.Thread(
             target=_run_resume_in_thread,
@@ -442,15 +450,12 @@ def _msg_to_dict(msg) -> dict:
 
 def run(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
     """Start the Flask server."""
-    import sys
     from dotenv import load_dotenv
     load_dotenv()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
-        stream=sys.stderr,
-    )
+    # File-only logging — no console output while GUI is running
+    setup_logging(console_level=None)
+    logging.getLogger('werkzeug').propagate = True  # let it go to the file handler only
 
     gui_dist = Path(__file__).resolve().parents[3] / 'gui' / 'dist'
     if not gui_dist.exists():

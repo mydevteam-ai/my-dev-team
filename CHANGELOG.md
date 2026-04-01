@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-04-01
+
+### 🚀 Added
+
+* **React GUI:** Replaced the Streamlit dashboard with a Vite + React JS web application served by a Flask backend. The new GUI features a sidebar navigation, live execution dashboard with Server-Sent Events streaming, and a minimalistic Tailwind CSS design.
+
+* **Flask backend (`src/devteam/server/`):** REST API and SSE streaming server. Manages project execution in background threads, buffers all events for reconnecting clients, and serves the built React app as static files. Entry point `devteam-ui` now starts the Flask server instead of Streamlit.
+
+* **Live execution dashboard:** Phase tracker (Planning → Development → Integration → Finished), interleaved Activity feed showing agent log entries (bold) and LLM thinking tokens (regular monospace) in chronological order, and a left panel with four tabs — Workspace files, Tasks, Specs, and Report — all updated in real time via SSE.
+
+* **Inline HITL input:** Clarification questions from the Product Manager and spec/plan approval prompts are now handled directly in the dashboard without interrupting the workflow. The HITL extension is always active (not just when approval mode is enabled), so PM clarification questions are handled correctly in all configurations.
+
+* **Markdown rendering:** Specs, final report, task descriptions, and agent activity log entries are rendered as formatted markdown (headings, bold/italic, bullet lists, code blocks).
+
+### 🗑️ Removed
+
+* Streamlit GUI (`src/devteam/gui/`) removed entirely.
+
 ## [0.9.2] - 2026-03-30
 
 ### 🚀 Added
