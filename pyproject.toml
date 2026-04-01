@@ -60,6 +60,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "devteam.config" = ["*", "**/*"]
+"devteam.gui" = ["dist/*", "dist/**/*"]
 
 [tool.pylint.messages_control]
 disable = [

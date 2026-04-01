@@ -45,7 +45,8 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 **Optional Dependencies:**
 
 * **Docker Engine** required only if you intend to use the Sandboxed QA code execution features.
-* **Streamlit** required only to launch the web dashboard. You can install it separately or run `pip install my-dev-team[ui]`.
+* **Flask** required only to launch the web dashboard (`pip install my-dev-team[ui]`).
+* **Node.js 18+** required only to build the web dashboard frontend (one-time build step; not needed at runtime).
 * **Git** required only if you want to use the `GitCommitter` extension for automatic local version control of the generated workspace.
 
 ### Installation
@@ -96,9 +97,16 @@ devteam project.txt
 
 ### Web Interface (Dashboard)
 
-In addition to the terminal CLI, **My Dev Team** includes a fully interactive web dashboard powered by Streamlit. This is perfect for users who want visual control over the autonomous agents.
+In addition to the terminal CLI, **My Dev Team** includes a fully interactive web dashboard - a React application served by Flask.
 
-Make sure you have Streamlit installed (`pip install streamlit`), and simply run:
+Install the UI dependency and build the frontend once:
+
+```sh
+pip install "my-dev-team[ui]"
+cd gui && npm install && npm run build
+```
+
+Then launch the dashboard:
 
 ```sh
 devteam-ui
@@ -142,9 +150,11 @@ Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_
 
 ### Dashboard Features
 
-- **Launch Projects:** Upload your project requirements text file directly through your browser and select your LLM provider.
-- **Granular Timeline:** View a deeply nested, chronological history of your AI crew's execution, cleanly displaying subgraph agent handoffs.
-- **Visual Time Travel:** Easily resume paused workflows, or inject human-in-the-loop feedback by targeting specific graph checkpoints directly from the UI dropdowns.
+- **Launch Projects:** Upload or paste your project requirements and select your LLM provider, rate limit, and timeout.
+- **Live Execution Feed:** Watch the planning and development phases unfold in real time - agent log entries and LLM thinking tokens stream directly into the Activity panel.
+- **Workspace Browser:** Inspect generated files, specs, task plan, and the final report from the left panel as they are created.
+- **Human-in-the-Loop:** Answer PM clarification questions and review/approve the specification and task plan without leaving the dashboard.
+- **Resume & History:** Resume any previous run with optional feedback, or browse the checkpoint timeline for a project.
 
 ## Architecture
 

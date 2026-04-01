@@ -13,6 +13,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist',
+    outDir: '../src/devteam/gui/dist',
+    emptyOutDir: true,
   },
 })

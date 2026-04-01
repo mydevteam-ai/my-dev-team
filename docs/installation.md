@@ -28,11 +28,27 @@ pip install my-dev-team
 
 ### Web Dashboard (UI)
 
-If you want to use the interactive Streamlit dashboard to visualize agent handoffs and "time travel" between checkpoints, install the UI extras:
+The web dashboard is a React application served by a Flask backend. To use it, install the UI extras:
 
 ```sh
 pip install "my-dev-team[ui]"
 ```
+
+Then build the React frontend (requires **Node.js 18+**):
+
+```sh
+cd gui
+npm install
+npm run build
+```
+
+The build output is written into the package directory and served automatically. After building once, simply run:
+
+```sh
+devteam-ui
+```
+
+> **Note:** The `npm run build` step is only needed once after cloning, and again after any GUI source changes. Node.js is not required at runtime.
 
 ### Sandboxed QA Execution
 
@@ -72,6 +88,25 @@ If you want to contribute or modify the agents, clone the repository and install
 git clone https://github.com/bobrovsky420/my-dev-team.git
 cd my-dev-team
 pip install -e .
+```
+
+To also develop or rebuild the web dashboard:
+
+```sh
+cd gui
+npm install
+npm run build   # writes output to src/devteam/gui/dist/
+```
+
+For frontend hot-reload during development, run the Vite dev server alongside the Flask backend:
+
+```sh
+# Terminal 1 — Flask API
+devteam-ui
+
+# Terminal 2 — Vite dev server (proxies /api to Flask)
+cd gui && npm run dev
+# Open http://localhost:5173
 ```
 
 ## Verify Installation

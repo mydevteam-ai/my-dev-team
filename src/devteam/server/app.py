@@ -201,7 +201,8 @@ def create_app(gui_dist: Path | None = None) -> Flask:
     app = Flask(__name__, static_folder=None)
 
     if gui_dist is None:
-        gui_dist = Path(__file__).resolve().parents[3] / 'gui' / 'dist'
+        # Bundled inside the installed package (built by: cd gui && npm run build)
+        gui_dist = Path(__file__).resolve().parent.parent / 'gui' / 'dist'
 
     # ------------------------------------------------------------------ #
     # Static files — serve the React build                                 #
@@ -457,7 +458,7 @@ def run(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
     setup_logging(console_level=None)
     logging.getLogger('werkzeug').propagate = True  # let it go to the file handler only
 
-    gui_dist = Path(__file__).resolve().parents[3] / 'gui' / 'dist'
+    gui_dist = Path(__file__).resolve().parent.parent / 'gui' / 'dist'
     if not gui_dist.exists():
         print(f"⚠  React build not found at {gui_dist}")
         print("   Run: cd gui && npm install && npm run build")
