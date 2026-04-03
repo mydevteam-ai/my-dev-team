@@ -6,24 +6,49 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp import ClientSession
 from devteam import settings
 
-async def _ingest(file_path: Path, source: str, title: str):
-    text = file_path.read_text(encoding='utf-8')
-    args = {
-        'information': text,
-        'metadata': {'source': source, 'title': title}
-    }
+DEFAULT_CHUNK_SIZE = 512
+DEFAULT_CHUNK_OVERLAP = 64
+
+
+def _chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
+    words = text.split()
+    if not words:
+        return []
+    chunks = []
+    start = 0
+    while start < len(words):
+        end = min(start + chunk_size, len(words))
+        chunks.append(' '.join(words[start:end]))
+        if end == len(words):
+            break
+        start += chunk_size - overlap
+    return chunks
+
+
+async def _store_chunk(session: ClientSession, text: str, metadata: dict):
+    args = {'information': text, 'metadata': metadata}
     if settings.rag_collection:
         args['collection_name'] = settings.rag_collection
+    await session.call_tool(settings.rag_mcp_tool.replace('find', 'store'), args)
 
+
+async def _ingest(file_path: Path, source: str, title: str, chunk_size: int, overlap: int):
+    text = file_path.read_text(encoding='utf-8')
+    chunks = _chunk_text(text, chunk_size, overlap) if chunk_size > 0 else None
     async with streamable_http_client(settings.rag_mcp_url) as (read, write, _):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            result = await session.call_tool(settings.rag_mcp_tool.replace('find', 'store'), args)
+            if not chunks or len(chunks) <= 1:
+                await _store_chunk(session, text, {'source': source, 'title': title})
+                print(f"Stored: {file_path} (1 chunk)")
+            else:
+                total = len(chunks)
+                for i, chunk in enumerate(chunks, 1):
+                    metadata = {'source': source, 'title': title, 'chunk': i, 'total_chunks': total}
+                    await _store_chunk(session, chunk, metadata)
+                    print(f"Stored chunk {i}/{total}", end='\r')
+                print(f"Stored: {file_path} ({total} chunks, size={chunk_size}, overlap={overlap})")
 
-    if result.content:
-        print(result.content[0].text if hasattr(result.content[0], 'text') else 'Stored.')
-    else:
-        print(f"Stored: {file_path}")
 
 def main():
     parser = argparse.ArgumentParser(description='Ingest a text file into the RAG knowledge base.')
@@ -31,7 +56,11 @@ def main():
     parser.add_argument('--source', default='files', help='source tag for filtering (default: files)')
     parser.add_argument('--title', help='document title (default: file name)')
     parser.add_argument('--mcp-url', help=f'MCP server URL (default: {settings.rag_mcp_url})')
-    parser.add_argument('--collection', help='Qdrant collection name (default: from settings)')
+    parser.add_argument('--collection', help='collection name (default: from settings)')
+    splitting = parser.add_mutually_exclusive_group()
+    splitting.add_argument('--no-split', action='store_true', help='store the entire document as a single chunk without splitting')
+    splitting.add_argument('--chunk-size', type=int, default=DEFAULT_CHUNK_SIZE, help=f'chunk size in words (default: {DEFAULT_CHUNK_SIZE})')
+    parser.add_argument('--overlap', type=int, default=DEFAULT_CHUNK_OVERLAP, help=f'overlap between chunks in words (default: {DEFAULT_CHUNK_OVERLAP}). ignored when --no-split is set')
     args = parser.parse_args()
 
     file_path = Path(args.file)
@@ -45,4 +74,5 @@ def main():
         settings.rag_collection = args.collection
 
     title = args.title or file_path.name
-    asyncio.run(_ingest(file_path, source=args.source, title=title))
+    chunk_size = 0 if args.no_split else args.chunk_size
+    asyncio.run(_ingest(file_path, source=args.source, title=title, chunk_size=chunk_size, overlap=args.overlap))
