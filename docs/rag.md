@@ -58,14 +58,52 @@ The server listens on `http://127.0.0.1:8000/mcp` by default.
 
 **4. Ingest documents:**
 
-Use the bundled `mcp-ingest` CLI to add text files to the knowledge base:
+Use the bundled `mcp-ingest` CLI to add files to the knowledge base.
+
+**Plain text - word-based chunking (default):**
 
 ```sh
-mcp-ingest path/to/document.txt
-mcp-ingest path/to/document.txt --title "Python Coding Standards" --source files
+mcp-ingest path/to/document.txt --title "My Document" --source files
 ```
 
-A sample standards file is available at `examples/python_coding_standards.txt`.
+**Markdown - split on `##` headings (recommended for structured docs):**
+
+```sh
+mcp-ingest path/to/document.md --split-by sections --title "Architecture Decisions"
+```
+
+Subsections (`###` and deeper) stay attached to their parent `##` section. Any content before the first `##` (e.g. a title or intro) is prepended to the first section chunk.
+
+**Large plain text - tune chunk size and overlap:**
+
+```sh
+mcp-ingest path/to/large.txt --chunk-size 256 --overlap 32
+```
+
+**Single chunk - no splitting:**
+
+```sh
+mcp-ingest path/to/small.txt --no-split
+```
+
+**All options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--split-by words\|sections` | `words` | Chunking strategy |
+| `--chunk-size N` | `512` | Chunk size in words (words strategy only) |
+| `--overlap N` | `64` | Overlap between chunks in words (words strategy only) |
+| `--no-split` | - | Store entire document as one chunk |
+| `--source` | `files` | Source tag for filtering (`jira`, `confluence`, `files`) |
+| `--title` | file name | Document title stored in metadata |
+| `--collection` | from settings | Qdrant collection name |
+| `--mcp-url` | from settings | MCP server URL |
+
+A sample standards file is available at `examples/python_coding_standards.txt`:
+
+```sh
+mcp-ingest examples/python_coding_standards.md --split-by sections --title "Python Coding Standards"
+```
 
 **5. Verify documents are stored:**
 
@@ -80,8 +118,8 @@ curl -s http://localhost:6333/collections/myproject/points/scroll \
 The MCP server URL and tool name can be overridden in `settings.py`:
 
 ```python
-settings.rag_mcp_url = 'http://localhost:8000/mcp'   # default
-settings.rag_mcp_tool = 'qdrant-find'            # default
+settings.rag_mcp_url = 'http://localhost:8000/mcp'
+settings.rag_mcp_tool = 'qdrant-find'
 ```
 
 ## Enabling RAG per agent
