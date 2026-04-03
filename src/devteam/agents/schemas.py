@@ -126,4 +126,3 @@ class RetrieveContext(BaseModel):
         default=None,
         description="Restrict search to a specific source: 'jira', 'confluence', or 'files'. Omit to search all sources."
     )
-    limit: int = Field(default=5, description="Number of results to retrieve (1-10).")

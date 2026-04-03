@@ -102,9 +102,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             case RetrieveContext.__name__:
                 query = tool_args.get('query', '')
                 source = tool_args.get('source')
-                limit = tool_args.get('limit', 5)
                 self.logger.info("Retrieving context for query: %s (source=%s)", query, source)
-                chunks = await rag.retrieve_context(query, source=source, limit=limit)
+                chunks = await rag.retrieve_context(query, source=source)
                 self.logger.debug("Retrieved context:\n%s", chunks[:500])
                 return chunks
         return None

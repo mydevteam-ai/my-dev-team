@@ -51,7 +51,7 @@ source ~/.local/bin/env # or restart your shell
 Replace `myproject` with your desired collection name:
 
 ```sh
-QDRANT_URL=http://localhost:6333 COLLECTION_NAME=myproject uvx mcp-server-qdrant
+uvx mcp-server-qdrant --transport streamable-http
 ```
 
 **4. Ingest documents** into the collection using your own ingestion tool or script. The MCP server handles embedding and retrieval - your ingestion tool only needs to write plain text and metadata to the Qdrant collection.
@@ -61,7 +61,7 @@ QDRANT_URL=http://localhost:6333 COLLECTION_NAME=myproject uvx mcp-server-qdrant
 The MCP server URL and tool name can be overridden in `settings.py`:
 
 ```python
-settings.rag_mcp_url = 'http://localhost:8765'   # default
+settings.rag_mcp_url = 'http://localhost:8000/mcp'   # default
 settings.rag_mcp_tool = 'qdrant-find'            # default
 ```
 
