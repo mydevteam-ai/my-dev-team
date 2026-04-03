@@ -65,6 +65,25 @@ docker build -t python:3.12-pytest -f src/devteam/config/docker/Dockerfile.pytho
 - This will create an image named `python:3.12-pytest` with pytest preinstalled and `/workspace` as the working directory.
 - You can customize the Dockerfile for other Python versions or additional dependencies as needed.
 
+### LLM Provider Packages
+
+The core `langchain` package is included as a dependency, but each provider requires its own integration package. Install only the ones you need:
+
+```sh
+pip install langchain-ollama      # Ollama (local models)
+pip install langchain-groq        # Groq
+pip install langchain-anthropic   # Anthropic Claude
+pip install langchain-openai      # OpenAI
+```
+
+Set the corresponding API key in your `.env` file:
+
+```
+GROQ_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
+```
+
 ### Ollama (Local LLMs)
 
 To use local LLMs with Ollama, follow the [Ollama Installation Guide](./ollama.md) for setup instructions on Windows, WSL, and Linux.

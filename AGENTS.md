@@ -50,7 +50,7 @@ mydevteam/
 
 ### Text Style
 
-- Use a hyphen-minus (`-`) as a dash in all written text. Never use an em dash (`—`) or en dash (`–`).
+- Use a hyphen-minus (`-`) as a dash in all written text. Never use an em dash (`—`) or en dash (`–`). This applies everywhere: comments, docstrings, markdown files, log messages, CLI help text, and any other written output. Automatically replace any `—` or `–` you produce with `-`.
 
 ### Quoting Convention
 
