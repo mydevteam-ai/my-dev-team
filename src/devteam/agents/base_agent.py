@@ -10,8 +10,9 @@ from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
 from devteam.state import ProjectState
+from devteam.tools import rag
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
-from .schemas import LoadSkill
+from .schemas import LoadSkill, RetrieveContext
 
 class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
@@ -89,15 +90,23 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             pass
         return ai_message
 
-    def _handle_intermediate_tools(self, tool_name: str, tool_args: dict) -> str | None:
+    async def _handle_intermediate_tools(self, tool_name: str, tool_args: dict) -> str | None:
         """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
         match tool_name:
-            case 'LoadSkill':
+            case LoadSkill.__name__:
                 skill_name = tool_args.get('skill_name')
                 skill_content = skills.load_skill(skill_name)
                 self.logger.info("Loaded skill: %s. LLM is re-evaluating...", skill_name)
                 self.logger.debug("Skill Content:\n%s", skill_content[:1000])
                 return skill_content
+            case RetrieveContext.__name__:
+                query = tool_args.get('query', '')
+                source = tool_args.get('source')
+                limit = tool_args.get('limit', 5)
+                self.logger.info("Retrieving context for query: %s (source=%s)", query, source)
+                chunks = await rag.retrieve_context(query, source=source, limit=limit)
+                self.logger.debug("Retrieved context:\n%s", chunks[:500])
+                return chunks
         return None
 
     async def process(self, state: ProjectState) -> dict:
@@ -135,7 +144,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                         no_tool_call_retry = True
                         raise ValueError("The model did not call any tool.")
                     tool_call = ai_message.tool_calls[0]
-                    if intermediate_result := self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
+                    if intermediate_result := await self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
                         tool_msg = ToolMessage(content=intermediate_result, tool_call_id=tool_call['id'])
                         conversation_history.append(tool_msg)
                         continue
@@ -170,7 +179,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
 
     @cached_property
     def _all_tools(self) -> list[type[BaseModel]]:
-        return [LoadSkill] + (self.tools or [])
+        extra = [RetrieveContext] if self.config.get('rag') else []
+        return [LoadSkill] + extra + (self.tools or [])
 
     @cached_property
     def _llm(self) -> Runnable:

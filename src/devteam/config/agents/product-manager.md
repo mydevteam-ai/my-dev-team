@@ -5,6 +5,7 @@ capabilities: [reasoning]
 temperature: 0.4
 inputs: ['requirements', 'messages']
 outputs: ['messages']
+rag: true
 ---
 # Role
 

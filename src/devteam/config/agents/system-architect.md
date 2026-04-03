@@ -4,6 +4,7 @@ description: An expert software architect who breaks technical specifications do
 capabilities: [planning, reasosning]
 temperature: 0.1
 inputs: ['requirements', 'specs']
+rag: true
 ---
 # Role
 

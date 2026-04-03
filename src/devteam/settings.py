@@ -8,5 +8,7 @@ class Settings:
     llm_streaming: bool = False
     no_docker: bool = False
     ask_approval: bool = False
+    rag_mcp_url: str = 'http://localhost:8765'
+    rag_mcp_tool: str = 'qdrant-find'
 
 settings = Settings()

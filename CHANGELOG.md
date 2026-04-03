@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - Unreleased
+
+### 🚀 Added
+
+* **RAG support via MCP:** Agents can now retrieve context from an external knowledge base using a `RetrieveContext` tool. The tool calls a configurable MCP server (default: `qdrant/mcp-server-qdrant`) over Streamable HTTP, keeping the main app free of any vector store or embedding dependencies.
+
+### 🔧 Internal
+
+* **`RetrieveContext` tool (`agents/schemas.py`):** Pydantic tool schema with `query`, `source` filter, and `limit` fields. Handled as an intermediate tool - retrieved chunks are injected as a `ToolMessage` and the LLM re-evaluates with the new context, reusing the existing `LoadSkill` re-evaluation loop.
+
+* **RAG opt-in via agent frontmatter:** Adding `rag: true` to any agent's `.md` config file enables the `RetrieveContext` tool for that agent automatically. Currently enabled for Product Manager and System Architect.
+
+* **`tools/rag.py`:** Async MCP client that calls the configured RAG MCP server and formats retrieved chunks for injection into the LLM conversation.
+
+* **RAG settings (`settings.py`):** Two new settings - `rag_mcp_url` (default: `http://localhost:8765`) and `rag_mcp_tool` (default: `qdrant-find`) - allow switching MCP backends via config with no code changes.
+
 ## [0.10.0] - 2026-04-01
 
 ### 🚀 Added

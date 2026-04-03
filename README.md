@@ -24,6 +24,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Local Git Versioning:** Every line of AI-generated code is automatically version-controlled.
 * **Cost & Token Optimization Analyzer:** Built-in telemetry tracks API costs down to the fraction of a cent and generates a diagnostic report at the end of every run, actively warning you if agents are stuck in loops or suffering from context bloat.
 * **SKILLs System:** Uses SKILLs - modular, reusable agent instructions and domain knowledge files. SKILLs can be attached to agents or workflows to extend capabilities, enforce coding standards, or inject project-specific expertise.
+* **RAG Knowledge Base:** Agents can retrieve context from an external knowledge base (documents, Jira tickets, Confluence pages, etc.) by any MCP-compatible vector store.
 
 ### AI Agents
 
@@ -48,6 +49,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Flask** required only to launch the web dashboard (`pip install my-dev-team[ui]`).
 * **Node.js 18+** required only to build the web dashboard frontend (one-time build step; not needed at runtime).
 * **Git** required only if you want to use the `GitCommitter` extension for automatic local version control of the generated workspace.
+* **`mcp`** required only if agents are configured with `rag: true`: `pip install mcp`. See the [RAG setup guide](docs/rag.md) for full instructions.
 
 ### Installation
 

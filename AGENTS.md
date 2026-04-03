@@ -71,7 +71,8 @@ mydevteam/
 ### Type Hints
 
 - Use type annotations on all public function signatures (parameters and return types).
-- Use modern union syntax: `str | None`, `int | float`.
+- Use modern union syntax: `str | list[str]`, `int | float`.
+- For optional parameters with a `None` default, use `str = None` not `str | None = None` - the `None` default already implies optionality.
 - Use `TypeVar` with `Generic[T]` for generic classes (see `BaseAgent[T]`).
 - Use `TypedDict` with `Annotated` for LangGraph state definitions.
 - `Any` is acceptable for opaque third-party objects (e.g. LangGraph app instances).
