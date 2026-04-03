@@ -27,6 +27,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--thinking', action='store_true', help='stream raw LLM thinking output to stderr')
     parser.add_argument('--no-docker', action='store_true', help='run QA engineer without Docker sandbox')
     parser.add_argument('--ask-approval', action='store_true', help='pause after planning to review and approve the plan before development starts')
+    parser.add_argument('--rag-collection', type=str, help='collection name to use for RAG queries')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -74,6 +75,8 @@ def main():
     settings.llm_streaming = args.thinking
     settings.no_docker = args.no_docker
     settings.ask_approval = args.ask_approval
+    if args.rag_collection:
+        settings.rag_collection = args.rag_collection
     _validate_inputs(parser, args)
 
     if args.history:

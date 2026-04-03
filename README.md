@@ -147,6 +147,7 @@ devteam --resume web_scraper_cli_20260312_083500
 * `--thinking`: Stream raw LLM thinking output to stderr in real-time.
 * `--no-docker`: Useful if Docker is not installed or you want to use LLM-based QA only.
 * `--ask-approval`: Enable interactive plan approval after the Product Manager produces the Technical Specification and again after the System Architect produces the task plan.
+* `--rag-collection`: Collection name to use for RAG queries (e.g. `myproject`). Only needed when the MCP server is running without a locked-in `COLLECTION_NAME`.
 
 Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_API_KEY`) set in your `.env` file, or ensure your local Ollama instance is running.
 
