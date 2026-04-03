@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-04-03
+
+### 🚀 Added
+
+* **`mcp-ingest` chunking:** The ingest CLI now splits large documents into overlapping chunks before storing. Supports two strategies - `--split-by words` (word-based sliding window, default) and `--split-by sections`.
+
+* **`--no-split` flag for `mcp-ingest`:** Stores the entire document as a single chunk, bypassing chunking. Mutually exclusive with `--split-by`.
+
+* **`--rag-collection` CLI argument:** New `devteam` CLI flag to set the RAG collection name at runtime without modifying settings.
+
 ## [0.11.0] - 2026-04-03
 
 ### 🚀 Added
