@@ -73,6 +73,7 @@ mydevteam/
 - Use type annotations on all public function signatures (parameters and return types).
 - Use modern union syntax: `str | list[str]`, `int | float`.
 - For optional parameters with a `None` default, use `str = None` not `str | None = None` - the `None` default already implies optionality.
+- **Exception:** Pydantic tool schemas exposed to LLMs (subclasses of `BaseModel` used as tools) must use `str | None = None` for nullable fields. Without `| None`, Pydantic generates `"type": "string"` in the JSON schema which rejects `null` values the LLM passes explicitly, causing tool call validation errors.
 - Use `TypeVar` with `Generic[T]` for generic classes (see `BaseAgent[T]`).
 - Use `TypedDict` with `Annotated` for LangGraph state definitions.
 - `Any` is acceptable for opaque third-party objects (e.g. LangGraph app instances).

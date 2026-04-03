@@ -3,7 +3,7 @@ from devteam import settings
 async def retrieve_context(query: str, source: str = None) -> str:
     """Call the RAG MCP server and return retrieved chunks as formatted text."""
     try:
-        from mcp.client.streamable_http import streamablehttp_client  # pylint: disable=import-outside-toplevel
+        from mcp.client.streamable_http import streamable_http_client  # pylint: disable=import-outside-toplevel
         from mcp import ClientSession  # pylint: disable=import-outside-toplevel
     except ImportError as e:
         raise ImportError("mcp is required for RAG. Install it with: pip install mcp") from e
@@ -13,7 +13,7 @@ async def retrieve_context(query: str, source: str = None) -> str:
     if source:
         args['filter'] = {'source': source}
     try:
-        async with streamablehttp_client(settings.rag_mcp_url) as (read, write, _):
+        async with streamable_http_client(settings.rag_mcp_url) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool(settings.rag_mcp_tool, args)

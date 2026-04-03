@@ -8,4 +8,4 @@ It should accept two numbers from the user, perform the chosen operation, and di
 Handle division by zero gracefully and provide a simple command-line interface.
 Perform only one operation and exit.
 
-Before starting, query the knowledge base for our coding standards and architecture decisions relevant to this project.
+IMPORTANT: You MUST call the RetrieveContext tool before writing any specifications. Query the knowledge base for Python coding standards and architecture decisions relevant to this project. Do not proceed without retrieving context first.

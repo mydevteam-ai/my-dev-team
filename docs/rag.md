@@ -51,10 +51,29 @@ source ~/.local/bin/env # or restart your shell
 Replace `myproject` with your desired collection name:
 
 ```sh
-uvx mcp-server-qdrant --transport streamable-http
+QDRANT_URL=http://localhost:6333 COLLECTION_NAME=myproject uvx mcp-server-qdrant --transport streamable-http
 ```
 
-**4. Ingest documents** into the collection using your own ingestion tool or script. The MCP server handles embedding and retrieval - your ingestion tool only needs to write plain text and metadata to the Qdrant collection.
+The server listens on `http://127.0.0.1:8000/mcp` by default.
+
+**4. Ingest documents:**
+
+Use the bundled `mcp-ingest` CLI to add text files to the knowledge base:
+
+```sh
+mcp-ingest path/to/document.txt
+mcp-ingest path/to/document.txt --title "Python Coding Standards" --source files
+```
+
+A sample standards file is available at `examples/python_coding_standards.txt`.
+
+**5. Verify documents are stored:**
+
+```sh
+curl -s http://localhost:6333/collections/myproject/points/scroll \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 5, "with_payload": true}' | python3 -m json.tool
+```
 
 ## Configuration
 

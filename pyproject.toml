@@ -55,6 +55,7 @@ ui = ["flask>=3.0.0"]
 [project.scripts]
 devteam = "devteam.cli:main"
 devteam-ui = "devteam.cli:main_ui"
+mcp-ingest = "devteam.cli.ingest:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
