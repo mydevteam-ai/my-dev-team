@@ -38,7 +38,7 @@ The app requires no vector store client, no embedding library and no knowledge b
 
 Qdrant is recommended as the primary knowledge base when you want to ingest your own documents (coding standards, architecture decisions, specs, PDFs, Markdown files). It is free, self-hosted, and works offline.
 
-The MCP server for Qdrant is `mcp-server-qdrant`, which handles embedding and semantic search internally using `fastembed`.
+The MCP server for Qdrant is [`mcp-server-qdrant`](https://github.com/qdrant/mcp-server-qdrant), which handles embedding and semantic search internally using `fastembed`.
 
 ---
 
@@ -123,7 +123,7 @@ The MCP server listens on `http://127.0.0.1:8000/mcp`.
 
 ## Ingesting Documents
 
-Use the bundled `mcp-ingest` CLI (run on **Windows** in your project directory).
+Use the bundled `mcp-ingest` CLI (run on **Windows** in your project directory). Replace `path/to/document.txt` in the examples below with the actual path to your file.
 
 **Plain text - word-based chunking (default):**
 

@@ -1,8 +1,10 @@
+import functools
 import yaml
 from pathlib import Path
 from devteam import settings
 
 
+@functools.lru_cache(maxsize=1)
 def _load_sources() -> dict:
     rag_config = Path('rag.yaml')
     if not rag_config.exists():
@@ -11,13 +13,14 @@ def _load_sources() -> dict:
         return yaml.safe_load(f).get('sources', {})
 
 
-def _resolve_source(source: str | None, sources: dict) -> tuple[str, str, dict]:
+@functools.lru_cache(maxsize=8)
+def _resolve_source(source: str | None) -> tuple[str, str, dict]:
     """Return (mcp_url, mcp_tool, extra_args) for the given source."""
-    if source and source in sources:
-        cfg = sources[source]
+    all_sources = _load_sources()
+    if source and source in all_sources:
+        cfg = all_sources[source]
         return cfg['mcp_url'], cfg['mcp_tool'], {}
-
-    default = sources.get('default', {})
+    default = all_sources.get('default', {})
     mcp_url = default.get('mcp_url', settings.rag_mcp_url)
     mcp_tool = default.get('mcp_tool', settings.rag_mcp_tool)
     extra_args = {'filter': {'source': source}} if source else {}
@@ -33,8 +36,7 @@ async def retrieve_context(query: str, source: str | None = None) -> str:
     except ImportError as e:
         raise ImportError("mcp is required for RAG. Install it with: pip install mcp") from e
 
-    sources = _load_sources()
-    mcp_url, mcp_tool, extra_args = _resolve_source(source, sources)
+    mcp_url, mcp_tool, extra_args = _resolve_source(source)
 
     args = {'query': query, **extra_args}
     if settings.rag_collection and mcp_tool == 'qdrant-find':
