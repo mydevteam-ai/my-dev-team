@@ -86,7 +86,7 @@ OPENAI_API_KEY=your_key_here
 
 ### Ollama (Local LLMs)
 
-To use local LLMs with Ollama, follow the [Ollama Installation Guide](./ollama.md) for setup instructions on Windows, WSL, and Linux.
+To use local LLMs with Ollama, follow the [Ollama Installation Guide](./ollama.md) for setup instructions on Windows, WSL and Linux.
 
 ## Configuration
 

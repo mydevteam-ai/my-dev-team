@@ -4,9 +4,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes raw project requirements and processes them through a multi-agent workflow (Product Manager, System Architect, Developers, and QA) to incrementally build, test, and deliver production-ready code.
+An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes raw project requirements and processes them through a multi-agent workflow (Product Manager, System Architect, Developers and QA) to incrementally build, test and deliver production-ready code.
 
-**Unlike third-party SaaS platforms, My Dev Team is a local-first orchestrator.** Your workspace, SQLite state database, and review trails live 100% on your machine. You can run the entire crew locally for free using Ollama for zero data egress, or connect to cloud APIs (OpenAI, Groq) knowing your proprietary codebase is never stored on an external platform's servers.
+**Unlike third-party SaaS platforms, My Dev Team is a local-first orchestrator.** Your workspace, SQLite state database and review trails live 100% on your machine. You can run the entire crew locally for free using Ollama for zero data egress, or connect to cloud APIs (OpenAI, Groq) knowing your proprietary codebase is never stored on an external platform's servers.
 
 ## Core Features
 
@@ -17,7 +17,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **State Recovery & Resiliency:** Powered by asynchronous SQLite checkpointing. If an API rate limit is hit or a workflow is interrupted, you can resume the exact thread without losing a single token of progress.
 * **Telemetry & Cost Tracking:** Automatically tallies prompt and completion tokens across the entire workflow. Calculates exact USD costs dynamically using LiteLLM's live pricing registry, printing a detailed receipt at the end of every run.
 * **Incremental Development:** The System Architect breaks down requirements into a manageable backlog of tasks with explicit dependency edges.
-* **Self-Healing Code:** The Developer, Reviewer, and QA Engineer agents continuously loop until unit tests pass and code meets specifications.
+* **Self-Healing Code:** The Developer, Reviewer and QA Engineer agents continuously loop until unit tests pass and code meets specifications.
 * **Structured Outputs:** Powered by Pydantic and LangChain, ensuring zero "Markdown spillage" and robust state management.
 * **Tool-Calling Agents:** All agents use LLM-native tool calling to submit their work, enabling free-form reasoning and thinking before structured output.
 * **Extensible:** Easily add custom tools like `HumanInTheLoop` or `ConsoleLogger`.
@@ -28,10 +28,10 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 
 ### AI Agents
 
-1) **Product Manager:** Analyzes requirements, asks clarifying questions, and writes detailed Technical Specifications.
+1) **Product Manager:** Analyzes requirements, asks clarifying questions and writes detailed Technical Specifications.
 2) **System Architect:** Breaks specifications down into a cohesive backlog of developer tasks.
 3) **Senior Developer:** Incrementally writes code and unit tests for the current task.
-4) **Code Reviewer:** Analyzes the generated code for security, style, and logic issues.
+4) **Code Reviewer:** Analyzes the generated code for security, style and logic issues.
 5) **QA Engineer:** Evaluates code against task requirements using either LLM-based mental simulation or execution via a secure Docker sandbox.
 6) **Final QA Engineer:** Performs a full-repository integration test once all tasks are complete.
 7) **Reporter:** Generates a comprehensive final Markdown report for stakeholders.
@@ -160,9 +160,9 @@ Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_
 
 ### Dashboard Features
 
-- **Launch Projects:** Upload or paste your project requirements and select your LLM provider, rate limit, and timeout.
+- **Launch Projects:** Upload or paste your project requirements and select your LLM provider, rate limit and timeout.
 - **Live Execution Feed:** Watch the planning and development phases unfold in real time - agent log entries and LLM thinking tokens stream directly into the Activity panel.
-- **Workspace Browser:** Inspect generated files, specs, task plan, and the final report from the left panel as they are created.
+- **Workspace Browser:** Inspect generated files, specs, task plan and the final report from the left panel as they are created.
 - **Human-in-the-Loop:** Answer PM clarification questions and review/approve the specification and task plan without leaving the dashboard.
 - **Resume & History:** Resume any previous run with optional feedback, or browse the checkpoint timeline for a project.
 
@@ -205,7 +205,7 @@ stateDiagram-v2
 
 * **Task Orchestration:** The **System Architect** designs the system, and the **Project Officer** orchestrates the task backlog, routing individual tickets to the **Senior Developer**.
 
-* **The Refinement Loop:** The **Senior Developer**, **Code Reviewer**, and **QA Engineer** agents operate in a strict self-healing loop. Code is repeatedly analyzed and tested; if bugs or style issues are found, the state routes directly back to the **Senior Developer** for revisions.
+* **The Refinement Loop:** The **Senior Developer**, **Code Reviewer** and **QA Engineer** agents operate in a strict self-healing loop. Code is repeatedly analyzed and tested; if bugs or style issues are found, the state routes directly back to the **Senior Developer** for revisions.
 
 * **Final Delivery:** Once the **Project Officer** confirms all tasks are complete, the **Final QA Engineer** runs full-repository integration tests before the **Reporter** generates the final documentation.
 
@@ -220,7 +220,7 @@ Instead of hardcoding a specific model (like `gpt-5.3-codex`), each agent declar
 * `reasoning` - deep thinking, complex analysis (Product Manager, Code Judge)
 * `planning` - task decomposition, architecture (System Architect)
 * `code-generation` - writing implementation code (Senior Developer)
-* `code-analysis` - reading, reviewing, and testing code (Reviewer, QA Engineers)
+* `code-analysis` - reading, reviewing and testing code (Reviewer, QA Engineers)
 * `fast-utility` - lightweight summarization tasks (Reporter)
 
 ### Centralized Configuration
@@ -228,7 +228,7 @@ Instead of hardcoding a specific model (like `gpt-5.3-codex`), each agent declar
 Code and configuration are strictly separated to make the framework maintainable and extensible.
 
 * **Model Routing (`config/llms.yaml`):** All provider definitions (Groq, OpenAI, Ollama) and model capability scores are centralized in a single YAML file. To add a new model, declare its capabilities - no agent code needs to change.
-* **Agent Prompts (`config/agents/**`):** Every agent's persona, system instructions, and constraints are stored as clean Markdown files with YAML frontmatter. No massive, hardcoded prompt strings cluttering the Python logic!
+* **Agent Prompts (`config/agents/**`):** Every agent's persona, system instructions and constraints are stored as clean Markdown files with YAML frontmatter. No massive, hardcoded prompt strings cluttering the Python logic!
 * **Sandbox Environments (`config/sandbox.yaml`):** Docker base images and test execution commands for various runtimes (Python, Node.js) are completely decoupled. You can easily add support for entirely new programming languages by simply defining the image and test command in YAML, without touching the core Python engine.
 
 ### Sandboxed QA Execution

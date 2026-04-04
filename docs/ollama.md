@@ -1,6 +1,6 @@
 # Ollama Installation Guide
 
-This guide covers how to install Ollama on Windows, Windows WSL, and Linux, as well as how to install models.
+This guide covers how to install Ollama on Windows, WSL and Linux, as well as how to install models.
 
 ## 1. Install Ollama on Windows
 

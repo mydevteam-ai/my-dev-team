@@ -51,6 +51,7 @@ mydevteam/
 ### Text Style
 
 - Use a hyphen-minus (`-`) as a dash in all written text. Never use an em dash (`—`) or en dash (`–`). This applies everywhere: comments, docstrings, markdown files, log messages, CLI help text, and any other written output. Automatically replace any `—` or `–` you produce with `-`.
+- Do not use the Oxford comma. In a list of three or more items, omit the comma before the final "and" or "or". Write "apples, oranges and bananas" not "apples, oranges, and bananas".
 
 ### Quoting Convention
 

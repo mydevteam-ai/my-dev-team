@@ -1,21 +1,55 @@
 # RAG Knowledge Base
 
-Agents configured with `rag: true` in their frontmatter can call a `RetrieveContext` tool to query an external knowledge base before producing output. Retrieved chunks are injected into the conversation and the LLM re-evaluates with the new context.
+RAG (Retrieval-Augmented Generation) lets agents query an external knowledge base before producing output. Retrieved content is injected into the conversation and the LLM re-evaluates with that context - allowing agents to reason over your team's actual documentation, tickets and standards rather than relying solely on training data.
 
-The main app communicates with the knowledge base exclusively over MCP - no vector store client or embedding library is required.
+---
+
+## How It Works
+
+RAG is built on two concepts: a **knowledge base** and an **MCP access layer**.
+
+### Knowledge Base
+
+The knowledge base is where your documents live. This can be:
+
+- **Qdrant** - a dedicated vector database, recommended as the universal knowledge base for this app. Accepts any document you ingest via `mcp-ingest`.
+- **Confluence** - your existing Confluence spaces, queried directly via MCP without ingestion
+- **Jira** - your existing Jira projects, queried directly via MCP without ingestion
+- **SharePoint / other** - any system for which an MCP server exists
+
+You can use one or several simultaneously. Each source is accessed through its own MCP server.
+
+### MCP Access Layer
+
+The app never connects to a knowledge base directly. Instead, each knowledge base exposes a search interface via an MCP server. The app calls the MCP server, which handles querying, embedding and result formatting.
+
+```
+MyDevTeam app
+    --> MCP server (Qdrant)      --> Qdrant vector DB
+    --> MCP server (Atlassian)   --> Confluence / Jira
+    --> any other MCP server     --> any other source
+```
+
+The app requires no vector store client, no embedding library and no knowledge base SDK.
+
+---
+
+## Recommended Setup: Qdrant
+
+Qdrant is recommended as the primary knowledge base when you want to ingest your own documents (coding standards, architecture decisions, specs, PDFs, Markdown files). It is free, self-hosted, and works offline.
+
+The MCP server for Qdrant is `mcp-server-qdrant`, which handles embedding and semantic search internally using `fastembed`.
 
 ---
 
 ## Overview
 
-RAG requires two services running before you start the app:
+When using Qdrant, two services must be running before starting the app:
 
 | Service | What it does | Where it runs |
 |---|---|---|
 | **Qdrant** | Stores and searches document vectors | Docker or WSL binary |
 | **MCP server** | Exposes Qdrant search as an MCP tool | WSL or any Linux host |
-
-Both must be running. The app talks only to the MCP server; the MCP server talks to Qdrant.
 
 ```
 MyDevTeam app  -->  MCP server (:8000)  -->  Qdrant (:6333)
@@ -162,7 +196,7 @@ devteam project.txt --no-rag
 
 ## Multi-Source Configuration
 
-By default the app queries a single Qdrant MCP server. To add additional sources (Jira, Confluence, or any other MCP-compatible search tool), create a `rag.yaml` file in your project root.
+By default the app queries a single Qdrant MCP server. To add additional sources (Jira, Confluence or any other MCP-compatible search tool), create a `rag.yaml` file in your project root.
 
 A template is provided:
 
@@ -185,7 +219,21 @@ sources:
     mcp_tool: confluence_search
 ```
 
-When an agent calls `RetrieveContext` with `source=jira`, it queries the Jira MCP server directly. Sources not listed in `rag.yaml` are passed as payload filters to the default Qdrant server instead.
+**Proprietary ticketing system example:** If your team uses an internal ticketing system (e.g. ServiceNow, YouTrack or a custom tool), expose it as an MCP server and add it as a named source:
+
+```yaml
+sources:
+  default:
+    mcp_url: http://localhost:8000/mcp
+    mcp_tool: qdrant-find
+  tickets:
+    mcp_url: http://your-ticketing-mcp-server/mcp
+    mcp_tool: search_tickets
+```
+
+Agents can then call `RetrieveContext` with `source=tickets` to search your ticketing system directly. Any MCP-compatible server works - the app treats all sources uniformly through the same protocol.
+
+When an agent calls `RetrieveContext` with a named source, it queries that source's MCP server directly. Sources not listed in `rag.yaml` are passed as payload filters to the default Qdrant server instead.
 
 `rag.yaml` is user-specific and excluded from version control via `.gitignore`. If absent, the app falls back to the default Qdrant server configured in `settings.py`.
 
