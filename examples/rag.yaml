@@ -1,0 +1,22 @@
+# RAG source configuration.
+# Copy this file to rag.yaml in your project root and adjust to your setup.
+#
+# Each source maps to an MCP server that handles search for that source.
+# The 'default' source is used when no source filter is specified or when
+# the requested source is not listed here.
+#
+# Sources not listed here are passed as payload filters to the default source.
+# Example: source=files -> default Qdrant server with filter {source: files}
+
+sources:
+  default:
+    mcp_url: http://localhost:8000/mcp
+    mcp_tool: qdrant-find
+
+  # Uncomment to add Atlassian (requires mcp-atlassian running on port 9000):
+  # jira:
+  #   mcp_url: http://localhost:9000/mcp
+  #   mcp_tool: jira_search_issues
+  # confluence:
+  #   mcp_url: http://localhost:9000/mcp
+  #   mcp_tool: confluence_search
