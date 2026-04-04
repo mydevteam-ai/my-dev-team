@@ -41,8 +41,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
     "docker>=7.1.0",
-    "rich>=14.3.3",
-    "mcp>=1.0.0"
+    "rich>=14.3.3"
 ]
 
 [project.optional-dependencies]
