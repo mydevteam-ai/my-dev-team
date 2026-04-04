@@ -11,5 +11,6 @@ class Settings:
     rag_mcp_url: str = 'http://localhost:8000/mcp'
     rag_mcp_tool: str = 'qdrant-find'
     rag_collection: str = None
+    rag_enabled: bool = True
 
 settings = Settings()

@@ -28,6 +28,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--no-docker', action='store_true', help='run QA engineer without Docker sandbox')
     parser.add_argument('--ask-approval', action='store_true', help='pause after planning to review and approve the plan before development starts')
     parser.add_argument('--rag-collection', type=str, help='collection name to use for RAG queries')
+    parser.add_argument('--no-rag', action='store_true', help='disable RAG context retrieval for all agents')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -77,6 +78,8 @@ def main():
     settings.ask_approval = args.ask_approval
     if args.rag_collection:
         settings.rag_collection = args.rag_collection
+    if args.no_rag:
+        settings.rag_enabled = False
     _validate_inputs(parser, args)
 
     if args.history:
