@@ -124,5 +124,5 @@ class RetrieveContext(BaseModel):
     query: str = Field(description="Natural language description of the information you need.")
     source: str | None = Field(
         default=None,
-        description="Restrict search to a specific source: 'jira', 'confluence', or 'files'. Omit to search all sources."
+        description="Restrict search to a specific source, e.g. 'jira', 'confluence', or 'files'. Sources with a dedicated MCP server are queried directly; others are used as a filter against the default knowledge base. Omit to search all sources."
     )

@@ -115,7 +115,7 @@ mcp-ingest path/to/large.txt --chunk-size 256 --overlap 32
 mcp-ingest path/to/small.txt --no-split
 ```
 
-A sample standards file is provided:
+A sample standards file is provided in `examples/python_coding_standards.md`:
 
 ```sh
 mcp-ingest examples/python_coding_standards.md --split-by sections --title "Python Coding Standards"
@@ -160,13 +160,44 @@ devteam project.txt --no-rag
 
 ---
 
+## Multi-Source Configuration
+
+By default the app queries a single Qdrant MCP server. To add additional sources (Jira, Confluence, or any other MCP-compatible search tool), create a `rag.yaml` file in your project root.
+
+A template is provided:
+
+```sh
+cp examples/rag.yaml rag.yaml
+```
+
+Edit `rag.yaml` to point each source to its MCP server:
+
+```yaml
+sources:
+  default:
+    mcp_url: http://localhost:8000/mcp
+    mcp_tool: qdrant-find
+  jira:
+    mcp_url: http://localhost:9000/mcp
+    mcp_tool: jira_search_issues
+  confluence:
+    mcp_url: http://localhost:9000/mcp
+    mcp_tool: confluence_search
+```
+
+When an agent calls `RetrieveContext` with `source=jira`, it queries the Jira MCP server directly. Sources not listed in `rag.yaml` are passed as payload filters to the default Qdrant server instead.
+
+`rag.yaml` is user-specific and excluded from version control via `.gitignore`. If absent, the app falls back to the default Qdrant server configured in `settings.py`.
+
+---
+
 ## Configuration
 
-Override MCP server settings in `settings.py`:
+Override default MCP server settings in `settings.py`:
 
 ```python
-settings.rag_mcp_url = 'http://localhost:8000/mcp'   # default
-settings.rag_mcp_tool = 'qdrant-find'                # default
+settings.rag_mcp_url = 'http://localhost:8000/mcp'   # default when no rag.yaml present
+settings.rag_mcp_tool = 'qdrant-find'                # default when no rag.yaml present
 ```
 
 ---

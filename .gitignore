@@ -13,6 +13,7 @@ __pycache__/
 
 venv/
 .env
+rag.yaml
 
 *.log
 *.log.*
