@@ -46,10 +46,10 @@ The MCP server for Qdrant is [`mcp-server-qdrant`](https://github.com/qdrant/mcp
 
 When using Qdrant, two services must be running before starting the app:
 
-| Service | What it does | Where it runs |
+| Service | What it does | Port |
 |---|---|---|
-| **Qdrant** | Stores and searches document vectors | Docker or WSL binary |
-| **MCP server** | Exposes Qdrant search as an MCP tool | WSL or any Linux host |
+| **Qdrant** | Stores and searches document vectors | 6333 |
+| **MCP server** | Exposes Qdrant search as an MCP tool | 8000 |
 
 ```
 MyDevTeam app  -->  MCP server (:8000)  -->  Qdrant (:6333)
@@ -65,26 +65,50 @@ Install the `mcp` package in your Python environment (Windows):
 pip install mcp
 ```
 
-Install `uv` on WSL (required to run the MCP server):
+---
+
+## Starting the RAG Stack
+
+### Option A - Bundled Docker image (recommended)
+
+A bundled Docker image runs both Qdrant and the MCP server in a single container. **No WSL required.**
+
+**Build the image (one time, from the repo root):**
 
 ```sh
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.local/bin/env
+docker build -t mydevteam-rag -f src/devteam/config/docker/Dockerfile.mydevteam-rag .
 ```
+
+**Run:**
+
+```sh
+docker run -d \
+  -p 6333:6333 -p 8000:8000 \
+  -e COLLECTION_NAME=myproject \
+  -v ~/qdrant/storage:/qdrant/storage \
+  --name mydevteam-rag \
+  mydevteam-rag
+```
+
+Replace `myproject` with your collection name. The MCP server listens on `http://127.0.0.1:8000/mcp`.
+
+> The collection name is the bucket all documents are stored in. Use the same name when ingesting and when running the app.
 
 ---
 
-## Starting Qdrant
+### Option B - Separate services (manual setup)
 
-Choose one option. Both expose Qdrant on `localhost:6333`.
+Use this if you prefer to run Qdrant and the MCP server independently, or if you already have Qdrant running.
 
-**Option A - Docker:**
+**Step 1 - Start Qdrant.**
+
+Docker:
 
 ```sh
 docker run -p 6333:6333 -v ~/qdrant/storage:/qdrant/storage qdrant/qdrant
 ```
 
-**Option B - Native binary on WSL (no Docker):**
+Or native binary on WSL (no Docker):
 
 ```sh
 # Download binary (one time)
@@ -102,13 +126,18 @@ EOF
 cd ~/qdrant && ./qdrant
 ```
 
-> **WSL note:** Both options expose Qdrant on `localhost:6333` which WSL2 forwards to Windows automatically. If unreachable, run `wsl hostname -I` and use that IP instead.
+> **WSL note:** Qdrant on `localhost:6333` is forwarded to Windows automatically by WSL2. If unreachable, run `wsl hostname -I` and use that IP instead.
 
----
+**Step 2 - Start the MCP server.**
 
-## Starting the MCP Server
+Install `uv` on WSL (one time):
 
-Run this in a **WSL terminal** (separate from Qdrant). Replace `myproject` with your collection name:
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.local/bin/env
+```
+
+Run in a **WSL terminal** (separate from Qdrant). Replace `myproject` with your collection name:
 
 ```sh
 QDRANT_URL=http://localhost:6333 COLLECTION_NAME=myproject \
@@ -117,7 +146,7 @@ QDRANT_URL=http://localhost:6333 COLLECTION_NAME=myproject \
 
 The MCP server listens on `http://127.0.0.1:8000/mcp`.
 
-> The collection name set here (`myproject`) is the bucket all documents are stored in. Use the same name when ingesting and when running the app.
+> The collection name is the bucket all documents are stored in. Use the same name when ingesting and when running the app.
 
 ---
 
