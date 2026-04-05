@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-04-05
+
+### 🚀 Added
+
+* **Source descriptions in `rag.yaml`:** Each source entry now supports an optional `description` field. Descriptions are embedded directly into the `RetrieveContext` tool schema so agents know what each source contains without an extra round-trip.
+
+* **Default `config/rag.yaml`:** A bundled default RAG config is loaded when no `rag.yaml` is present in the project directory. Resolution order: CWD `rag.yaml` → bundled `config/rag.yaml` → `settings.py` values.
+
+## [0.11.2] - 2026-04-04
+
+### 🚀 Added
+
+* **Bundled RAG Docker image (`Dockerfile.mydevteam-rag`):** A single container image that runs both Qdrant and the MCP server. Replaces the previous two-terminal setup - one `docker run` starts the entire RAG stack with no WSL required.
+
 ## [0.11.1] - 2026-04-03
 
 ### 🚀 Added

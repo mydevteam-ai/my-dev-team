@@ -12,11 +12,14 @@ sources:
   default:
     mcp_url: http://localhost:8000/mcp
     mcp_tool: qdrant-find
+    description: "Internal docs, coding standards and architecture decisions"
 
   # Uncomment to add Atlassian (requires mcp-atlassian running on port 9000):
   # jira:
   #   mcp_url: http://localhost:9000/mcp
   #   mcp_tool: jira_search_issues
+  #   description: "Bug reports, feature requests and sprint tickets"
   # confluence:
   #   mcp_url: http://localhost:9000/mcp
   #   mcp_tool: confluence_search
+  #   description: "Team wiki, runbooks and meeting notes"

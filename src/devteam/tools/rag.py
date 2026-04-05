@@ -1,19 +1,22 @@
-import functools
+from functools import lru_cache
 import yaml
 from pathlib import Path
+from pydantic import BaseModel, Field, create_model
 from devteam import settings
+from devteam.agents.schemas import RetrieveContext
 
-
-@functools.lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
 def _load_sources() -> dict:
     rag_config = Path('rag.yaml')
+    if not rag_config.exists():
+        rag_config = settings.config_dir / 'rag.yaml'
     if not rag_config.exists():
         return {}
     with open(rag_config, encoding='utf-8') as f:
         return yaml.safe_load(f).get('sources', {})
 
 
-@functools.lru_cache(maxsize=8)
+@lru_cache(maxsize=8)
 def _resolve_source(source: str | None) -> tuple[str, str, dict]:
     """Return (mcp_url, mcp_tool, extra_args) for the given source."""
     all_sources = _load_sources()
@@ -25,6 +28,35 @@ def _resolve_source(source: str | None) -> tuple[str, str, dict]:
     mcp_tool = default.get('mcp_tool', settings.rag_mcp_tool)
     extra_args = {'filter': {'source': source}} if source else {}
     return mcp_url, mcp_tool, extra_args
+
+
+@lru_cache(maxsize=1)
+def rag_sources_catalog() -> str:
+    """Return a formatted list of available RAG sources with descriptions, or empty string if none configured."""
+    sources = _load_sources()
+    if not sources:
+        return ''
+    lines = []
+    for name, cfg in sources.items():
+        description = cfg.get('description', '')
+        lines.append(f"- `{name}`" + (f": {description}" if description else ''))
+    return '\n'.join(lines)
+
+
+@lru_cache(maxsize=1)
+def make_retrieve_context_tool():
+    """Return a RetrieveContext tool class with available sources embedded in the field description."""
+    catalog = rag_sources_catalog()
+    default_desc = RetrieveContext.model_fields['source'].description
+    source_desc = f"Restrict search to a specific source. Available sources:\n{catalog}\nOmit to search all sources." if catalog else default_desc
+    tool = create_model(
+        'RetrieveContext',
+        query=(str, Field(description="Natural language description of the information you need.")),
+        source=(str | None, Field(default=None, description=source_desc)),
+        __base__=BaseModel,
+    )
+    tool.__doc__ = RetrieveContext.__doc__
+    return tool
 
 
 async def retrieve_context(query: str, source: str | None = None) -> str:

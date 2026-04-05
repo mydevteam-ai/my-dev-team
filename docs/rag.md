@@ -233,19 +233,22 @@ A template is provided:
 cp examples/rag.yaml rag.yaml
 ```
 
-Edit `rag.yaml` to point each source to its MCP server:
+Edit `rag.yaml` to point each source to its MCP server. The optional `description` field is shown to agents so they know what each source contains:
 
 ```yaml
 sources:
   default:
     mcp_url: http://localhost:8000/mcp
     mcp_tool: qdrant-find
+    description: "Internal docs, coding standards and architecture decisions"
   jira:
     mcp_url: http://localhost:9000/mcp
     mcp_tool: jira_search_issues
+    description: "Bug reports, feature requests and sprint tickets"
   confluence:
     mcp_url: http://localhost:9000/mcp
     mcp_tool: confluence_search
+    description: "Team wiki, runbooks and meeting notes"
 ```
 
 **Proprietary ticketing system example:** If your team uses an internal ticketing system (e.g. ServiceNow, YouTrack or a custom tool), expose it as an MCP server and add it as a named source:
@@ -264,7 +267,7 @@ Agents can then call `RetrieveContext` with `source=tickets` to search your tick
 
 When an agent calls `RetrieveContext` with a named source, it queries that source's MCP server directly. Sources not listed in `rag.yaml` are passed as payload filters to the default Qdrant server instead.
 
-`rag.yaml` is user-specific and excluded from version control via `.gitignore`. If absent, the app falls back to the default Qdrant server configured in `settings.py`.
+`rag.yaml` is user-specific and excluded from version control via `.gitignore`. If absent, the app loads the bundled default config (single Qdrant source on `localhost:8000`). Settings in `settings.py` are used only when no `rag.yaml` is found at all.
 
 ---
 
