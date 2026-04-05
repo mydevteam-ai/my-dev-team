@@ -8,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
+from devteam.tools.rag import init_retrieve_context_tool
 from devteam.utils import setup_logging
 from .runtime import async_main, show_history
 
@@ -58,7 +59,8 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
 def main_ui():
     """Entry point for the devteam-ui command."""
     load_dotenv()
-    from devteam.server import run as run_server
+    init_retrieve_context_tool()
+    from devteam.server import run as run_server  # pylint: disable=import-outside-toplevel
     try:
         run_server()
     except KeyboardInterrupt:
@@ -80,6 +82,8 @@ def main():
         settings.rag_collection = args.rag_collection
     if args.no_rag:
         settings.rag_enabled = False
+    else:
+        init_retrieve_context_tool()
     _validate_inputs(parser, args)
 
     if args.history:

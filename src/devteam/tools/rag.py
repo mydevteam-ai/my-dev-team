@@ -1,7 +1,6 @@
 from functools import lru_cache
 import yaml
 from pathlib import Path
-from pydantic import BaseModel, Field, create_model
 from devteam import settings
 from devteam.agents.schemas import RetrieveContext
 
@@ -43,20 +42,14 @@ def rag_sources_catalog() -> str:
     return '\n'.join(lines)
 
 
-@lru_cache(maxsize=1)
-def make_retrieve_context_tool():
-    """Return a RetrieveContext tool class with available sources embedded in the field description."""
+def init_retrieve_context_tool():
+    """Patch RetrieveContext.source description with available sources from rag.yaml. Call once at startup."""
     catalog = rag_sources_catalog()
-    default_desc = RetrieveContext.model_fields['source'].description
-    source_desc = f"Restrict search to a specific source. Available sources:\n{catalog}\nOmit to search all sources." if catalog else default_desc
-    tool = create_model(
-        'RetrieveContext',
-        query=(str, Field(description="Natural language description of the information you need.")),
-        source=(str | None, Field(default=None, description=source_desc)),
-        __base__=BaseModel,
+    if not catalog:
+        return
+    RetrieveContext.model_fields['source'].description = (
+        f"Restrict search to a specific source. Available sources:\n{catalog}\nOmit to search all sources."
     )
-    tool.__doc__ = RetrieveContext.__doc__
-    return tool
 
 
 async def retrieve_context(query: str, source: str | None = None) -> str:

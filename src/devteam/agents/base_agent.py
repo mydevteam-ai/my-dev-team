@@ -178,7 +178,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
 
     @cached_property
     def _all_tools(self) -> list[type[BaseModel]]:
-        extra = [rag.make_retrieve_context_tool()] if self.config.get('rag') and settings.rag_enabled else []
+        extra = [RetrieveContext] if self.config.get('rag') and settings.rag_enabled else []
         return [LoadSkill] + extra + (self.tools or [])
 
     @cached_property
