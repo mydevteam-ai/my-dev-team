@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.11.3] - 2026-04-05
+## [0.11.3] - 2026-04-06
 
 ### 🚀 Added
+
+* **Parallel tool calls:** Agents can now call multiple tools simultaneously in a single LLM response (e.g. `LoadSkill` + `RetrieveContext`). All intermediate tool calls are executed concurrently via `asyncio.gather`.
+
+* **Batched skill loading:** `LoadSkill` now accepts a `skill_names` list instead of a single `skill_name`, allowing agents to load multiple skills in one tool call.
 
 * **Source descriptions in `rag.yaml`:** Each source entry now supports an optional `description` field. Descriptions are embedded directly into the `RetrieveContext` tool schema so agents know what each source contains without an extra round-trip.
 

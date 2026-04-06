@@ -94,11 +94,14 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
         match tool_name:
             case LoadSkill.__name__:
-                skill_name = tool_args.get('skill_name')
-                skill_content = skills.load_skill(skill_name)
-                self.logger.info("Loaded skill: %s. LLM is re-evaluating...", skill_name)
-                self.logger.debug("Skill Content:\n%s", skill_content[:1000])
-                return skill_content
+                skill_names = tool_args.get('skill_names', [])
+                results = []
+                for name in skill_names:
+                    content = skills.load_skill(name)
+                    self.logger.info("Loaded skill: %s", name)
+                    self.logger.debug("Skill Content:\n%s", content[:1000])
+                    results.append(content)
+                return '\n\n---\n\n'.join(results)
             case RetrieveContext.__name__:
                 query = tool_args.get('query', '')
                 source = tool_args.get('source')
@@ -142,10 +145,13 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                     if not ai_message.tool_calls:
                         no_tool_call_retry = True
                         raise ValueError("The model did not call any tool.")
-                    tool_call = ai_message.tool_calls[0]
-                    if intermediate_result := await self._handle_intermediate_tools(tool_call['name'], tool_call['args']):
-                        tool_msg = ToolMessage(content=intermediate_result, tool_call_id=tool_call['id'])
-                        conversation_history.append(tool_msg)
+                    intermediate_results = await asyncio.gather(
+                        *[self._handle_intermediate_tools(tc['name'], tc['args']) for tc in ai_message.tool_calls]
+                    )
+                    if any(r is not None for r in intermediate_results):
+                        for tc, result in zip(ai_message.tool_calls, intermediate_results):
+                            tool_msg = ToolMessage(content=result or '', tool_call_id=tc['id'])
+                            conversation_history.append(tool_msg)
                         continue
                     parsed_data = self._parse_outputs(ai_message)
                     break
