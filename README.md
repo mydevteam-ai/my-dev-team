@@ -56,7 +56,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 
 * **Docker Engine** required only if you intend to use the Sandboxed QA code execution features.
 * **Flask** required only to launch the web dashboard (`pip install my-dev-team[ui]`).
-* **Node.js 18+** required only to build the web dashboard frontend (one-time build step; not needed at runtime).
+* **Node.js 18+** required only if you installed from source (`pip install -e .`) and need to build the web dashboard frontend.
 * **Git** required only if you want to use the `GitCommitter` extension for automatic local version control of the generated workspace.
 * **`mcp`** required only if agents are configured with `rag: true`: `pip install mcp`. See the [RAG setup guide](docs/rag.md) for full instructions.
 
@@ -72,101 +72,43 @@ pip install my-dev-team
 
 For local development, clone the repository and run `pip install -e .`
 
-## Usage Guide
+## Usage
 
-### Preparing Your Project File
-
-The crew requires a text file outlining your project requirements. By default, it looks for a specific header format to extract the project name and thread ID.
-
-Create a file named `project.txt`:
-
-```
-Subject: NEW PROJECT: Web Scraper CLI
-
-I need a Python command-line tool that scrapes articles from a given URL.
-It should extract the title, author, and main body text, and save the output as a JSON file.
-
-Requirements:
-- Use BeautifulSoup4 for parsing.
-- Include a `--url` argument and an `--output` argument.
-- Write unit tests for the parsing logic.
-```
-
-Alternatively, the `examples/` folder contains sample project definitions you can use for testing:
+### CLI
 
 ```sh
-devteam examples/calc_app_python.txt
-```
-
-### Command Line Interface
-
-The fastest way to use the framework is via the terminal command included in the package.
-
-```sh
+# Start a new project (Ollama by default)
 devteam project.txt
+
+# Switch provider and cap request rate
+devteam project.txt --provider groq --rpm 30
+
+# Pause for human approval of spec and task plan before development
+devteam project.txt --ask-approval
+
+# Run without Docker (LLM-based QA only)
+devteam project.txt --no-docker
+
+# Resume an interrupted run
+devteam --resume web_scraper_cli_20260312_083500
+
+# Inject reviewer feedback into a paused run
+devteam --resume web_scraper_cli_20260312_083500 --feedback "Add input validation"
+
+# Print checkpoint timeline for a thread
+devteam --resume web_scraper_cli_20260312_083500 --history
 ```
 
-### Web Interface (Dashboard)
+See [docs/cli.md](docs/cli.md) for all arguments and options.
 
-In addition to the terminal CLI, **My Dev Team** includes a fully interactive web dashboard - a React application served by Flask.
-
-Install the UI dependency and build the frontend once:
+### Web Dashboard
 
 ```sh
 pip install "my-dev-team[ui]"
-cd gui && npm install && npm run build
-```
-
-Then launch the dashboard:
-
-```sh
 devteam-ui
 ```
 
-### Advanced CLI Options
-
-You can easily switch between cloud providers and local models, and adjust rate limits based on your API tier:
-
-```sh
-# Run entirely locally for free using Ollama, with no rate limit!
-devteam project.txt --provider ollama
-
-# Switch to QA engineer without Docker sandbox
-devteam project.txt --no-docker
-
-# Run using OpenAI's flagship models, limited to 15 requests per minute
-devteam project.txt --provider openai --rpm 15
-
-# Review and approve the plan before development starts
-devteam project.txt --ask-approval
-
-# Resume an interrupted run exactly where it left off
-devteam --resume web_scraper_cli_20260312_083500
-```
-
-**Available Arguments:**
-
-* `project_file`: (Optional if resuming) Path to your project requirements text file.
-* `--provider`: Choose the LLM backend. Options: groq, ollama (default), openai.
-* `--timeout`: Maximum wait time for LLM responses, allowing users to easily adjust for slower local models.
-* `--rpm`: API requests per minute. Set to 0 to disable rate limiting (default: 0).
-* `--resume`: Resume a specific thread ID (e.g., my_app_20260312_083500).
-* `--history`: Print the timeline of checkpoints for the thread and exit.
-* `--checkpoint`: Specific checkpoint ID to rewind to.
-* `--thinking`: Stream raw LLM thinking output to stderr in real-time.
-* `--no-docker`: Useful if Docker is not installed or you want to use LLM-based QA only.
-* `--ask-approval`: Enable interactive plan approval after the Product Manager produces the Technical Specification and again after the System Architect produces the task plan.
-* `--rag-collection`: Collection name to use for RAG queries (e.g. `myproject`). Only needed when the MCP server is running without a locked-in `COLLECTION_NAME`.
-
-Note: Ensure you have the corresponding API keys (e.g., `GROQ_API_KEY`, `OPENAI_API_KEY`) set in your `.env` file, or ensure your local Ollama instance is running.
-
-### Dashboard Features
-
-- **Launch Projects:** Upload or paste your project requirements and select your LLM provider, rate limit and timeout.
-- **Live Execution Feed:** Watch the planning and development phases unfold in real time - agent log entries and LLM thinking tokens stream directly into the Activity panel.
-- **Workspace Browser:** Inspect generated files, specs, task plan and the final report from the left panel as they are created.
-- **Human-in-the-Loop:** Answer PM clarification questions and review/approve the specification and task plan without leaving the dashboard.
-- **Resume & History:** Resume any previous run with optional feedback, or browse the checkpoint timeline for a project.
+The dashboard supports live execution feed, workspace browser, human-in-the-loop approval and resume with feedback.
 
 ## Architecture
 
