@@ -5,6 +5,36 @@ from .sanitizer import sanitize_for_prompt
 
 MAX_RESULTS = 50
 
+# Patterns excluded from ListFiles, GlobFiles and GrepFiles results.
+EXCLUDED_PATTERNS = [
+    # Secrets and environment
+    '.env', '.env.*',
+    # Git
+    '.git/*',
+    # Python
+    '__pycache__/*', '*.pyc', '*.pyo', '*.pyd',
+    '*.egg-info/*', 'dist/*', 'build/*',
+    '.venv/*', 'venv/*', '.tox/*', '.mypy_cache/*', '.pytest_cache/*',
+    # Java
+    'target/*', '*.class', '*.jar', '*.war', '*.ear',
+    '.gradle/*', '.idea/*',
+    # JavaScript / TypeScript
+    'node_modules/*', '.next/*', '.nuxt/*',
+    '*.min.js', '*.min.css', '*.map',
+    # General build / binary
+    '*.so', '*.dll', '*.dylib', '*.exe',
+    '*.whl', '*.tar.gz', '*.zip',
+    '*.png', '*.jpg', '*.jpeg', '*.gif', '*.ico', '*.svg',
+    '*.woff', '*.woff2', '*.ttf', '*.eot',
+    '*.sqlite', '*.db',
+    '.DS_Store', 'Thumbs.db',
+]
+
+
+def _is_excluded(path: str) -> bool:
+    return any(fnmatch.fnmatch(path, pat) for pat in EXCLUDED_PATTERNS)
+
+
 def workspace_str_from_files(workspace_files: dict) -> str:
     workspace_str = ''
     for filepath, content in workspace_files.items():
@@ -14,6 +44,8 @@ def workspace_str_from_files(workspace_files: dict) -> str:
 
 
 def read_workspace_file(path: str, workspace_files: dict, workspace_path: str) -> str:
+    if _is_excluded(path):
+        return f"Access denied: '{path}' is in the excluded files list."
     if path in workspace_files:
         return f"--- FILE: {path} ---\n{workspace_files[path]}"
     if workspace_path:
@@ -27,13 +59,15 @@ def read_workspace_file(path: str, workspace_files: dict, workspace_path: str) -
 
 
 def list_workspace_files(workspace_files: dict, workspace_path: str) -> str:
-    paths = set(workspace_files.keys())
+    paths = {p for p in workspace_files if not _is_excluded(p)}
     if workspace_path:
         live_root = Path(workspace_path)
         if live_root.is_dir():
             for f in live_root.rglob('*'):
                 if f.is_file():
-                    paths.add(str(f.relative_to(live_root)).replace('\\', '/'))
+                    rel = str(f.relative_to(live_root)).replace('\\', '/')
+                    if not _is_excluded(rel):
+                        paths.add(rel)
     if not paths:
         return 'No files in workspace.'
     file_list = '\n'.join(f"- {p}" for p in sorted(paths))
@@ -41,15 +75,15 @@ def list_workspace_files(workspace_files: dict, workspace_path: str) -> str:
 
 
 def _all_workspace_paths(workspace_files: dict, workspace_path: str) -> dict[str, str]:
-    """Return a dict of {relative_path: content_or_None} from both sources."""
-    paths: dict[str, str] = {p: c for p, c in workspace_files.items()}
+    """Return a dict of {relative_path: content_or_None} from both sources, excluding ignored files."""
+    paths: dict[str, str] = {p: c for p, c in workspace_files.items() if not _is_excluded(p)}
     if workspace_path:
         live_root = Path(workspace_path)
         if live_root.is_dir():
             for f in live_root.rglob('*'):
                 if f.is_file():
                     rel = str(f.relative_to(live_root)).replace('\\', '/')
-                    if rel not in paths:
+                    if rel not in paths and not _is_excluded(rel):
                         paths[rel] = None  # lazy, read on demand
     return paths
 

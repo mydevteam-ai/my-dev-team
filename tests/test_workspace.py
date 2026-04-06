@@ -1,5 +1,6 @@
 import pytest
 from devteam.utils.workspace import (
+    _is_excluded,
     read_workspace_file,
     list_workspace_files,
     glob_workspace_files,
@@ -15,6 +16,45 @@ WORKSPACE_FILES = {
 }
 
 NO_WORKSPACE_PATH = ''
+
+
+# ---------------------------------------------------------------------------
+# _is_excluded
+# ---------------------------------------------------------------------------
+
+class TestIsExcluded:
+    @pytest.mark.parametrize('path', [
+        '.env', '.env.production',
+        '.git/config', '.git/HEAD',
+        '__pycache__/module.cpython-314.pyc', 'src/__pycache__/foo.pyc',
+        'app.pyc', 'module.pyo',
+        'dist/bundle.js', 'build/output.jar',
+        'node_modules/lodash/index.js',
+        'target/classes/Main.class', 'App.class',
+        'lib.jar', 'app.war',
+        '.venv/bin/python', 'venv/lib/site.py',
+        '.next/static/chunk.js',
+        'bundle.min.js', 'styles.min.css', 'main.js.map',
+        'icon.png', 'photo.jpg', 'logo.svg',
+        'font.woff2', 'data.sqlite',
+        'package.whl', 'release.tar.gz', 'archive.zip',
+        'mylib.so', 'mylib.dll', 'app.exe',
+        '.DS_Store', 'Thumbs.db',
+        'mypackage.egg-info/PKG-INFO',
+    ])
+    def test_excluded_paths(self, path):
+        assert _is_excluded(path), f"Expected '{path}' to be excluded"
+
+    @pytest.mark.parametrize('path', [
+        'src/main.py', 'tests/test_main.py',
+        'README.md', 'package.json', 'pom.xml',
+        'src/App.tsx', 'config/settings.yaml',
+        'Dockerfile', 'Makefile',
+        '.gitignore', '.eslintrc.js',
+        'requirements.txt', 'build.gradle',
+    ])
+    def test_allowed_paths(self, path):
+        assert not _is_excluded(path), f"Expected '{path}' to be allowed"
 
 
 # ---------------------------------------------------------------------------
@@ -53,6 +93,12 @@ class TestReadWorkspaceFile:
         result = read_workspace_file('../secret.txt', {}, str(tmp_path))
         assert 'File not found' in result
 
+    def test_excluded_file_blocked(self):
+        files = {'.env': 'SECRET_KEY=abc123'}
+        result = read_workspace_file('.env', files, NO_WORKSPACE_PATH)
+        assert 'Access denied' in result
+        assert 'SECRET_KEY' not in result
+
 
 # ---------------------------------------------------------------------------
 # list_workspace_files
@@ -74,6 +120,13 @@ class TestListWorkspaceFiles:
     def test_empty_workspace(self):
         result = list_workspace_files({}, NO_WORKSPACE_PATH)
         assert result == 'No files in workspace.'
+
+    def test_excludes_ignored_files(self):
+        files = {'src/main.py': 'x', '.env': 'SECRET', '__pycache__/mod.pyc': ''}
+        result = list_workspace_files(files, NO_WORKSPACE_PATH)
+        assert 'src/main.py' in result
+        assert '.env' not in result
+        assert '__pycache__' not in result
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +164,12 @@ class TestGlobWorkspaceFiles:
         result = glob_workspace_files('*.py', many_files, NO_WORKSPACE_PATH)
         assert 'Matching files (60)' in result
         assert '... and 10 more' in result
+
+    def test_glob_excludes_ignored(self):
+        files = {'src/main.py': 'x', '__pycache__/main.cpython-314.pyc': ''}
+        result = glob_workspace_files('*main*', files, NO_WORKSPACE_PATH)
+        assert 'src/main.py' in result
+        assert '__pycache__' not in result
 
 
 # ---------------------------------------------------------------------------
@@ -159,3 +218,9 @@ class TestGrepWorkspaceFiles:
         disk_file.write_text('secret_function = True', encoding='utf-8')
         result = grep_workspace_files('secret_function', {}, str(tmp_path))
         assert 'disk.py:1:' in result
+
+    def test_grep_excludes_ignored(self):
+        files = {'src/main.py': 'SECRET_KEY=abc', '.env': 'SECRET_KEY=abc'}
+        result = grep_workspace_files('SECRET_KEY', files, NO_WORKSPACE_PATH)
+        assert 'src/main.py' in result
+        assert '.env' not in result
