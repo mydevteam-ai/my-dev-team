@@ -14,7 +14,8 @@ from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools import rag
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
-from .schemas import LoadSkill, RetrieveContext
+from devteam.utils.workspace import read_workspace_file, list_workspace_files
+from .schemas import ListFiles, LoadSkill, ReadFile, RetrieveContext
 
 class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
@@ -92,7 +93,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             pass
         return ai_message
 
-    async def _handle_intermediate_tools(self, tool_name: str, tool_args: dict) -> str | None:
+    async def _handle_intermediate_tools(self, tool_name: str, tool_args: dict, state: ProjectState) -> str | None:
         """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
         match tool_name:
             case LoadSkill.__name__:
@@ -111,6 +112,13 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                 chunks = await rag.retrieve_context(query, source=source)
                 self.logger.debug("Retrieved context:\n%s", chunks[:500])
                 return chunks
+            case ReadFile.__name__:
+                path = tool_args.get('path', '')
+                self.logger.info("Reading workspace file: %s", path)
+                return read_workspace_file(path, state.workspace_files, state.workspace_path)
+            case ListFiles.__name__:
+                self.logger.info("Listing workspace files")
+                return list_workspace_files(state.workspace_files, state.workspace_path)
         return None
 
     async def process(self, state: ProjectState) -> dict:
@@ -148,7 +156,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                         no_tool_call_retry = True
                         raise ValueError("The model did not call any tool.")
                     intermediate_results = await asyncio.gather(
-                        *[self._handle_intermediate_tools(tc['name'], tc['args']) for tc in ai_message.tool_calls]
+                        *[self._handle_intermediate_tools(tc['name'], tc['args'], state) for tc in ai_message.tool_calls]
                     )
                     if any(r is not None for r in intermediate_results):
                         for tc, result in zip(ai_message.tool_calls, intermediate_results):
@@ -187,7 +195,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     @cached_property
     def _all_tools(self) -> list[type[BaseModel]]:
         extra = [RetrieveContext] if self.config.get('rag') and settings.rag_enabled else []
-        return [LoadSkill] + extra + (self.tools or [])
+        return [LoadSkill, ReadFile, ListFiles] + extra + (self.tools or [])
 
     @cached_property
     def _llm(self) -> Runnable:

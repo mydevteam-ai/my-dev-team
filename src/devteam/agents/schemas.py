@@ -127,3 +127,12 @@ class RetrieveContext(BaseModel):
         default=None,
         description="Restrict search to a specific source, e.g. 'jira', 'confluence', or 'files'. Sources with a dedicated MCP server are queried directly; others are used as a filter against the default knowledge base. Omit to search all sources."
     )
+
+class ReadFile(BaseModel):
+    """Read the contents of a file from the project workspace. Use this when you need to see a file that is not shown in your current context."""
+    path: str = Field(
+        description="The relative path to the file in the workspace (e.g. 'src/main.py' or 'tests/test_main.py')."
+    )
+
+class ListFiles(BaseModel):
+    """List all files currently available in the project workspace."""
