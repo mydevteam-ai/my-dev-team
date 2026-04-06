@@ -5,7 +5,7 @@ capabilities: [reasoning]
 temperature: 0.4
 inputs: ['requirements', 'skills', 'messages']
 outputs: ['messages']
-rag: true
+tools: [LoadSkill, RetrieveContext, AskClarification, SubmitSpecification]
 ---
 # Role
 

@@ -12,12 +12,10 @@ from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
 from devteam.state import ProjectState
-from devteam.tools import rag
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
-from devteam.utils.workspace import read_workspace_file, list_workspace_files
-from .schemas import ListFiles, LoadSkill, ReadFile, RetrieveContext
+from .intermediate_tools import IntermediateTools
 
-class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
+class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
 
     capabilities: dict[str, float]
@@ -25,7 +23,6 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
     max_retries: int = 2
     rate_limiter: RateLimiter = None
     output_schema: type[T]
-    tools: list[type[BaseModel]]
 
     def __init__(self, config: dict, prompt_template: str, node_name: str, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None):
         self.config = config
@@ -93,34 +90,6 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             pass
         return ai_message
 
-    async def _handle_intermediate_tools(self, tool_name: str, tool_args: dict, state: ProjectState) -> str | None:
-        """Handle intermediate tool calls that are not final outputs, e.g. LoadSkill."""
-        match tool_name:
-            case LoadSkill.__name__:
-                skill_names = tool_args.get('skill_names', [])
-                results = []
-                for name in skill_names:
-                    content = skills.load_skill(name)
-                    self.logger.info("Loaded skill: %s", name)
-                    self.logger.debug("Skill Content:\n%s", content[:1000])
-                    results.append(content)
-                return '\n\n---\n\n'.join(results)
-            case RetrieveContext.__name__:
-                query = tool_args.get('query', '')
-                source = tool_args.get('source')
-                self.logger.info("Retrieving context for query: %s (source=%s)", query, source)
-                chunks = await rag.retrieve_context(query, source=source)
-                self.logger.debug("Retrieved context:\n%s", chunks[:500])
-                return chunks
-            case ReadFile.__name__:
-                path = tool_args.get('path', '')
-                self.logger.info("Reading workspace file: %s", path)
-                return read_workspace_file(path, state.workspace_files, state.workspace_path)
-            case ListFiles.__name__:
-                self.logger.info("Listing workspace files")
-                return list_workspace_files(state.workspace_files, state.workspace_path)
-        return None
-
     async def process(self, state: ProjectState) -> dict:
         """Invoke LLM and use tools to provide structured results."""
         if isinstance(state, dict):
@@ -136,7 +105,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
                 self.logger.warning("LLM call failed. Retrying (attempt %d/%d)...", attempt + 1, self.max_retries + 1)
                 inputs['messages'] = list(original_messages)
                 if no_tool_call_retry:
-                    tool_names = ', '.join(t.__name__ for t in self._all_tools)
+                    tool_names = ', '.join(t.__name__ for t in self.tools)
                     inputs['messages'] = inputs['messages'] + [HumanMessage(content=(
                         f"You must respond by calling one of the available tools: {tool_names}. "
                         "Do not return plain text — use a tool call to submit your response."
@@ -193,11 +162,6 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         return "No skills available."
 
     @cached_property
-    def _all_tools(self) -> list[type[BaseModel]]:
-        extra = [RetrieveContext] if self.config.get('rag') and settings.rag_enabled else []
-        return [LoadSkill, ReadFile, ListFiles] + extra + (self.tools or [])
-
-    @cached_property
     def _llm(self) -> Runnable:
         llm = self.llm_factory.create(
             capabilities=self.capabilities,
@@ -205,7 +169,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
             node_name=self.node_name,
             json_mode=False
         )
-        return llm.bind_tools(self._all_tools)
+        return llm.bind_tools(self.tools)
 
     def _build_prompt(self) -> ChatPromptTemplate:
         return ChatPromptTemplate.from_messages([

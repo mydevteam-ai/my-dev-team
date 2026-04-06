@@ -4,12 +4,11 @@ from pathlib import Path
 from devteam.state import ProjectState
 from devteam.tools import DockerSandbox
 from devteam.utils import sanitizer, status, workspace
-from .schemas import ApproveCode, QAEngineerResponse, ReportIssues
+from .schemas import QAEngineerResponse
 from .base_agent import BaseAgent
 
 class QAEngineer(BaseAgent[QAEngineerResponse]):
     output_schema = QAEngineerResponse
-    tools = [ApproveCode, ReportIssues]
     sandbox: DockerSandbox = None
 
     @override

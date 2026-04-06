@@ -1,12 +1,11 @@
 from typing import override
 from devteam.state import ProjectState
 from devteam.utils import workspace
-from .schemas import DeveloperResponse, SubmitCode
+from .schemas import DeveloperResponse
 from .base_agent import BaseAgent
 
 class SeniorDeveloper(BaseAgent[DeveloperResponse]):
     output_schema = DeveloperResponse
-    tools = [SubmitCode]
 
     @override
     def _build_inputs(self, state: ProjectState) -> dict:

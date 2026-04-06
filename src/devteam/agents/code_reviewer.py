@@ -1,12 +1,11 @@
 from typing import override
 from devteam.state import ProjectState
 from devteam.utils import status, workspace
-from .schemas import ApproveCode, CodeReviewerResponse, ReportIssues
+from .schemas import CodeReviewerResponse
 from .base_agent import BaseAgent
 
 class CodeReviewer(BaseAgent[CodeReviewerResponse]):
     output_schema = CodeReviewerResponse
-    tools = [ApproveCode, ReportIssues]
 
     @override
     def _build_inputs(self, state: ProjectState) -> dict:

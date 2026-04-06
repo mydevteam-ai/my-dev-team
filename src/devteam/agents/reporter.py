@@ -1,11 +1,10 @@
 from devteam.state import ProjectState
 from devteam.utils import sanitizer, workspace
-from .schemas import ReporterResponse, SubmitReport
+from .schemas import ReporterResponse
 from .base_agent import BaseAgent
 
 class Reporter(BaseAgent[ReporterResponse]):
     output_schema = ReporterResponse
-    tools = [SubmitReport]
 
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)

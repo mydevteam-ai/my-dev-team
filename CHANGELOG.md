@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Default `config/rag.yaml`:** A bundled default RAG config is loaded when no `rag.yaml` is present in the project directory. Resolution order: CWD `rag.yaml` → bundled `config/rag.yaml` → `settings.py` values.
 
+* **Tools configuration in agent's frontmatter:** Intermediate and final tools configuration for every agent is moved to the frontmatter of the agent's configuration file, for instance: `tools: [LoadSkill, RetrieveContext, AskClarification, SubmitSpecification]`.
+
 ### 🔧 Internal
 
 * **Prompt partials:** Agent prompt templates now support `{ include 'partials/file.md' }` syntax to share common sections across agents. Partials are resolved from `config/agents/` with path traversal protection.

@@ -1,9 +1,8 @@
-from .schemas import AskClarification, ProductManagerResponse, SubmitSpecification
+from .schemas import ProductManagerResponse
 from .base_agent import BaseAgent
 
 class ProductManager(BaseAgent[ProductManagerResponse]):
     output_schema = ProductManagerResponse
-    tools = [AskClarification, SubmitSpecification]
 
     def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> ProductManagerResponse:
         if tool_name == 'AskClarification':

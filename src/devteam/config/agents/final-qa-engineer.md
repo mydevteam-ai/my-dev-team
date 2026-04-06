@@ -4,6 +4,7 @@ description: An expert Integration QA Engineer who evaluates the fully assembled
 capabilities: [code-analysis]
 temperature: 0.0
 inputs: ['specs', 'workspace']
+tools: [ReadFile, ListFiles, ApproveCode, ReportIssues]
 ---
 # Role
 

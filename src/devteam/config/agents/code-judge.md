@@ -4,6 +4,7 @@ description: Judge the quality of code drafts based on provided specifications a
 capabilities: [code-analysis]
 temperature: 0.0
 inputs: ['specs', 'current_task']
+tools: [SubmitWinner]
 ---
 # Role
 

@@ -4,6 +4,7 @@ description: An expert senior developer who strictly reviews code for bugs, logi
 capabilities: [code-analysis]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace']
+tools: [ReadFile, ListFiles, ApproveCode, ReportIssues]
 ---
 # Role
 

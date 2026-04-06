@@ -4,6 +4,7 @@ description: A meticulous Quality Assurance Engineer who evaluates code against 
 capabilities: [code-analysis]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace']
+tools: [ReadFile, ListFiles, ApproveCode, ReportIssues]
 ---
 # Role
 

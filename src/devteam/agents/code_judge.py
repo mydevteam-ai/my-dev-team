@@ -1,11 +1,10 @@
 from typing import override
 from devteam.utils import sanitizer
-from .schemas import CodeJudgeResponse, SubmitWinner
+from .schemas import CodeJudgeResponse
 from .base_agent import BaseAgent
 
 class CodeJudge(BaseAgent[CodeJudgeResponse]):
     output_schema = CodeJudgeResponse
-    tools = [SubmitWinner]
 
     @override
     def _build_inputs(self, state: dict) -> dict:

@@ -5,7 +5,7 @@ capabilities: [planning, reasosning]
 temperature: 0.1
 inputs: ['requirements', 'specs', 'skills', 'messages']
 outputs: ['messages']
-rag: true
+tools: [LoadSkill, RetrieveContext, SubmitArchitecture]
 ---
 # Role
 
