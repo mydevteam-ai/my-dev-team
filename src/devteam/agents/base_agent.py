@@ -1,6 +1,5 @@
 import asyncio
 from functools import cached_property
-import json
 from pathlib import Path
 import re
 import traceback
@@ -12,6 +11,7 @@ from pydantic import BaseModel
 from devteam import settings
 from devteam.skills import skills
 from devteam.state import ProjectState
+from devteam.tools.extractor import coerce_tool_calls
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
 from .intermediate_tools import IntermediateTools
 
@@ -74,22 +74,6 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         """Lifecycle Hook: performs actions AFTER the LLM runs."""
         return final_state
 
-    @staticmethod
-    def _coerce_tool_calls(ai_message: AIMessage) -> AIMessage:
-        """If tool_calls is empty but content is a JSON tool call, synthesize the tool call."""
-        if ai_message.tool_calls or not ai_message.content:
-            return ai_message
-        try:
-            data = json.loads(ai_message.content)
-            name = data.get('name')
-            args = data.get('arguments') or data.get('args') or {}
-            if name and isinstance(args, dict):
-                tool_call = {'name': name, 'args': args, 'id': 'coerced_0', 'type': 'tool_call'}
-                return AIMessage(content='', tool_calls=[tool_call])
-        except (json.JSONDecodeError, AttributeError):
-            pass
-        return ai_message
-
     async def process(self, state: ProjectState) -> dict:
         """Invoke LLM and use tools to provide structured results."""
         if isinstance(state, dict):
@@ -119,7 +103,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                         inputs['messages'] = original_messages + conversation_history
                     self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
                     ai_message = await self._invoke_llm(**inputs)
-                    ai_message = self._coerce_tool_calls(ai_message)
+                    ai_message = coerce_tool_calls(ai_message)
                     conversation_history.append(ai_message)
                     if not ai_message.tool_calls:
                         no_tool_call_retry = True
