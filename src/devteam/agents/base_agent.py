@@ -1,6 +1,8 @@
 import asyncio
 from functools import cached_property
 import json
+from pathlib import Path
+import re
 import traceback
 import yaml
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -235,6 +237,20 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         """Map a tool call to the agent's output schema."""
         return self.output_schema(**tool_args)
 
+    @staticmethod
+    def _resolve_includes(prompt: str, base_dir: Path) -> str:
+        base = base_dir.resolve()
+        def replacer(match):
+            filepath = match.group(1)
+            resolved = (base / filepath).resolve()
+            if not resolved.is_relative_to(base):
+                raise ValueError(f"Include path '{filepath}' escapes the base directory")
+            try:
+                return resolved.read_text(encoding='utf-8').strip()
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Include '{filepath}' not found in {base}") from None
+        return re.sub(r"\{\s*include\s+'([^']+)'\s*\}", replacer, prompt)
+
     @classmethod
     def from_config(cls, node_name: str, config_path: str, *, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None, capabilities: dict[str, float] | list[str] = None, temperature: float = None):
         prompt_file = settings.config_dir / 'agents' / config_path
@@ -246,7 +262,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, WithLogging):
         if len(parts) < 3:
             raise ValueError(f"Invalid format in {config_path}. Missing YAML frontmatter")
         config = yaml.safe_load(parts[1])
-        prompt = parts[2].strip()
+        prompt = cls._resolve_includes(parts[2].strip(), prompt_file.parent)
         if capabilities is not None:
             config['capabilities'] = capabilities
         if temperature is not None:
