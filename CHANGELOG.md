@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Tools configuration in agent's frontmatter:** Intermediate and final tools configuration for every agent is moved to the frontmatter of the agent's configuration file, for instance: `tools: [LoadSkill, RetrieveContext, AskClarification, SubmitSpecification]`.
 
+* **Custom tool registry:** End users can now register custom intermediate tools (or override built-ins) via the `tool_registry`. Register a Pydantic schema and an async handler, then add the tool name to any agent's `tools:` frontmatter list.
+
+* **`ReadFile` / `ListFiles` workspace tools:** Agents can now request workspace files on demand via `ReadFile` (read a single file by path) and `ListFiles` (list all available files). Files are resolved from in-memory state first, then from the live workspace folder on disk.
+
 ### 🔧 Internal
 
 * **Prompt partials:** Agent prompt templates now support `{ include 'partials/file.md' }` syntax to share common sections across agents. Partials are resolved from `config/agents/` with path traversal protection.
