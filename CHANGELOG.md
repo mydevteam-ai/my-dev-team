@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **`ReadFile` / `ListFiles` workspace tools:** Agents can now request workspace files on demand via `ReadFile` (read a single file by path) and `ListFiles` (list all available files). Files are resolved from in-memory state first, then from the live workspace folder on disk.
 
+* **`GlobFiles` / `GrepFiles` workspace tools:** Agents can now search the workspace with `GlobFiles` (find files by path pattern, e.g. `*.py`, `src/**/*.ts`) and `GrepFiles` (search file contents by regex with optional glob filter).
+
 ### 🔧 Internal
 
 * **Prompt partials:** Agent prompt templates now support `{ include 'partials/file.md' }` syntax to share common sections across agents. Partials are resolved from `config/agents/` with path traversal protection.

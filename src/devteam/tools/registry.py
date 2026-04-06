@@ -1,8 +1,11 @@
 import logging
 from collections.abc import Awaitable, Callable
 from pydantic import BaseModel
+from devteam.agents.schemas import LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, RetrieveContext
+from devteam.skills import skills
 from devteam.state import ProjectState
-from devteam.agents.schemas import LoadSkill, ReadFile, ListFiles, RetrieveContext
+from devteam.tools import rag
+from devteam.utils.workspace import read_workspace_file, list_workspace_files, glob_workspace_files, grep_workspace_files
 
 type ToolHandler = Callable[[dict, ProjectState, logging.Logger], Awaitable[str]]
 
@@ -33,7 +36,6 @@ tool_registry = ToolRegistry()
 
 
 async def _handle_load_skill(tool_args: dict, _state: ProjectState, _logger: logging.Logger) -> str:
-    from devteam.skills import skills  # pylint: disable=import-outside-toplevel
     skill_names = tool_args.get('skill_names', [])
     results = []
     for name in skill_names:
@@ -45,7 +47,6 @@ async def _handle_load_skill(tool_args: dict, _state: ProjectState, _logger: log
 
 
 async def _handle_retrieve_context(tool_args: dict, _state: ProjectState, _logger: logging.Logger) -> str:
-    from devteam.tools import rag  # pylint: disable=import-outside-toplevel
     query = tool_args.get('query', '')
     source = tool_args.get('source')
     _logger.info("Retrieving context for query: %s (source=%s)", query, source)
@@ -55,16 +56,27 @@ async def _handle_retrieve_context(tool_args: dict, _state: ProjectState, _logge
 
 
 async def _handle_read_file(tool_args: dict, state: ProjectState, _logger: logging.Logger) -> str:
-    from devteam.utils.workspace import read_workspace_file  # pylint: disable=import-outside-toplevel
     path = tool_args.get('path', '')
     _logger.info("Reading workspace file: %s", path)
     return read_workspace_file(path, state.workspace_files, state.workspace_path)
 
 
 async def _handle_list_files(_tool_args: dict, state: ProjectState, _logger: logging.Logger) -> str:
-    from devteam.utils.workspace import list_workspace_files  # pylint: disable=import-outside-toplevel
     _logger.info("Listing workspace files")
     return list_workspace_files(state.workspace_files, state.workspace_path)
+
+
+async def _handle_glob_files(tool_args: dict, state: ProjectState, _logger: logging.Logger) -> str:
+    pattern = tool_args.get('pattern', '*')
+    _logger.info("Glob workspace files: %s", pattern)
+    return glob_workspace_files(pattern, state.workspace_files, state.workspace_path)
+
+
+async def _handle_grep_files(tool_args: dict, state: ProjectState, _logger: logging.Logger) -> str:
+    pattern = tool_args.get('pattern', '')
+    glob_filter = tool_args.get('glob')
+    _logger.info("Grep workspace files: %s (glob=%s)", pattern, glob_filter)
+    return grep_workspace_files(pattern, state.workspace_files, state.workspace_path, glob_filter=glob_filter)
 
 
 def _register_builtins():
@@ -72,6 +84,8 @@ def _register_builtins():
     tool_registry.register(RetrieveContext.__name__, RetrieveContext, _handle_retrieve_context)
     tool_registry.register(ReadFile.__name__, ReadFile, _handle_read_file)
     tool_registry.register(ListFiles.__name__, ListFiles, _handle_list_files)
+    tool_registry.register(GlobFiles.__name__, GlobFiles, _handle_glob_files)
+    tool_registry.register(GrepFiles.__name__, GrepFiles, _handle_grep_files)
 
 
 _register_builtins()

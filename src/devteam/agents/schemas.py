@@ -136,3 +136,19 @@ class ReadFile(BaseModel):
 
 class ListFiles(BaseModel):
     """List all files currently available in the project workspace."""
+
+class GlobFiles(BaseModel):
+    """Find workspace files matching a glob pattern (e.g. '*.py', 'src/**/*.test.js', 'config/*.yaml')."""
+    pattern: str = Field(
+        description="Glob pattern to match file paths against (e.g. '*.py', 'src/**/*.ts', 'tests/*')."
+    )
+
+class GrepFiles(BaseModel):
+    """Search workspace file contents for a regex pattern and return matching lines."""
+    pattern: str = Field(
+        description="Regex pattern to search for in file contents."
+    )
+    glob: str | None = Field(
+        default=None,
+        description="Optional glob pattern to filter which files to search (e.g. '*.py'). Omit to search all files."
+    )

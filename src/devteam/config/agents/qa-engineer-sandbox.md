@@ -4,7 +4,7 @@ description: A meticulous Quality Assurance Engineer who evaluates real unit tes
 capabilities: [code-analysis]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace', 'test_results']
-tools: [ReadFile, ListFiles, ApproveCode, ReportIssues]
+tools: [ReadFile, ListFiles, GlobFiles, GrepFiles, ApproveCode, ReportIssues]
 ---
 # Role
 

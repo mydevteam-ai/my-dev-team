@@ -4,7 +4,7 @@ description: The Reporter writes a detailed Final Markdown Report for the stakeh
 capabilities: [fast-utility]
 temperature: 0.3
 inputs: ['requirements', 'specs', 'workspace', 'revision_count']
-tools: [ReadFile, ListFiles, SubmitReport]
+tools: [ReadFile, ListFiles, GlobFiles, GrepFiles, SubmitReport]
 ---
 # Role
 

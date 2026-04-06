@@ -16,7 +16,7 @@ Each agent declares its tools in the YAML frontmatter of its config file (`confi
 ```yaml
 ---
 role: Senior Developer
-tools: [LoadSkill, ReadFile, ListFiles, SubmitCode]
+tools: [LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, SubmitCode]
 ---
 ```
 
@@ -32,6 +32,8 @@ The `tools` list controls which tool schemas are bound to the LLM. An agent can 
 | `RetrieveContext` | Intermediate | Retrieve relevant context from the RAG knowledge base. Only available when RAG is enabled. |
 | `ReadFile` | Intermediate | Read a specific file from the workspace by relative path. Checks in-memory state first, then the live workspace folder on disk. |
 | `ListFiles` | Intermediate | List all files available in the workspace (both in-memory and on disk). |
+| `GlobFiles` | Intermediate | Find workspace files matching a glob pattern (e.g. `*.py`, `src/**/*.ts`). |
+| `GrepFiles` | Intermediate | Search workspace file contents by regex pattern. Supports an optional `glob` filter to narrow which files to search. |
 | `AskClarification` | Output | Ask the stakeholder a clarifying question. |
 | `SubmitSpecification` | Output | Submit technical specifications. |
 | `SubmitArchitecture` | Output | Submit the development task backlog. |

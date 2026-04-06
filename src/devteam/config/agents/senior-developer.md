@@ -5,7 +5,7 @@ capabilities: [code-generation]
 temperature: 0.1
 inputs: ['specs', 'current_task', 'workspace', 'skills', 'messages']
 outputs: ['messages']
-tools: [LoadSkill, ReadFile, ListFiles, SubmitCode]
+tools: [LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, SubmitCode]
 ---
 # Role
 
