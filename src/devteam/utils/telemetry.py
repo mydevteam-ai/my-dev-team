@@ -71,7 +71,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
     @cached_property
     def llm_aliases(self) -> dict:
         try:
-            config_path = settings.config_dir / 'llms.yaml'
+            config_path = settings.tools_config_dir / 'llms.yaml'
             config = yaml.safe_load(config_path.read_text(encoding='utf-8'))
             return config.get('aliases', {})
         except Exception: # pylint: disable=broad-exception-caught

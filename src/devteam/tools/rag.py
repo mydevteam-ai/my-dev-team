@@ -8,7 +8,7 @@ from devteam.agents.schemas import RetrieveContext
 def _load_sources() -> dict:
     rag_config = Path('rag.yaml')
     if not rag_config.exists():
-        rag_config = settings.config_dir / 'rag.yaml'
+        rag_config = settings.tools_config_dir / 'rag.yaml'
     if not rag_config.exists():
         return {}
     with open(rag_config, encoding='utf-8') as f:

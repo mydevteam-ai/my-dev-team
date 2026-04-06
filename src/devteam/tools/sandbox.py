@@ -15,7 +15,7 @@ class DockerSandbox(WithLogging):
 
     @cached_property
     def _sandbox_config(self) -> dict:
-        config_path = settings.config_dir / 'sandbox.yaml'
+        config_path = settings.tools_config_dir / 'sandbox.yaml'
         return yaml.safe_load(config_path.read_text(encoding='utf-8'))
 
     @cached_property

@@ -59,7 +59,7 @@ CLI (--provider flag)
             → BaseAgent.__init__(config, prompt, node_name, llm_factory)
 ```
 
-At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(capabilities, temperature)` which scores all models in `config/llms.yaml` and returns the best-fit provider-specific LangChain chat model with tools bound.
+At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(capabilities, temperature)` which scores all models in `config/tools/llms.yaml` and returns the best-fit provider-specific LangChain chat model with tools bound.
 
 ### Agent Base Class (`agents/base_agent.py`)
 
@@ -70,13 +70,13 @@ At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(
 
 The `process()` loop invokes the LLM, then calls `_coerce_tool_calls()` to handle models that emit tool calls as plain-text JSON instead of native function calls (common with smaller Ollama models). If no tool call is found after coercion, it retries with an injected reminder message.
 
-### LLM Routing (`utils/llm_factory.py` + `config/llms.yaml`)
+### LLM Routing (`utils/llm_factory.py` + `config/tools/llms.yaml`)
 
-Agents declare `capabilities` in their `.md` frontmatter - either a list (equal weights) or a weighted dict. `LLMFactory._select_model()` scores every model in `llms.yaml` by computing a weighted sum of capability scores and returns the highest scorer.
+Agents declare `capabilities` in their `.md` frontmatter - either a list (equal weights) or a weighted dict. `LLMFactory._select_model()` scores every model in `config/tools/llms.yaml` by computing a weighted sum of capability scores and returns the highest scorer.
 
 Ollama models additionally require a `thinking: true/false` field; only models with `thinking: true` have the `reasoning` stream enabled.
 
-**Compound providers** are pseudo-providers defined in `llms.yaml` under `providers:` like any other, but each model entry carries a `provider:` field pointing to the real backend. The factory reads `model.get('provider', self.provider)` and dispatches to the correct `_instantiate()` branch. The built-in `free` compound provider combines Groq free-tier models with local Ollama models. Add new compound providers by adding a new key under `providers:` with per-model `provider:` fields — no factory changes needed.
+**Compound providers** are pseudo-providers defined in `config/tools/llms.yaml` under `providers:` like any other, but each model entry carries a `provider:` field pointing to the real backend. The factory reads `model.get('provider', self.provider)` and dispatches to the correct `_instantiate()` branch. The built-in `free` compound provider combines Groq free-tier models with local Ollama models. Add new compound providers by adding a new key under `providers:` with per-model `provider:` fields — no factory changes needed.
 
 ### Agent Config Format (`config/agents/*.md`)
 

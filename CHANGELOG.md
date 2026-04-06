@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Prompt partials:** Agent prompt templates now support `{ include 'partials/file.md' }` syntax to share common sections across agents. Partials are resolved from `config/agents/` with path traversal protection.
 
+* **Config reorganization:** Moved `llms.yaml`, `rag.yaml` and `sandbox.yaml` into `config/tools/`. Added `settings.tools_config_dir` cached property to avoid repeating the path.
+
 ## [0.11.2] - 2026-04-04
 
 ### 🚀 Added

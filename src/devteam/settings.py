@@ -1,3 +1,4 @@
+from functools import cached_property
 from pathlib import Path
 
 class Settings:
@@ -12,5 +13,9 @@ class Settings:
     rag_mcp_tool: str = 'qdrant-find'
     rag_collection: str = None
     rag_enabled: bool = True
+
+    @cached_property
+    def tools_config_dir(self) -> Path:
+        return self.config_dir / 'tools'
 
 settings = Settings()

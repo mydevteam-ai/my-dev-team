@@ -69,7 +69,7 @@ def _register_project(ctx: ProjectContext):
 # ---------------------------------------------------------------------------
 
 def get_providers_from_config() -> list[str]:
-    config_path = settings.config_dir / 'llms.yaml'
+    config_path = settings.tools_config_dir / 'llms.yaml'
     if not config_path.exists():
         return ['ollama', 'groq', 'openai']
     try:

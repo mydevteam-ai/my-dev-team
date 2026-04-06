@@ -63,7 +63,7 @@ mydevteam/
 
 **Single quotes (`'...'`) everywhere else:**
 - Dictionary keys: `state['workspace_files']`
-- File and path names: `'config/llms.yaml'`
+- File and path names: `'config/tools/llms.yaml'`
 - Module/class/attribute names as strings: `'planning'`, `'development'`
 - Import-related strings: `'devteam.agents'`
 - YAML keys, config identifiers: `'reasoning'`, `'code-generator'`
