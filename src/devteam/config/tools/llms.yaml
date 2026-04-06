@@ -56,6 +56,106 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+    openai:
+        models:
+            - id: 'o3'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.9
+            - id: 'codex-mini-latest'
+              capabilities:
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.9
+                  planning: 0.8
+            - id: 'gpt-4.1'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 0.9
+                  code-analysis: 0.9
+                  reasoning: 0.8
+            - id: 'gpt-4.1-mini'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4
+    grok:
+        models:
+            - id: 'grok-3'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.9
+                  code-generation: 0.9
+                  code-analysis: 0.9
+            - id: 'grok-3-fast'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.8
+            - id: 'grok-3-mini-fast'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4
+    google:
+        models:
+            - id: 'gemini-3.0-pro'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.9
+                  code-generation: 0.9
+                  code-analysis: 0.9
+            - id: 'gemini-3.0-flash'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.8
+            - id: 'gemini-3.0-flash-lite'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.3
+    mistral:
+        models:
+            - id: 'mistral-large-latest'
+              capabilities:
+                  reasoning: 0.9
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+            - id: 'codestral-latest'
+              capabilities:
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.6
+                  planning: 0.5
+            - id: 'mistral-small-latest'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4
+    deepseek:
+        models:
+            - id: 'deepseek-reasoner'
+              capabilities:
+                  reasoning: 1.0
+                  planning: 0.8
+            - id: 'deepseek-chat'
+              capabilities:
+                  planning: 1.0
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.8
     free:  # compound: groq free tier + ollama local models
         models:
             - id: 'qwen/qwen3-32b'
@@ -82,22 +182,6 @@ providers:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.5
-    openai:
-        models:
-            - id: 'o1-preview'
-              capabilities:
-                  reasoning: 1.0
-                  planning: 0.7
-            - id: 'gpt-4o'
-              capabilities:
-                  planning: 1.0
-                  code-generation: 1.0
-                  code-analysis: 1.0
-                  reasoning: 0.8
-            - id: 'gpt-4o-mini'
-              capabilities:
-                  fast-utility: 1.0
-                  planning: 0.5
-                  code-generation: 0.5
-                  code-analysis: 0.5
-                  reasoning: 0.4
+
+aliases:
+    'groq/compound': 'openai/gpt-oss-120b'

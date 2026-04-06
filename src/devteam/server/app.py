@@ -71,12 +71,12 @@ def _register_project(ctx: ProjectContext):
 def get_providers_from_config() -> list[str]:
     config_path = settings.tools_config_dir / 'llms.yaml'
     if not config_path.exists():
-        return ['ollama', 'groq', 'openai']
+        return ['ollama', 'groq', 'openai', 'anthropic', 'google', 'mistral', 'deepseek', 'grok']
     try:
         data = yaml.safe_load(config_path.read_text(encoding='utf-8'))
         return list(data['providers'].keys())
     except Exception:  # pylint: disable=broad-exception-caught
-        return ['ollama', 'groq', 'openai']
+        return ['ollama', 'groq', 'openai', 'anthropic', 'google', 'mistral', 'deepseek', 'grok']
 
 
 def _run_crew_in_thread(

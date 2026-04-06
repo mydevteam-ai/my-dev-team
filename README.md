@@ -44,10 +44,12 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **API Keys** set in your environment (e.g., `OPENAI_API_KEY`, `GROQ_API_KEY`), OR a local instance of **Ollama** running for free local models.
 * **LLM provider package** for your chosen backend - install only what you need:
   ```sh
-  pip install langchain-ollama      # Ollama
-  pip install langchain-groq        # Groq
-  pip install langchain-anthropic   # Anthropic Claude
-  pip install langchain-openai      # OpenAI
+  pip install langchain-ollama       # Ollama
+  pip install langchain-groq         # Groq
+  pip install langchain-anthropic    # Anthropic Claude
+  pip install langchain-openai       # OpenAI / DeepSeek / xAI Grok
+  pip install langchain-google-genai # Google Gemini
+  pip install langchain-mistralai    # Mistral
   ```
 
 **Optional Dependencies:**
