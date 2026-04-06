@@ -44,7 +44,7 @@ class Execution(EventEmitter):
         abort_requested = False
         if feedback:
             state_update = await self._inject_feedback(config, feedback, feedback_source)
-            self.emit_event('resume', thread_id, state_update=state_update)
+            await self.emit_event('resume', thread_id, state_update=state_update)
             initial_state = None
         elif requirements:
             safe_requirements = sanitizer.sanitize_for_prompt(requirements, ['requirements'])
@@ -59,17 +59,17 @@ class Execution(EventEmitter):
                 'current_phase': 'planning',
                 'messages': [HumanMessage(content=content)]
             }
-            self.emit_event('start', thread_id, initial_state=initial_state)
+            await self.emit_event('start', thread_id, initial_state=initial_state)
         else:
             initial_state = None
-            self.emit_event('resume', thread_id, state_update=initial_state)
+            await self.emit_event('resume', thread_id, state_update=initial_state)
 
         while True:
             async for event in self.app.astream(initial_state, config, stream_mode='updates'):
                 state_update = event
                 state_object = await self.app.aget_state(config)
                 full_state = state_object.values
-                self.emit_event('step', thread_id, state_update=state_update, full_state=full_state)
+                await self.emit_event('step', thread_id, state_update=state_update, full_state=full_state)
                 if full_state.get('abort_requested'):
                     abort_requested = True
                     self.logger.debug("Abort requested during execution. Ending workflow.")
@@ -83,13 +83,13 @@ class Execution(EventEmitter):
                 break
             next_node = state_snapshot.next[0]
             self.logger.debug("Workflow paused. Waiting on: %s", next_node)
-            if update := self.emit_event('pause', thread_id, current_state=state_snapshot.values, next_node=next_node):
-                await self.app.aupdate_state(config, update)
-                if update.get('abort_requested'):
-                    abort_requested = True
-                    self.logger.debug("Abort requested. Ending workflow.")
-                    break
-            else:
+            update = await self.emit_event('pause', thread_id, current_state=state_snapshot.values, next_node=next_node)
+            if not update:
+                break
+            await self.app.aupdate_state(config, update)
+            if update.get('abort_requested'):
+                abort_requested = True
+                self.logger.debug("Abort requested. Ending workflow.")
                 break
 
         final_state = await self.app.aget_state(config)
@@ -98,6 +98,6 @@ class Execution(EventEmitter):
             final_state['abort_requested'] = True
         else:
             final_state['current_phase'] = 'complete'
-        self.emit_event('finish', thread_id, final_state=final_state)
+        await self.emit_event('finish', thread_id, final_state=final_state)
         final_state['thread_id'] = thread_id
         return FinalResult(**final_state)

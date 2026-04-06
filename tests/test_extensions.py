@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 import threading
 from queue import Queue
@@ -37,7 +38,7 @@ def test_console_logger_on_step_skips_empty_values(monkeypatch):
     }
     full_state = {"communication_log": ["[DEV] Working on auth"]}
 
-    logger.on_step("thread-1", state_update, full_state)
+    asyncio.run(logger.on_step("thread-1", state_update, full_state))
 
     # One panel for node output + one line for latest communication log.
     assert print_mock.call_count == 2
@@ -57,7 +58,7 @@ def test_workspace_saver_target_dir_rules(tmp_path: Path):
 def test_workspace_saver_on_start_saves_requirements(tmp_path: Path):
     saver = WorkspaceSaver(tmp_path)
 
-    saver.on_start("thread-1", {"requirements": "Build auth module"})
+    asyncio.run(saver.on_start("thread-1", {"requirements": "Build auth module"}))
 
     requirements_file = tmp_path / "00_planning" / "requirements.md"
     assert requirements_file.exists()
@@ -66,9 +67,9 @@ def test_workspace_saver_on_start_saves_requirements(tmp_path: Path):
 
 def test_workspace_saver_on_step_saves_all_outputs(tmp_path: Path):
     saver = WorkspaceSaver(tmp_path)
-    saver.on_start("thread-1", {"requirements": "R"})
+    asyncio.run(saver.on_start("thread-1", {"requirements": "R"}))
 
-    saver.on_step(
+    asyncio.run(saver.on_step(
         "thread-1",
         {
             "pm": {"specs": "Spec content"},
@@ -83,9 +84,9 @@ def test_workspace_saver_on_step_saves_all_outputs(tmp_path: Path):
             },
         },
         {"current_phase": "planning", "current_task_index": 0, "current_task": ""},
-    )
+    ))
 
-    saver.on_step(
+    asyncio.run(saver.on_step(
         "thread-1",
         {
             "developer": {
@@ -95,13 +96,13 @@ def test_workspace_saver_on_step_saves_all_outputs(tmp_path: Path):
             "qa": {"test_results": "PASSED", "revision_count": 2},
         },
         {"current_phase": "development", "current_task_index": 1, "current_task": "Task 1", "revision_count": 2},
-    )
+    ))
 
-    saver.on_step(
+    asyncio.run(saver.on_step(
         "thread-1",
         {"reporter": {"final_report": "Final summary"}},
         {"current_phase": "integration", "current_task_index": 1},
-    )
+    ))
 
     assert (tmp_path / "00_planning" / "specs.md").read_text(encoding="utf-8") == "Spec content"
     assert (tmp_path / "00_planning" / "tasks.md").exists()
@@ -114,22 +115,22 @@ def test_workspace_saver_on_step_saves_all_outputs(tmp_path: Path):
 def test_hitl_cli_handles_planning_pause_with_clarification(monkeypatch):
     ext = HumanInTheLoop()
     monkeypatch.setattr('builtins.input', lambda _: 'Use only integer operations')
-    update = ext.on_pause(
+    update = asyncio.run(ext.on_pause(
         'thread-1',
         {'clarification_question': 'Should division return floats?'},
         'human',
-    )
+    ))
     assert update['messages'][0].content == 'Use only integer operations'
     assert update['communication_log'][0] == '**[HumanInTheLoop]**: Use only integer operations'
 
 
 def test_hitl_cli_ignores_non_human_pause():
     ext = HumanInTheLoop()
-    update = ext.on_pause(
+    update = asyncio.run(ext.on_pause(
         'thread-1',
         {'clarification_question': ''},
         'other',
-    )
+    ))
     assert update is None
 
 
@@ -140,11 +141,11 @@ def test_hitl_gui_handles_planning_pause_with_clarification():
     timer = threading.Timer(0.05, ext.submit_response, args=('Build only a CLI version',))
     timer.start()
     try:
-        update = ext.on_pause(
+        update = asyncio.run(ext.on_pause(
             'thread-1',
             {'clarification_question': 'CLI or GUI calculator?'},
             'human',
-        )
+        ))
     finally:
         timer.cancel()
 

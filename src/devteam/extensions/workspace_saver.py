@@ -1,3 +1,4 @@
+import asyncio
 from typing import override
 from functools import cached_property
 from pathlib import Path
@@ -5,6 +6,9 @@ from devteam.utils import task_to_markdown
 from .base_extension import CrewExtension
 
 class WorkspaceSaver(CrewExtension):
+    """Persists agent outputs (specs, code, reviews, reports) to the project workspace directory."""
+
+    critical = True
     _base_dir: Path
 
     def __init__(self, workspace_dir: Path):
@@ -14,14 +18,6 @@ class WorkspaceSaver(CrewExtension):
     @cached_property
     def _live_dir(self) -> Path:
         return self.workspace_dir / 'workspace'
-
-    @override
-    def on_start(self, thread_id: str, initial_state: dict):
-        self._base_dir = self._get_target_dir(initial_state)
-        self._base_dir.mkdir(parents=True, exist_ok=True)
-        initial_state['workspace_path'] = str(self._live_dir)
-        if requirements := initial_state.get('requirements'):
-            self._save_requirements(requirements)
 
     def _get_target_dir(self, full_state: dict) -> Path:
         match full_state.get('current_phase', 'planning'):
@@ -90,8 +86,14 @@ class WorkspaceSaver(CrewExtension):
         report_file = self._base_dir / 'final_report.md'
         report_file.write_text(report, encoding='utf-8')
 
-    @override
-    def on_step(self, thread_id: str, state_update: dict, full_state: dict):
+    def _sync_on_start(self, thread_id: str, initial_state: dict):
+        self._base_dir = self._get_target_dir(initial_state)
+        self._base_dir.mkdir(parents=True, exist_ok=True)
+        initial_state['workspace_path'] = str(self._live_dir)
+        if requirements := initial_state.get('requirements'):
+            self._save_requirements(requirements)
+
+    def _sync_on_step(self, thread_id: str, state_update: dict, full_state: dict):
         for node_name, node_update in state_update.items():
             self._base_dir = self._get_target_dir(full_state)
             self._base_dir.mkdir(parents=True, exist_ok=True)
@@ -129,3 +131,11 @@ class WorkspaceSaver(CrewExtension):
                 case 'reporter':
                     if final_report := node_update.get('final_report', ''):
                         self._save_final_report(final_report)
+
+    @override
+    async def on_start(self, thread_id: str, initial_state: dict):
+        await asyncio.to_thread(self._sync_on_start, thread_id, initial_state)
+
+    @override
+    async def on_step(self, thread_id: str, state_update: dict, full_state: dict):
+        await asyncio.to_thread(self._sync_on_step, thread_id, state_update, full_state)

@@ -19,25 +19,25 @@ class StreamlitLogger(CrewExtension):
         })
 
     @override
-    def on_start(self, thread_id: str, initial_state: dict):
+    async def on_start(self, thread_id: str, initial_state: dict):
         self._emit('start', thread_id=thread_id, state=initial_state)
 
     @override
-    def on_resume(self, thread_id: str, state_update: dict):
+    async def on_resume(self, thread_id: str, state_update: dict):
         self._emit('resume', thread_id=thread_id, state_update=state_update)
 
     @override
-    def on_step(self, thread_id: str, state_update: dict, full_state: dict):
+    async def on_step(self, thread_id: str, state_update: dict, full_state: dict):
         self._emit('step', thread_id=thread_id,
                    state_update=state_update, full_state=full_state)
 
     @override
-    def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
+    async def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
         self._emit('pause', thread_id=thread_id, next_node=next_node)
         return None  # Streamlit handles HITL via its own UI
 
     @override
-    def on_finish(self, thread_id: str, final_state: dict):
+    async def on_finish(self, thread_id: str, final_state: dict):
         if final_state.get('error'):
             self._emit('error', thread_id=thread_id, state=final_state)
         else:

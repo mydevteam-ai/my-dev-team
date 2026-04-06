@@ -1,3 +1,4 @@
+import asyncio
 import threading
 import time
 from queue import Queue
@@ -25,16 +26,16 @@ class HumanInTheLoopGUI(CrewExtension):
         self._aborted = True
         self._response_event.set()
 
-    def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
+    async def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
         if next_node != 'human':
             return None
         if current_state.get('clarification_question'):
-            return self._request_clarification(thread_id, current_state)
+            return await self._request_clarification(thread_id, current_state)
         if current_state.get('specs'):
-            return self._request_approval(thread_id, current_state)
+            return await self._request_approval(thread_id, current_state)
         return None
 
-    def _request_clarification(self, thread_id: str, current_state: dict) -> dict | None:
+    async def _request_clarification(self, thread_id: str, current_state: dict) -> dict | None:
         self.event_queue.put({
             'type': 'hitl_request',
             'mode': 'clarification',
@@ -43,7 +44,7 @@ class HumanInTheLoopGUI(CrewExtension):
             'ts': time.time(),
         })
         self._response_event.clear()
-        self._response_event.wait()
+        await asyncio.to_thread(self._response_event.wait)
         if self._aborted:
             return {
                 'abort_requested': True,
@@ -54,7 +55,7 @@ class HumanInTheLoopGUI(CrewExtension):
             'communication_log': self.communication(self._response)
         }
 
-    def _request_approval(self, thread_id: str, current_state: dict) -> dict | None:
+    async def _request_approval(self, thread_id: str, current_state: dict) -> dict | None:
         pending_tasks = current_state.get('pending_tasks', [])
         mode = 'approval_plan' if pending_tasks else 'approval_spec'
         self.event_queue.put({
@@ -66,7 +67,7 @@ class HumanInTheLoopGUI(CrewExtension):
             'ts': time.time(),
         })
         self._response_event.clear()
-        self._response_event.wait()
+        await asyncio.to_thread(self._response_event.wait)
         if self._aborted:
             return {
                 'abort_requested': True,
