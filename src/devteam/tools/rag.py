@@ -2,7 +2,7 @@ from functools import lru_cache
 import yaml
 from pathlib import Path
 from devteam import settings
-from devteam.agents.schemas import RetrieveContext
+from devteam.tools.schemas import RetrieveContext
 
 @lru_cache(maxsize=1)
 def _load_sources() -> dict:

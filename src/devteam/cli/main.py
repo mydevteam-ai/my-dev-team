@@ -30,6 +30,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--ask-approval', action='store_true', help='pause after planning to review and approve the plan before development starts')
     parser.add_argument('--rag-collection', type=str, help='collection name to use for RAG queries')
     parser.add_argument('--no-rag', action='store_true', help='disable RAG context retrieval for all agents')
+    parser.add_argument('--seed', type=str, help='path to an existing directory or ZIP archive to pre-populate the workspace')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -55,6 +56,14 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
         parser.error('You must provide either a project_file OR the --resume flag.')
     if args.history and not args.resume:
         parser.error('--history requires --resume <thread_id> to specify which project to inspect.')
+    if args.seed:
+        if args.resume:
+            parser.error('--seed cannot be used with --resume (workspace already exists).')
+        seed_path = Path(args.seed)
+        if not seed_path.exists():
+            parser.error(f"--seed path '{seed_path}' does not exist.")
+        if not (seed_path.is_dir() or (seed_path.is_file() and seed_path.suffix == '.zip')):
+            parser.error(f"--seed must be a directory or a .zip file, got: '{seed_path}'.")
 
 def main_ui():
     """Entry point for the devteam-ui command."""
@@ -99,5 +108,6 @@ def main():
             feedback=args.feedback,
             feedback_source=args.as_node,
             checkpoint_id=args.checkpoint,
+            seed_path=args.seed,
         )
     )

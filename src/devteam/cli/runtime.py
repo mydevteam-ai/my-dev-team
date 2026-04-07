@@ -1,12 +1,14 @@
 import asyncio
 import logging
 import aiosqlite
+from pathlib import Path
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import ConsoleLogger, HumanInTheLoop
 from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, load_project_spec, add_file_handler, remove_file_handler
+from devteam.utils.workspace import hydrate_workspace
 
 STATE_DB_FILE = 'state.db'
 
@@ -32,7 +34,7 @@ async def show_history(thread_id: str):
                 f"Checkpoint: {checkpoint['c_id']} | Next: {checkpoint['node']}"
             )
 
-async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None):
+async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None, seed_path: str = None):
     if resume_thread:
         thread_id = resume_thread
         project_requirements = None
@@ -43,6 +45,8 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
         logging.info('🚀 Starting NEW project: %s', project_name)
     project_folder = settings.workspace_dir / thread_id
     project_folder.mkdir(parents=True, exist_ok=True)
+    if seed_path:
+        hydrate_workspace(seed_path, project_folder / 'workspace')
     db_path = project_folder / 'state.db'
     log_file_path = project_folder / 'execution.log'
     log_handler = add_file_handler(log_file_path)

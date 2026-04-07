@@ -1,5 +1,8 @@
 import fnmatch
+import logging
 import re
+import shutil
+import zipfile
 from pathlib import Path
 from .sanitizer import sanitize_for_prompt
 
@@ -137,3 +140,16 @@ def grep_workspace_files(pattern: str, workspace_files: dict, workspace_path: st
     if total >= MAX_RESULTS:
         summary += " - results truncated"
     return result + summary
+
+
+def hydrate_workspace(seed: str, live_dir: Path):
+    """Populate the live workspace directory from a local directory or ZIP archive."""
+    seed_path = Path(seed)
+    live_dir.mkdir(parents=True, exist_ok=True)
+    if seed_path.is_dir():
+        shutil.copytree(seed_path, live_dir, dirs_exist_ok=True)
+        logging.info('🌱 Workspace seeded from directory: %s', seed_path.absolute())
+    else:
+        with zipfile.ZipFile(seed_path, 'r') as zf:
+            zf.extractall(live_dir)
+        logging.info('🌱 Workspace seeded from archive: %s', seed_path.absolute())

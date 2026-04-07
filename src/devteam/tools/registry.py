@@ -1,10 +1,10 @@
 import logging
 from collections.abc import Awaitable, Callable
 from pydantic import BaseModel
-from devteam.agents.schemas import LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, RetrieveContext
 from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools import rag
+from devteam.tools.schemas import LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, RetrieveContext
 from devteam.utils.workspace import read_workspace_file, list_workspace_files, glob_workspace_files, grep_workspace_files
 
 type ToolHandler = Callable[[dict, ProjectState, logging.Logger], Awaitable[str]]

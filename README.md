@@ -25,6 +25,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Cost & Token Optimization Analyzer:** Built-in telemetry tracks API costs down to the fraction of a cent and generates a diagnostic report at the end of every run, actively warning you if agents are stuck in loops or suffering from context bloat.
 * **SKILLs System:** Uses SKILLs - modular, reusable agent instructions and domain knowledge files. SKILLs can be attached to agents or workflows to extend capabilities, enforce coding standards, or inject project-specific expertise.
 * **RAG Knowledge Base:** Agents can retrieve context from an external knowledge base (documents, Jira tickets, Confluence pages, etc.) via any MCP-compatible vector store. A bundled Docker image starts the entire Qdrant + MCP stack in one command. Multi-source routing lets you combine Qdrant, Jira, Confluence and custom sources simultaneously.
+* **Workspace Hydrating:** Seed the workspace from an existing local directory or ZIP archive before agents run. Agents can extend, refactor or build on top of real code instead of starting from scratch.
 
 ### AI Agents
 
@@ -102,6 +103,10 @@ devteam --resume web_scraper_cli_20260312_083500 --feedback "Add input validatio
 
 # Print checkpoint timeline for a thread
 devteam --resume web_scraper_cli_20260312_083500 --history
+
+# Seed the workspace from an existing project before agents run
+devteam project.txt --seed /path/to/existing/code
+devteam project.txt --seed export.zip
 ```
 
 See [docs/cli.md](docs/cli.md) for all arguments and options.

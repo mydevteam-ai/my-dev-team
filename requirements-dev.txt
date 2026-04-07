@@ -1,4 +1,2 @@
 pylint
 pytest
-build
-twine

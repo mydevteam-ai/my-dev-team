@@ -32,6 +32,7 @@ Either `project_file` or `--resume` is required.
 | `--no-docker` | flag | off | Run the QA Engineer without a Docker sandbox (LLM-based simulation only). |
 | `--rag-collection` | str | - | Vector store collection name for RAG queries. Only needed when the MCP server has no locked-in `COLLECTION_NAME`. |
 | `--no-rag` | flag | off | Disable RAG context retrieval entirely for all agents. |
+| `--seed` | str | - | Path to a local directory or `.zip` archive to copy into the workspace before agents run. Cannot be combined with `--resume`. |
 | `--config` | str | - | Path to a custom configuration directory, overriding the bundled `config/`. |
 | `--verbose` | flag | off | Enable debug-level logging to the console. |
 
@@ -127,6 +128,16 @@ devteam project.txt --rag-collection myproject
 **Disable RAG entirely:**
 ```sh
 devteam project.txt --no-rag
+```
+
+**Seed the workspace from an existing local project:**
+```sh
+devteam project.txt --seed /path/to/existing/code
+```
+
+**Seed from a ZIP archive:**
+```sh
+devteam project.txt --seed export.zip
 ```
 
 ---
