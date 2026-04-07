@@ -55,8 +55,8 @@ ollama = ["langchain-ollama>=0.3.0"]
 openai = ["langchain-openai>=0.3.0"]
 
 [project.urls]
-"Homepage" = "https://github.com/bobrovsky420/my-dev-team"
-"Bug Tracker" = "https://github.com/bobrovsky420/my-dev-team/issues"
+"Homepage" = "https://github.com/mydevteam-ai/my-dev-team"
+"Bug Tracker" = "https://github.com/mydevteam-ai/my-dev-team/issues"
 
 [project.scripts]
 devteam = "devteam.cli:main"
