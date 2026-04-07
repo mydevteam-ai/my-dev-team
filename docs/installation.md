@@ -70,12 +70,18 @@ docker build -t python:3.12-pytest -f src/devteam/config/docker/Dockerfile.pytho
 The core `langchain` package is included as a dependency, but each provider requires its own integration package. Install only the ones you need:
 
 ```sh
-pip install langchain-ollama       # Ollama (local models)
-pip install langchain-groq         # Groq
-pip install langchain-anthropic    # Anthropic Claude
-pip install langchain-openai       # OpenAI / DeepSeek / xAI Grok
-pip install langchain-google-genai # Google Gemini
-pip install langchain-mistralai    # Mistral
+pip install "my-dev-team[ollama]"      # Ollama (local models)
+pip install "my-dev-team[groq]"        # Groq
+pip install "my-dev-team[anthropic]"   # Anthropic Claude
+pip install "my-dev-team[openai]"      # OpenAI / DeepSeek / xAI Grok
+pip install "my-dev-team[google]"      # Google Gemini
+pip install "my-dev-team[mistral]"     # Mistral
+```
+
+Combine multiple extras in one command:
+
+```sh
+pip install "my-dev-team[groq,ollama,openai]"
 ```
 
 Set the corresponding API key in your `.env` file:

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚀 Added
 
+* **Provider optional dependency groups:** Each LLM provider now has its own extras group - `anthropic`, `google`, `groq`, `mistral`, `ollama` and `openai`. Install only what you need: `pip install "my-dev-team[groq,ollama]"`.
+
 * **`rag` optional dependency group:** `pip install "my-dev-team[rag]"` now installs both `mcp` (agent context retrieval) and `vectorize-me` (document ingestion CLI).
 
 ### 🗑️ Removed
