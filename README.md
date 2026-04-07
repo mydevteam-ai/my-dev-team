@@ -58,7 +58,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Flask** required only to launch the web dashboard (`pip install my-dev-team[ui]`).
 * **Node.js 18+** required only if you installed from source (`pip install -e .`) and need to build the web dashboard frontend.
 * **Git** required only if you want to use the `GitCommitter` extension for automatic local version control of the generated workspace.
-* **`mcp`** required only if agents are configured with `rag: true`: `pip install mcp`. See the [RAG setup guide](docs/rag.md) for full instructions.
+* **RAG** required only if agents are configured with `rag: true`: `pip install "my-dev-team[rag]"`. This installs `mcp` (for agent context retrieval) and `vectorize-me` (the `mcp-ingest` CLI for document ingestion). See the [RAG setup guide](docs/rag.md) for full instructions.
 
 ### Installation
 

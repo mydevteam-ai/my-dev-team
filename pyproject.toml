@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "my-dev-team"
-version = "0.11.4"
+version = "0.11.5"
 description = "An autonomous, LangGraph-powered AI development agency."
 authors = [
     { name="Alexander Bobrovsky", email="bobrovsky@seznam.cz" },
@@ -46,6 +46,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ui = ["flask>=3.0.0"]
+rag = ["mcp>=1.0.0", "vectorize-me>=0.1.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/bobrovsky420/my-dev-team"
@@ -54,7 +55,6 @@ ui = ["flask>=3.0.0"]
 [project.scripts]
 devteam = "devteam.cli:main"
 devteam-ui = "devteam.cli:main_ui"
-mcp-ingest = "devteam.cli.ingest:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

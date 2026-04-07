@@ -59,11 +59,13 @@ MyDevTeam app  -->  MCP server (:8000)  -->  Qdrant (:6333)
 
 ## Installation
 
-Install the `mcp` package in your Python environment (Windows):
+Install the RAG optional dependencies in your Python environment:
 
 ```sh
-pip install mcp
+pip install "my-dev-team[rag]"
 ```
+
+This installs `mcp` (required for agent context retrieval) and `vectorize-me` (provides the `mcp-ingest` CLI for ingesting documents).
 
 ---
 
