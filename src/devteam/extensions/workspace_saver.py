@@ -24,7 +24,8 @@ class WorkspaceSaver(CrewExtension):
             case 'integration' | 'complete':
                 return self.workspace_dir / '90_integration'
             case 'development':
-                task_idx = full_state.get('current_task_index') or (
+                task_ctx = full_state.get('task_context')
+                task_idx = (task_ctx.current_task_index if task_ctx else None) or (
                     len(full_state.get('completed_tasks', [])) + 1
                 )
                 return self.workspace_dir / f'{task_idx:02d}_task'
@@ -94,9 +95,12 @@ class WorkspaceSaver(CrewExtension):
             self._save_requirements(requirements)
 
     def _sync_on_step(self, thread_id: str, state_update: dict, full_state: dict):
+        task_ctx = full_state.get('task_context')
+        current_rev = task_ctx.revision_count if task_ctx else 0
         for node_name, node_update in state_update.items():
             self._base_dir = self._get_target_dir(full_state)
             self._base_dir.mkdir(parents=True, exist_ok=True)
+            node_tc = node_update.get('task_context') if isinstance(node_update, dict) else None
             match node_name:
                 case 'pm':
                     if specs := node_update.get('specs', ''):
@@ -105,8 +109,8 @@ class WorkspaceSaver(CrewExtension):
                     if pending := node_update.get('pending_tasks', []):
                         self._save_tasks(pending)
                 case 'officer':
-                    if node_update.get('current_agent') == 'developer':
-                        task_name = node_update.get('current_task_name', '')
+                    if node_update.get('current_agent') == 'developer' and node_tc:
+                        task_name = node_tc.current_task_name
                         pending_tasks = full_state.get('pending_tasks', [])
                         task = next((t for t in pending_tasks if t.get('task_name') == task_name), None)
                         if task:
@@ -118,15 +122,12 @@ class WorkspaceSaver(CrewExtension):
                             self._save_current_task(task_to_markdown(task, task_idx), task_dir)
                 case 'developer':
                     workspace_files = node_update.get('workspace_files', {})
-                    current_rev = full_state.get('revision_count', 0)
                     self._save_workspace(workspace_files, current_rev)
                 case 'reviewer':
-                    if review_feedback := node_update.get('review_feedback', ''):
-                        current_rev = full_state.get('revision_count', 0)
+                    if node_tc and (review_feedback := node_tc.review_feedback):
                         self._save_code_review(review_feedback, current_rev)
                 case 'qa':
-                    if test_results := node_update.get('test_results', ''):
-                        current_rev = full_state.get('revision_count', 0)
+                    if node_tc and (test_results := node_tc.test_results):
                         self._save_test_results(test_results, current_rev)
                 case 'reporter':
                     if final_report := node_update.get('final_report', ''):

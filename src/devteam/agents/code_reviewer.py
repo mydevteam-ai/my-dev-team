@@ -33,6 +33,6 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
             feedback = 'APPROVED'
         status_str = 'APPROVED' if feedback == 'APPROVED' else 'REQUESTED CHANGES'
         return {
-            'review_feedback': feedback,
+            'task_context': current_state.task_context.model_copy(update={'review_feedback': feedback}),
             'communication_log': self.communication(f"{status_str}\n{feedback}")
         }

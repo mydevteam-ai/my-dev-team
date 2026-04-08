@@ -32,11 +32,11 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
         if status.is_approved(results):
             results = 'APPROVED'
         status_str = 'APPROVED' if results == 'APPROVED' else 'INTEGRATION BUGS FOUND'
-        updates = {
-            'test_results': results,
+        tc_update: dict = {'test_results': results}
+        if not status.is_approved(results):
+            tc_update['current_task'] = "FINAL INTEGRATION: Fix the overarching bugs identified in the Final QA test results."
+            tc_update['revision_count'] = 0
+        return {
+            'task_context': current_state.task_context.model_copy(update=tc_update),
             'communication_log': self.communication(f"{status_str}\n{results}")
         }
-        if not status.is_approved(results):
-            updates['current_task'] = "FINAL INTEGRATION: Fix the overarching bugs identified in the Final QA test results."
-            updates['revision_count'] = 0
-        return updates

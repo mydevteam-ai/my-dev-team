@@ -14,9 +14,9 @@ class IntegrationManager:
     def _route_integration(self, state: ProjectState) -> str:
         if state.final_report:
             return END
-        if not state.test_results:
+        if not state.task_context.test_results:
             return 'final_qa'
-        if status.is_approved(state.test_results):
+        if status.is_approved(state.task_context.test_results):
             self.logger.debug("Integration tests passed. Proceeding to reporter.")
             return 'reporter'
         self.logger.error("Integration bugs found! Halting release.")

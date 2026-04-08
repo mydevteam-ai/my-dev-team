@@ -3,6 +3,7 @@ from typing import Annotated, Literal, TypedDict
 from pydantic import BaseModel, ConfigDict, Field
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
+from .task_context import TaskContext
 
 type ProjectPhase = Literal['planning', 'development', 'integration', 'complete']
 
@@ -29,18 +30,12 @@ class ProjectState(BaseModel):
     runtime: str = ''
     pending_tasks: list[PendingTask] = Field(default_factory=list)
     workspace_files: Annotated[dict[str, str], _merge_workspace_files] = Field(default_factory=dict)
-    current_task: str = ''
-    current_task_name: str = ''
-    current_task_index: int = 0
-    review_feedback: str = ''
-    test_results: str = ''
-    revision_count: int = 0
+    task_context: TaskContext = Field(default_factory=TaskContext)
     final_report: str = ''
     integration_bugs: list[str] = Field(default_factory=list)
     communication_log: Annotated[list[str], operator.add] = Field(default_factory=list)
     failed_tasks: Annotated[list[str], operator.add] = Field(default_factory=list)
     completed_tasks: Annotated[list[str], operator.add] = Field(default_factory=list)
-    raw_test_results: str = ''
     workspace_path: str = ''
     abort_requested: bool = False
     error: bool = False

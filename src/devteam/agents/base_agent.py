@@ -59,7 +59,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             elif key == 'skills':
                 inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
             else:
-                val = getattr(state, key, '')
+                val = getattr(state, key, None)
+                if val is None:
+                    val = getattr(state.task_context, key, '')
                 inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
         return inputs
 
