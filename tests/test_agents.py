@@ -96,14 +96,16 @@ class TestSeniorDeveloper:
         agent = SeniorDeveloper(config, "prompt {specs} {current_task} {workspace}", "developer")
         state = ProjectState(specs="spec", task_context=TaskContext(current_task="build it"))
         inputs = agent._build_inputs(state)
-        assert "No files exist yet" in inputs["workspace"]
+        assert "No files in workspace" in inputs["workspace"]
 
     def test_build_inputs_with_workspace(self, sample_workspace_files):
         config = make_config("Developer", ["specs", "current_task"])
         agent = SeniorDeveloper(config, "prompt {specs} {current_task} {workspace}", "developer")
         state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_files=sample_workspace_files)
         inputs = agent._build_inputs(state)
-        assert "--- FILE: src/main.py ---" in inputs["workspace"]
+        assert "src/main.py" in inputs["workspace"]
+        assert "tests/test_main.py" in inputs["workspace"]
+        assert 'print("hello")' not in inputs["workspace"]
 
     def test_update_state_new_files(self):
         config = make_config("Developer")

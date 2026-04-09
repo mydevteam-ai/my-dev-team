@@ -10,11 +10,7 @@ class SeniorDeveloper(BaseAgent[DeveloperResponse]):
     @override
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        if state.workspace_files:
-            workspace_str = workspace.workspace_str_from_files(state.workspace_files)
-        else:
-            workspace_str = "No files exist yet. This is the first task. Please create the initial file structure."
-        inputs['workspace'] = workspace_str
+        inputs['workspace'] = workspace.list_workspace_files(state.workspace_files, state.workspace_path)
         return inputs
 
     @override

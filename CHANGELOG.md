@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-04-09
+
+### 🚀 Added
+
+* **Lazy workspace loading for Developer:** The Senior Developer agent no longer receives full file contents in its initial prompt. Instead, it receives a file listing and uses `ReadFile`, `GlobFiles` and `GrepFiles` tools to read only the files relevant to the current task.
+
+### 🔧 Internal
+
+* **`TaskContext` state isolation:** Extracted all per-task fields from `ProjectState` into a new `TaskContext` Pydantic model. `ProjectState` now holds a single `task_context: TaskContext` field. This separation prepares the state model for future parallel task execution, where each task branch owns its own isolated context.
+
 ## [0.11.6] - 2026-04-07
 
 ### 🚀 Added

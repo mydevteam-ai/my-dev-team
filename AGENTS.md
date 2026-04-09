@@ -46,7 +46,7 @@ mydevteam/
 
 - **Target Python 3.10+.** Use modern syntax: `str | None` instead of `Optional[str]`, `list[str]` instead of `List[str]`, `match/case` for routing logic.
 - Max line length is **190** characters (configured in `pyproject.toml` under `[tool.pylint.format]`).
-- Docstrings are minimal and optional ? `missing-docstring` is disabled in pylint. When present, use one-line triple-double-quote style: `"""Brief description."""`
+- Docstrings are minimal and optional - `missing-docstring` is disabled in pylint. When present, use one-line triple-double-quote style: `"""Brief description."""`
 
 ### Text Style
 

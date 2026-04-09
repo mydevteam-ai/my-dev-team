@@ -26,6 +26,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **SKILLs System:** Uses SKILLs - modular, reusable agent instructions and domain knowledge files. SKILLs can be attached to agents or workflows to extend capabilities, enforce coding standards, or inject project-specific expertise.
 * **RAG Knowledge Base:** Agents can retrieve context from an external knowledge base (documents, Jira tickets, Confluence pages, etc.) via any MCP-compatible vector store. A bundled Docker image starts the entire Qdrant + MCP stack in one command. Multi-source routing lets you combine Qdrant, Jira, Confluence and custom sources simultaneously.
 * **Workspace Hydrating:** Seed the workspace from an existing local directory or ZIP archive before agents run. Agents can extend, refactor or build on top of real code instead of starting from scratch.
+* **Lazy Workspace Loading:** The Developer agent receives only a file listing instead of the full workspace dump. It reads files on demand via `ReadFile`, `GlobFiles` and `GrepFiles` tools, keeping prompts small and avoiding context window overflow on large projects.
 
 ### AI Agents
 
