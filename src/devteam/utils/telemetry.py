@@ -14,6 +14,7 @@ from .cost_optimization import CostOptimization
 class CallRecord(TypedDict):
     agent: str
     input_tokens: int
+    cached_tokens: int
     output_tokens: int
     iteration: int
 
@@ -44,12 +45,14 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.call_history.append(CallRecord(
             agent=agent_name,
             input_tokens=metadata['input_tokens'],
+            cached_tokens=metadata['cached_tokens'],
             output_tokens=metadata['output_tokens'],
             iteration=self.agent_calls[agent_name]
         ))
 
     def _extract_metadata(self, response) -> dict:
         input_tokens = 0
+        cached_tokens = 0
         output_tokens = 0
         model_provider = 'unknown'
         model_name = 'unknown'
@@ -59,12 +62,15 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             usage = generation.message.usage_metadata or {}
             if idx == 0:  # Prompt tokens are shared across all generations - only count once
                 input_tokens = usage.get('input_tokens', 0)
+                if 'input_tokens_details' in usage:
+                    cached_tokens = usage['input_tokens_details'].get('cached_tokens', 0)
             output_tokens += usage.get('output_tokens', 0)
         self.logger.debug("Generation: %s/%s %i %i", model_provider, model_name, input_tokens, output_tokens)
         return {
             'model_provider': model_provider,
             'model_name': model_name,
             'input_tokens': input_tokens,
+            'cached_tokens': cached_tokens,
             'output_tokens': output_tokens
         }
 
@@ -99,6 +105,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         table.add_column("Value", justify='right', style='yellow')
         table.add_row("Total API Requests:", str(self.total_requests))
         table.add_row("Prompt Tokens:", f"{self.input_tokens:,}")
+        table.add_row("Cached Tokens:", f"{self.cached_tokens:,}")
         table.add_row("Completion Tokens:", f"{self.output_tokens:,}")
         table.add_row("Total Tokens:", f"{self.input_tokens + self.output_tokens:,}")
         table.add_row("", "")
