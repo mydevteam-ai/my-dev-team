@@ -29,13 +29,13 @@ class ExecutionManager:
         # 4) From QA node -> either a) task complete or b) return to developer
         task_context = state.task_context
         current_revision = task_context.revision_count
-        if state.current_agent == 'developer': # Case no. 2
+        if task_context.current_agent == 'developer': # Case no. 2
             return {
-                'current_agent': 'reviewer'
+                'task_context': task_context.model_copy(update={'current_agent': 'reviewer'})
             }
         if not task_context.review_feedback: # Case no. 3: reviewer hasn't run yet
             return {
-                'current_agent': 'reviewer'
+                'task_context': task_context.model_copy(update={'current_agent': 'reviewer'})
             }
         if not status.is_approved(task_context.review_feedback):
             if current_revision < self.max_revision_count: # Case no. 3b: rejected, retry
@@ -45,8 +45,8 @@ class ExecutionManager:
                         f"### Reviewer Feedback ###\n{task_context.review_feedback}"
                     )
                 return {
-                    'current_agent': 'developer',
                     'task_context': task_context.model_copy(update={
+                        'current_agent': 'developer',
                         'revision_count': current_revision + 1,
                         'review_feedback': '',
                         'test_results': '',
@@ -56,11 +56,11 @@ class ExecutionManager:
                 }
             self.logger.warning("Max revisions reached with a rejected review. Running QA on best attempt.")
             return {
-                'current_agent': 'qa'
+                'task_context': task_context.model_copy(update={'current_agent': 'qa'})
             }
         if not task_context.test_results: # Case no. 3a: review approved, send to QA
             return {
-                'current_agent': 'qa'
+                'task_context': task_context.model_copy(update={'current_agent': 'qa'})
             }
         if not status.is_approved(task_context.test_results) and current_revision < self.max_revision_count: # Case no. 4b
             instruction = (
@@ -69,8 +69,8 @@ class ExecutionManager:
                     f"### QA Feedback ###\n{task_context.test_results}"
                 )
             return {
-                'current_agent': 'developer',
                 'task_context': task_context.model_copy(update={
+                    'current_agent': 'developer',
                     'revision_count': current_revision + 1,
                     'review_feedback': '',
                     'test_results': '',
@@ -79,7 +79,7 @@ class ExecutionManager:
                 'communication_log': self.communication(f"Revision {current_revision + 1} requested by QA.")
             }
         return {
-            'current_agent': 'officer',
+            'task_context': task_context.model_copy(update={'current_agent': 'officer'}),
             'completed_tasks': [task_context.current_task_name],
         }
 
@@ -102,7 +102,6 @@ class ExecutionManager:
             self.logger.debug("All tasks complete. Routing to integration.")
             return {
                 'current_phase': 'integration',
-                'current_agent': '',
                 'task_context': TaskContext(),
                 'messages': self._cleanup_messages(state.messages),
             }
@@ -113,18 +112,15 @@ class ExecutionManager:
         formatted = tasks.task_to_markdown(task, task_idx)
         self.logger.info("Starting task: %s", task['task_name'])
         return {
-            'current_agent': 'developer',
             'task_context': TaskContext(
+                current_agent='developer',
                 current_task=formatted,
                 current_task_name=task['task_name'],
                 current_task_index=task_idx,
-                revision_count=0,
-                review_feedback='',
-                test_results='',
             ),
             'messages': [],
             'communication_log': self.communication(f"Task '{task['task_name']}' ###"),
         }
 
     def _route_execution(self, state: ProjectState) -> str:
-        return state.current_agent or 'officer'
+        return state.task_context.current_agent or 'officer'

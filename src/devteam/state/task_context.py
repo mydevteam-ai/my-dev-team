@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 class TaskContext(BaseModel):
     """Isolated state for a single task execution cycle (dev -> review -> qa)."""
+    current_agent: str = ''
     current_task: str = ''
     current_task_name: str = ''
     current_task_index: int = 0

@@ -37,7 +37,7 @@ class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionMa
             return {
                 'error': False,
                 'error_message': '',
-                'current_agent': 'officer',
+                'task_context': task_context.model_copy(update={'current_agent': 'officer'}),
                 'completed_tasks': [task_context.current_task_name] if task_context.current_task_name else [],
                 'failed_tasks': [task_label],
             }

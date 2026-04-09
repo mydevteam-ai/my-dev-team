@@ -100,7 +100,7 @@ class WorkspaceSaver(CrewExtension):
         for node_name, node_update in state_update.items():
             self._base_dir = self._get_target_dir(full_state)
             self._base_dir.mkdir(parents=True, exist_ok=True)
-            node_tc = node_update.get('task_context') if isinstance(node_update, dict) else None
+            task_context = node_update.get('task_context') if isinstance(node_update, dict) else None
             match node_name:
                 case 'pm':
                     if specs := node_update.get('specs', ''):
@@ -109,8 +109,8 @@ class WorkspaceSaver(CrewExtension):
                     if pending := node_update.get('pending_tasks', []):
                         self._save_tasks(pending)
                 case 'officer':
-                    if node_update.get('current_agent') == 'developer' and node_tc:
-                        task_name = node_tc.current_task_name
+                    if task_context and task_context.current_agent == 'developer':
+                        task_name = task_context.current_task_name
                         pending_tasks = full_state.get('pending_tasks', [])
                         task = next((t for t in pending_tasks if t.get('task_name') == task_name), None)
                         if task:
@@ -124,10 +124,10 @@ class WorkspaceSaver(CrewExtension):
                     workspace_files = node_update.get('workspace_files', {})
                     self._save_workspace(workspace_files, current_rev)
                 case 'reviewer':
-                    if node_tc and (review_feedback := node_tc.review_feedback):
+                    if task_context and (review_feedback := task_context.review_feedback):
                         self._save_code_review(review_feedback, current_rev)
                 case 'qa':
-                    if node_tc and (test_results := node_tc.test_results):
+                    if task_context and (test_results := task_context.test_results):
                         self._save_test_results(test_results, current_rev)
                 case 'reporter':
                     if final_report := node_update.get('final_report', ''):

@@ -277,7 +277,7 @@ class TestProjectManagerErrorRecovery:
         result = manager._manager_node(state)
         assert result['error'] is False
         assert result['error_message'] == ''
-        assert result['current_agent'] == 'officer'
+        assert result['task_context'].current_agent == 'officer'
         assert len(result['failed_tasks']) == 1
         assert 'Task 2' in result['failed_tasks'][0]
 
@@ -296,11 +296,11 @@ class TestProjectManagerErrorRecovery:
         manager = self._make_manager()
         state = ProjectState(
             current_phase='development',
-            current_agent='developer',
+            task_context=TaskContext(current_agent='developer'),
             error=False,
         )
         result = manager._manager_node(state)
-        assert result.get('current_agent') == 'reviewer'
+        assert result['task_context'].current_agent == 'reviewer'
 
 # --- SystemArchitect Tests ---
 

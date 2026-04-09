@@ -20,7 +20,6 @@ class ProjectState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list)
     current_phase: ProjectPhase = 'planning'
-    current_agent: str = ''
     requirements: str = ''
     specs: str = ''
     specs_approved: bool = False
