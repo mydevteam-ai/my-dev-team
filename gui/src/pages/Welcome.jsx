@@ -44,7 +44,7 @@ export default function Welcome() {
         <h1 className="text-3xl font-bold text-slate-900">My AI Dev Team</h1>
         <p className="text-slate-600 text-lg leading-relaxed max-w-xl">
           An autonomous, LangGraph-powered development agency. Describe your project and watch a
-          full team of AI agents — PM, Architect, Developer, Reviewer, and QA — build it for you.
+          full team of AI agents - PM, Architect, Developer, Reviewer, and QA - build it for you.
         </p>
       </div>
 

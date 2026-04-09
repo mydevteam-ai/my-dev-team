@@ -21,7 +21,7 @@ const initialState = {
   totalTasks: 0,
   revisionCount: 0,
   workspaceFiles: {},
-  communicationLog: [],     // raw list — used only to detect new entries
+  communicationLog: [],     // raw list - used only to detect new entries
   specs: '',
   finalReport: '',
   integrationBugs: [],

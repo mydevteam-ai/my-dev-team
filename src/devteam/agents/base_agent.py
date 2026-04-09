@@ -94,7 +94,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                     tool_names = ', '.join(t.__name__ for t in self.tools)
                     inputs['messages'] = inputs['messages'] + [HumanMessage(content=(
                         f"You must respond by calling one of the available tools: {tool_names}. "
-                        "Do not return plain text — use a tool call to submit your response."
+                        "Do not return plain text - use a tool call to submit your response."
                     ))]
                     self.logger.debug("Injected tool-call reminder into retry messages.")
             no_tool_call_retry = False

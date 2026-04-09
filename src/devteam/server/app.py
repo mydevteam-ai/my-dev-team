@@ -205,7 +205,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         gui_dist = Path(__file__).resolve().parent.parent / 'gui' / 'dist'
 
     # ------------------------------------------------------------------ #
-    # Static files — serve the React build                                 #
+    # Static files - serve the React build                                 #
     # ------------------------------------------------------------------ #
 
     @app.route('/', defaults={'path': ''})
@@ -252,7 +252,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
 
         event_queue: Queue = Queue()
         result_holder: dict = {}
-        # Always present — handles PM clarification questions regardless of ask_approval.
+        # Always present - handles PM clarification questions regardless of ask_approval.
         # ask_approval only controls graph routing (whether spec/plan review pauses happen).
         hitl_ext = HumanInTheLoopGUI(event_queue)
 
@@ -454,7 +454,7 @@ def run(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
     from dotenv import load_dotenv
     load_dotenv()
 
-    # File-only logging — no console output while GUI is running
+    # File-only logging - no console output while GUI is running
     setup_logging(console_level=None)
     logging.getLogger('werkzeug').propagate = True  # let it go to the file handler only
 

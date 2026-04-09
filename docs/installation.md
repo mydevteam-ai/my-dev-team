@@ -132,10 +132,10 @@ npm run build   # writes output to src/devteam/gui/dist/
 For frontend hot-reload during development, run the Vite dev server alongside the Flask backend:
 
 ```sh
-# Terminal 1 — Flask API
+# Terminal 1 - Flask API
 devteam-ui
 
-# Terminal 2 — Vite dev server (proxies /api to Flask)
+# Terminal 2 - Vite dev server (proxies /api to Flask)
 cd gui && npm run dev
 # Open http://localhost:5173
 ```
