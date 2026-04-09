@@ -17,7 +17,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
-from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler
+from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def _run_crew_in_thread(
             extensions.append(hitl_extension)
 
         async with aiosqlite.connect(db_path) as conn:
-            checkpointer = AsyncSqliteSaver(conn)
+            checkpointer = AsyncSqliteSaver(conn, serde=create_serde())
             crew = crew_factory.create(project_folder, checkpointer=checkpointer, rpm=rpm, extensions=extensions)
             final_state = await crew.execute(thread_id=thread_id, requirements=requirements)
             result_holder['final_state'] = final_state
@@ -149,7 +149,7 @@ def _run_resume_in_thread(
         if hitl_extension:
             extensions.append(hitl_extension)
         async with aiosqlite.connect(db_path) as conn:
-            checkpointer = AsyncSqliteSaver(conn)
+            checkpointer = AsyncSqliteSaver(conn, serde=create_serde())
             crew = crew_factory.create(project_folder, checkpointer=checkpointer, extensions=extensions)
             final_state = await crew.execute(
                 thread_id=thread_id,
@@ -180,7 +180,7 @@ def _fetch_history(thread_id: str) -> list[dict]:
         db_path = settings.workspace_dir / thread_id / 'state.db'
         project_folder = settings.workspace_dir / thread_id
         async with aiosqlite.connect(db_path) as conn:
-            checkpointer = AsyncSqliteSaver(conn)
+            checkpointer = AsyncSqliteSaver(conn, serde=create_serde())
             crew_factory = CrewFactory()
             crew = crew_factory.create(project_folder, checkpointer=checkpointer)
             return await crew.get_history(thread_id)

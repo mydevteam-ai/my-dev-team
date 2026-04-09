@@ -8,6 +8,7 @@ from .telemetry import TelemetryTracker
 from .with_logging import WithLogging
 from .communication_log import CommunicationLog
 from .workspace import hydrate_workspace
+from .serializer_deserializer import create_serde
 
 __all__ = [
     'LLMFactory',
@@ -24,4 +25,5 @@ __all__ = [
     'WithLogging',
     'CommunicationLog',
     'hydrate_workspace',
+    'create_serde'
 ]

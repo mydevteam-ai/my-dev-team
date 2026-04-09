@@ -23,6 +23,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
     def __init__(self):
         self.total_requests = 0
         self.input_tokens = 0
+        self.cached_tokens = 0
         self.output_tokens = 0
         self.total_cost = 0.0
         self.call_history: list[CallRecord] = []
@@ -33,9 +34,10 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.total_requests += 1
         metadata = self._extract_metadata(response)
         self.input_tokens += metadata['input_tokens']
+        self.cached_tokens += metadata['cached_tokens']
         self.output_tokens += metadata['output_tokens']
         self.total_cost += self._calculate_cost(metadata['model_provider'], metadata['model_name'], metadata['input_tokens'], metadata['output_tokens'])
-        self.logger.debug("Accumulated: %i %i %.6f", self.input_tokens, self.output_tokens, self.total_cost)
+        self.logger.debug("Accumulated: %i (%i) %i %.6f", self.input_tokens, self.cached_tokens, self.output_tokens, self.total_cost)
         tags = kwargs.get('tags', [])
         agent_name = next(
             (tag.split(':', maxsplit=1)[1] for tag in tags if isinstance(tag, str) and tag.startswith('node:')),
@@ -65,7 +67,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
                 if 'input_tokens_details' in usage:
                     cached_tokens = usage['input_tokens_details'].get('cached_tokens', 0)
             output_tokens += usage.get('output_tokens', 0)
-        self.logger.debug("Generation: %s/%s %i %i", model_provider, model_name, input_tokens, output_tokens)
+        self.logger.debug("Generation: %s/%s %i (%i) %i", model_provider, model_name, input_tokens, cached_tokens, output_tokens)
         return {
             'model_provider': model_provider,
             'model_name': model_name,

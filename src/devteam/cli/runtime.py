@@ -7,7 +7,7 @@ from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import ConsoleLogger, HumanInTheLoop
-from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, load_project_spec, add_file_handler, remove_file_handler
+from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, load_project_spec, add_file_handler, remove_file_handler, create_serde
 from devteam.utils.workspace import hydrate_workspace
 
 STATE_DB_FILE = 'state.db'
@@ -24,7 +24,7 @@ async def show_history(thread_id: str):
     llm_factory = LLMFactory(provider='ollama')
     crew_factory = CrewFactory(llm_factory=llm_factory)
     async with aiosqlite.connect(db_path) as conn:
-        checkpointer = AsyncSqliteSaver(conn)
+        checkpointer = AsyncSqliteSaver(conn, serde=create_serde())
         crew = crew_factory.create(project_folder, checkpointer=checkpointer)
         logging.info("Fetching timeline history...")
         history_data = await crew.get_history(thread_id)
@@ -58,7 +58,7 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
     crew_factory = CrewFactory(llm_factory=llm_factory)
     try:
         async with aiosqlite.connect(db_path) as conn:
-            checkpointer = AsyncSqliteSaver(conn)
+            checkpointer = AsyncSqliteSaver(conn, serde=create_serde())
             crew = crew_factory.create(
                 project_folder,
                 checkpointer=checkpointer,
