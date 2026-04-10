@@ -31,6 +31,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--rag-collection', type=str, help='collection name to use for RAG queries')
     parser.add_argument('--no-rag', action='store_true', help='disable RAG context retrieval for all agents')
     parser.add_argument('--seed', type=str, help='path to an existing directory or ZIP archive to pre-populate the workspace')
+    parser.add_argument('--skills', type=str, help='path to the user\'s SKILLs folder')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -93,6 +94,8 @@ def main():
         settings.rag_enabled = False
     else:
         init_retrieve_context_tool()
+    if args.skills:
+        settings.skills = Path(args.skills)
     _validate_inputs(parser, args)
 
     if args.history:

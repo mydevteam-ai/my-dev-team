@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Lazy workspace loading for Developer:** The Senior Developer agent no longer receives full file contents in its initial prompt. Instead, it receives a file listing and uses `ReadFile`, `GlobFiles` and `GrepFiles` tools to read only the files relevant to the current task.
 
+### ⚙️ Changed
+
+* **Skills directory:** Removed all built-in skills from the package configuration. By default, the app now searches for a `skills` sub-folder in the current working directory. This location can be overridden using the `--skills` CLI argument.
+
 ### 🔧 Internal
 
 * **`TaskContext` state isolation:** Extracted all per-task fields from `ProjectState` into a new `TaskContext` Pydantic model. `ProjectState` now holds a single `task_context: TaskContext` field. This separation prepares the state model for future parallel task execution, where each task branch owns its own isolated context.
