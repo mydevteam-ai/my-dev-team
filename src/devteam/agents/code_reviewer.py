@@ -10,12 +10,24 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
     @override
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        workspace_str = ''
-        if state.workspace_files:
-            workspace_str = workspace.workspace_str_from_files(state.workspace_files)
-        else:
-            workspace_str = "No files exist in the workspace."
-        inputs['workspace'] = workspace_str.strip()
+        changed = state.task_context.changed_files
+        all_paths = workspace.live_paths(state.workspace_path)
+        if not all_paths and not changed:
+            inputs['workspace'] = "No files exist in the workspace."
+            return inputs
+        sections: list[str] = []
+        if changed:
+            sections.append("## Files changed in this revision (full content)\n\n"
+                            + workspace.workspace_str_from_files(changed).strip())
+        other_paths = sorted(p for p in all_paths if p not in changed)
+        if other_paths:
+            listing = '\n'.join(f"- {p}" for p in other_paths)
+            sections.append(
+                f"## Other workspace files ({len(other_paths)}) - paths only\n\n"
+                f"Use the `ReadFile` tool to fetch the content of any file below that you need "
+                f"to verify imports, integration points or context.\n\n{listing}"
+            )
+        inputs['workspace'] = '\n\n'.join(sections).strip() or "No files exist in the workspace."
         return inputs
 
     @override

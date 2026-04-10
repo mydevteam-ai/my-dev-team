@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class TaskContext(BaseModel):
     """Isolated state for a single task execution cycle (dev -> review -> qa)."""
@@ -10,3 +10,4 @@ class TaskContext(BaseModel):
     test_results: str = ''
     raw_test_results: str = ''
     revision_count: int = 0
+    changed_files: dict[str, str] = Field(default_factory=dict)

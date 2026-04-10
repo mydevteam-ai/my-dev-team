@@ -10,18 +10,19 @@ class SeniorDeveloper(BaseAgent[DeveloperResponse]):
     @override
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        inputs['workspace'] = workspace.list_workspace_files(state.workspace_files, state.workspace_path)
+        inputs['workspace'] = workspace.list_workspace_files(state.workspace_path)
         return inputs
 
     @override
     def _update_state(self, parsed_data: DeveloperResponse, current_state: ProjectState) -> dict:
-        workspace_files = current_state.workspace_files.copy()
-        for file_obj in parsed_data.workspace_files:
-            workspace_files[file_obj.path] = file_obj.content
+        changed_files: dict[str, str] = {f.path: f.content for f in parsed_data.workspace_files}
         files_modified = len(parsed_data.workspace_files)
         current_revision = current_state.task_context.revision_count
         return {
-            'workspace_files': workspace_files,
-            'task_context': current_state.task_context.model_copy(update={'review_feedback': '', 'test_results': ''}),
+            'task_context': current_state.task_context.model_copy(update={
+                'review_feedback': '',
+                'test_results': '',
+                'changed_files': changed_files,
+            }),
             'communication_log': self.communication(f"Wrote/modified {files_modified} file(s)." + (f" (Revision: {current_revision})" if current_revision > 0 else ""))
         }

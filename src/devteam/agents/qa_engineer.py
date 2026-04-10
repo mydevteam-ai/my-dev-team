@@ -14,7 +14,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
     @override
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        if workspace_files := state.workspace_files:
+        if workspace_files := workspace.read_all_files(state.workspace_path):
             workspace_str = workspace.workspace_str_from_files(workspace_files)
             if state.task_context.raw_test_results:
                 inputs['test_results'] = sanitizer.sanitize_for_prompt(state.task_context.raw_test_results, ['test_results'])
@@ -51,7 +51,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
         }
 
     async def _pre_process(self, state: ProjectState) -> ProjectState:
-        if self.sandbox and state.workspace_files:
+        if self.sandbox and workspace.live_paths(state.workspace_path):
             state.task_context.raw_test_results = await asyncio.to_thread(self._run_tests, state)
         return state
 

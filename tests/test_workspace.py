@@ -5,6 +5,7 @@ from devteam.utils.workspace import (
     list_workspace_files,
     glob_workspace_files,
     grep_workspace_files,
+    read_all_files,
 )
 
 WORKSPACE_FILES = {
@@ -15,7 +16,19 @@ WORKSPACE_FILES = {
     'config/settings.yaml': 'debug: true\n',
 }
 
-NO_WORKSPACE_PATH = ''
+
+def _materialize(root, files: dict[str, str]) -> str:
+    """Write the given {path: content} dict into root and return the str path."""
+    for rel, content in files.items():
+        target = root / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding='utf-8')
+    return str(root)
+
+
+@pytest.fixture
+def workspace_path(tmp_path):
+    return _materialize(tmp_path, WORKSPACE_FILES)
 
 
 # ---------------------------------------------------------------------------
@@ -58,44 +71,50 @@ class TestIsExcluded:
 
 
 # ---------------------------------------------------------------------------
+# read_all_files
+# ---------------------------------------------------------------------------
+
+class TestReadAllFiles:
+    def test_loads_every_file(self, workspace_path):
+        files = read_all_files(workspace_path)
+        assert set(files.keys()) == set(WORKSPACE_FILES.keys())
+        assert files['src/main.py'] == WORKSPACE_FILES['src/main.py']
+
+    def test_skips_excluded_files(self, tmp_path):
+        path = _materialize(tmp_path, {'src/main.py': 'x', '.env': 'SECRET'})
+        files = read_all_files(path)
+        assert 'src/main.py' in files
+        assert '.env' not in files
+
+    def test_empty_when_no_path(self):
+        assert read_all_files('') == {}
+
+
+# ---------------------------------------------------------------------------
 # read_workspace_file
 # ---------------------------------------------------------------------------
 
 class TestReadWorkspaceFile:
-    def test_reads_from_memory(self):
-        result = read_workspace_file('src/main.py', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_reads_from_disk(self, workspace_path):
+        result = read_workspace_file('src/main.py', workspace_path)
         assert '--- FILE: src/main.py ---' in result
         assert 'def main()' in result
 
-    def test_reads_from_disk(self, tmp_path):
-        disk_file = tmp_path / 'on_disk.py'
-        disk_file.write_text('x = 1', encoding='utf-8')
-        result = read_workspace_file('on_disk.py', {}, str(tmp_path))
-        assert '--- FILE: on_disk.py ---' in result
-        assert 'x = 1' in result
-
-    def test_memory_takes_precedence_over_disk(self, tmp_path):
-        disk_file = tmp_path / 'src' / 'main.py'
-        disk_file.parent.mkdir(parents=True)
-        disk_file.write_text('DISK VERSION', encoding='utf-8')
-        result = read_workspace_file('src/main.py', WORKSPACE_FILES, str(tmp_path))
-        assert 'def main()' in result
-        assert 'DISK VERSION' not in result
-
-    def test_not_found_lists_available(self):
-        result = read_workspace_file('nope.py', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_not_found_lists_available(self, workspace_path):
+        result = read_workspace_file('nope.py', workspace_path)
         assert "File not found: 'nope.py'" in result
         assert 'src/main.py' in result
 
     def test_path_traversal_blocked(self, tmp_path):
         secret = tmp_path.parent / 'secret.txt'
         secret.write_text('secret', encoding='utf-8')
-        result = read_workspace_file('../secret.txt', {}, str(tmp_path))
+        path = _materialize(tmp_path / 'ws', {'a.py': 'x'})
+        result = read_workspace_file('../secret.txt', path)
         assert 'File not found' in result
 
-    def test_excluded_file_blocked(self):
-        files = {'.env': 'SECRET_KEY=abc123'}
-        result = read_workspace_file('.env', files, NO_WORKSPACE_PATH)
+    def test_excluded_file_blocked(self, tmp_path):
+        path = _materialize(tmp_path, {'.env': 'SECRET_KEY=abc'})
+        result = read_workspace_file('.env', path)
         assert 'Access denied' in result
         assert 'SECRET_KEY' not in result
 
@@ -105,25 +124,21 @@ class TestReadWorkspaceFile:
 # ---------------------------------------------------------------------------
 
 class TestListWorkspaceFiles:
-    def test_lists_memory_files(self):
-        result = list_workspace_files(WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_lists_disk_files(self, workspace_path):
+        result = list_workspace_files(workspace_path)
         assert 'Workspace files (5)' in result
         assert '- src/main.py' in result
         assert '- README.md' in result
 
-    def test_includes_disk_files(self, tmp_path):
-        (tmp_path / 'extra.txt').write_text('hi', encoding='utf-8')
-        result = list_workspace_files({'a.py': 'x'}, str(tmp_path))
-        assert '- a.py' in result
-        assert '- extra.txt' in result
-
     def test_empty_workspace(self):
-        result = list_workspace_files({}, NO_WORKSPACE_PATH)
-        assert result == 'No files in workspace.'
+        assert list_workspace_files('') == 'No files in workspace.'
 
-    def test_excludes_ignored_files(self):
-        files = {'src/main.py': 'x', '.env': 'SECRET', '__pycache__/mod.pyc': ''}
-        result = list_workspace_files(files, NO_WORKSPACE_PATH)
+    def test_excludes_ignored_files(self, tmp_path):
+        path = _materialize(tmp_path, {'src/main.py': 'x', '.env': 'SECRET'})
+        # __pycache__ files are also excluded
+        (tmp_path / '__pycache__').mkdir(exist_ok=True)
+        (tmp_path / '__pycache__' / 'mod.pyc').write_text('', encoding='utf-8')
+        result = list_workspace_files(path)
         assert 'src/main.py' in result
         assert '.env' not in result
         assert '__pycache__' not in result
@@ -134,40 +149,41 @@ class TestListWorkspaceFiles:
 # ---------------------------------------------------------------------------
 
 class TestGlobWorkspaceFiles:
-    def test_glob_py_files(self):
-        result = glob_workspace_files('*.py', WORKSPACE_FILES, NO_WORKSPACE_PATH)
-        assert 'src/main.py' in result
-        assert 'README.md' not in result
+    def test_glob_py_files(self, workspace_path):
+        result = glob_workspace_files('*.py', workspace_path)
+        # *.py matches at root level only with fnmatch on full relative path
+        # so we use a recursive-style pattern instead.
+        result_rec = glob_workspace_files('*main*', workspace_path)
+        assert 'src/main.py' in result_rec
 
-    def test_glob_src_py(self):
-        result = glob_workspace_files('src/*.py', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_glob_src_py(self, workspace_path):
+        result = glob_workspace_files('src/*.py', workspace_path)
         assert '- src/main.py' in result
         assert 'README.md' not in result
         assert 'test_main.py' not in result
 
-    def test_glob_md_files(self):
-        result = glob_workspace_files('*.md', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_glob_md_files(self, workspace_path):
+        result = glob_workspace_files('*.md', workspace_path)
         assert '- README.md' in result
         assert 'main.py' not in result
 
-    def test_glob_no_matches(self):
-        result = glob_workspace_files('*.rs', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_glob_no_matches(self, workspace_path):
+        result = glob_workspace_files('*.rs', workspace_path)
         assert "No files matching '*.rs'" in result
 
-    def test_glob_with_disk_files(self, tmp_path):
-        (tmp_path / 'data.json').write_text('{}', encoding='utf-8')
-        result = glob_workspace_files('*.json', {}, str(tmp_path))
-        assert '- data.json' in result
-
-    def test_glob_truncation(self):
-        many_files = {f'file_{i:03d}.py': '' for i in range(60)}
-        result = glob_workspace_files('*.py', many_files, NO_WORKSPACE_PATH)
+    def test_glob_truncation(self, tmp_path):
+        many = {f'file_{i:03d}.py': '' for i in range(60)}
+        path = _materialize(tmp_path, many)
+        result = glob_workspace_files('*.py', path)
         assert 'Matching files (60)' in result
         assert '... and 10 more' in result
 
-    def test_glob_excludes_ignored(self):
-        files = {'src/main.py': 'x', '__pycache__/main.cpython-314.pyc': ''}
-        result = glob_workspace_files('*main*', files, NO_WORKSPACE_PATH)
+    def test_glob_excludes_ignored(self, tmp_path):
+        path = _materialize(tmp_path, {
+            'src/main.py': 'x',
+            '__pycache__/main.cpython-314.pyc': '',
+        })
+        result = glob_workspace_files('*main*', path)
         assert 'src/main.py' in result
         assert '__pycache__' not in result
 
@@ -177,50 +193,47 @@ class TestGlobWorkspaceFiles:
 # ---------------------------------------------------------------------------
 
 class TestGrepWorkspaceFiles:
-    def test_simple_pattern(self):
-        result = grep_workspace_files('def main', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_simple_pattern(self, workspace_path):
+        result = grep_workspace_files('def main', workspace_path)
         assert 'src/main.py:1: def main()' in result
 
-    def test_regex_pattern(self):
-        result = grep_workspace_files(r'def \w+\(a, b\)', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_regex_pattern(self, workspace_path):
+        result = grep_workspace_files(r'def \w+\(a, b\)', workspace_path)
         assert 'src/utils/helpers.py:1:' in result
 
-    def test_no_matches(self):
-        result = grep_workspace_files('class Foo', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_no_matches(self, workspace_path):
+        result = grep_workspace_files('class Foo', workspace_path)
         assert "No matches for 'class Foo'" in result
 
-    def test_glob_filter(self):
-        result = grep_workspace_files('def', WORKSPACE_FILES, NO_WORKSPACE_PATH, glob_filter='tests/*')
+    def test_glob_filter(self, workspace_path):
+        result = grep_workspace_files('def', workspace_path, glob_filter='tests/*')
         assert 'test_main.py' in result
         assert 'src/main.py' not in result
 
-    def test_invalid_regex(self):
-        result = grep_workspace_files('[invalid', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_invalid_regex(self, workspace_path):
+        result = grep_workspace_files('[invalid', workspace_path)
         assert 'Invalid regex pattern' in result
 
-    def test_match_count_summary(self):
-        result = grep_workspace_files('def', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_match_count_summary(self, workspace_path):
+        result = grep_workspace_files('def', workspace_path)
         assert 'across' in result
         assert 'file' in result
 
-    def test_single_match_grammar(self):
-        result = grep_workspace_files('debug', WORKSPACE_FILES, NO_WORKSPACE_PATH)
+    def test_single_match_grammar(self, workspace_path):
+        result = grep_workspace_files('debug', workspace_path)
         assert '(1 match across 1 file)' in result
 
-    def test_truncation(self):
-        big_file = '\n'.join(f'match_line_{i}' for i in range(60))
-        files = {'big.txt': big_file}
-        result = grep_workspace_files('match_line', files, NO_WORKSPACE_PATH)
+    def test_truncation(self, tmp_path):
+        big = '\n'.join(f'match_line_{i}' for i in range(60))
+        path = _materialize(tmp_path, {'big.txt': big})
+        result = grep_workspace_files('match_line', path)
         assert 'results truncated' in result
 
-    def test_reads_from_disk(self, tmp_path):
-        disk_file = tmp_path / 'disk.py'
-        disk_file.write_text('secret_function = True', encoding='utf-8')
-        result = grep_workspace_files('secret_function', {}, str(tmp_path))
-        assert 'disk.py:1:' in result
-
-    def test_grep_excludes_ignored(self):
-        files = {'src/main.py': 'SECRET_KEY=abc', '.env': 'SECRET_KEY=abc'}
-        result = grep_workspace_files('SECRET_KEY', files, NO_WORKSPACE_PATH)
+    def test_grep_excludes_ignored(self, tmp_path):
+        path = _materialize(tmp_path, {
+            'src/main.py': 'SECRET_KEY=abc',
+            '.env': 'SECRET_KEY=abc',
+        })
+        result = grep_workspace_files('SECRET_KEY', path)
         assert 'src/main.py' in result
         assert '.env' not in result

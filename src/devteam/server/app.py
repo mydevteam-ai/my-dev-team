@@ -18,6 +18,7 @@ from devteam import settings
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
 from devteam.utils import LLMFactory, StreamHandler, generate_thread_id, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde
+from devteam.utils.workspace import read_all_files
 
 logger = logging.getLogger(__name__)
 
@@ -435,6 +436,8 @@ def _serialize_state(state) -> dict:
             safe[k] = {str(kk): str(vv) if not isinstance(vv, (str, int, float, bool, type(None))) else vv for kk, vv in v.items()}
         else:
             safe[k] = str(v)
+    if workspace_path := safe.get('workspace_path', ''):
+        safe['workspace_files'] = read_all_files(workspace_path)
     return safe
 
 

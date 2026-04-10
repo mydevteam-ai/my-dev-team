@@ -31,13 +31,35 @@ def make_config(role="TestAgent", inputs=None):
 # --- CodeReviewer Tests ---
 
 class TestCodeReviewer:
-    def test_build_inputs_with_workspace(self, sample_workspace_files):
+    def test_build_inputs_lists_other_files_when_nothing_changed(self, workspace_dir):
         config = make_config("Code Reviewer", ["specs", "current_task"])
         agent = CodeReviewer(config, "prompt {specs} {current_task} {workspace}", "reviewer")
-        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_files=sample_workspace_files)
+        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
-        assert "--- FILE: src/main.py ---" in inputs["workspace"]
-        assert "--- FILE: tests/test_main.py ---" in inputs["workspace"]
+        # With no changed_files, reviewer sees only the path-only listing.
+        assert "Other workspace files" in inputs["workspace"]
+        assert "- src/main.py" in inputs["workspace"]
+        assert "- tests/test_main.py" in inputs["workspace"]
+        assert "--- FILE:" not in inputs["workspace"]
+
+    def test_build_inputs_splits_changed_and_other_files(self, workspace_dir, sample_workspace_files):
+        config = make_config("Code Reviewer", ["specs", "current_task"])
+        agent = CodeReviewer(config, "prompt {specs} {current_task} {workspace}", "reviewer")
+        changed = {"src/main.py": sample_workspace_files["src/main.py"]}
+        state = ProjectState(
+            specs="spec",
+            task_context=TaskContext(current_task="task", changed_files=changed),
+            workspace_path=workspace_dir,
+        )
+        inputs = agent._build_inputs(state)
+        ws = inputs["workspace"]
+        # Changed file has full content.
+        assert "Files changed in this revision" in ws
+        assert "--- FILE: src/main.py ---" in ws
+        # Unchanged file is only listed by path, not dumped in full.
+        assert "Other workspace files" in ws
+        assert "- tests/test_main.py" in ws
+        assert "--- FILE: tests/test_main.py ---" not in ws
 
     def test_build_inputs_no_workspace(self):
         config = make_config("Code Reviewer", [])
@@ -98,16 +120,16 @@ class TestSeniorDeveloper:
         inputs = agent._build_inputs(state)
         assert "No files in workspace" in inputs["workspace"]
 
-    def test_build_inputs_with_workspace(self, sample_workspace_files):
+    def test_build_inputs_with_workspace(self, workspace_dir):
         config = make_config("Developer", ["specs", "current_task"])
         agent = SeniorDeveloper(config, "prompt {specs} {current_task} {workspace}", "developer")
-        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_files=sample_workspace_files)
+        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
         assert "src/main.py" in inputs["workspace"]
         assert "tests/test_main.py" in inputs["workspace"]
         assert 'print("hello")' not in inputs["workspace"]
 
-    def test_update_state_new_files(self):
+    def test_update_state_populates_changed_files(self):
         config = make_config("Developer")
         agent = SeniorDeveloper(config, "prompt", "developer")
         parsed = DeveloperResponse(workspace_files=[
@@ -115,20 +137,23 @@ class TestSeniorDeveloper:
             WorkspaceFile(path="tests/test_app.py", content="test code"),
         ])
         result = agent._update_state(parsed, ProjectState())
-        assert "src/app.py" in result["workspace_files"]
-        assert "tests/test_app.py" in result["workspace_files"]
         assert result["task_context"].review_feedback == ""
         assert result["task_context"].test_results == ""
+        assert result["task_context"].changed_files == {
+            "src/app.py": "app code",
+            "tests/test_app.py": "test code",
+        }
 
-    def test_update_state_merges_workspace(self):
+    def test_update_state_replaces_changed_files_each_revision(self):
         config = make_config("Developer")
         agent = SeniorDeveloper(config, "prompt", "developer")
         parsed = DeveloperResponse(workspace_files=[
             WorkspaceFile(path="new.py", content="new file"),
         ])
-        result = agent._update_state(parsed, ProjectState(workspace_files={"old.py": "old code"}))
-        assert "old.py" in result["workspace_files"]
-        assert "new.py" in result["workspace_files"]
+        prior = ProjectState(task_context=TaskContext(changed_files={"old.py": "old"}))
+        result = agent._update_state(parsed, prior)
+        # changed_files reflects only what the developer just wrote.
+        assert result["task_context"].changed_files == {"new.py": "new file"}
 
 # --- ProductManager Tests ---
 
@@ -142,10 +167,10 @@ class TestProductManager:
 # --- QAEngineer Tests ---
 
 class TestQAEngineer:
-    def test_build_inputs_with_workspace(self, sample_workspace_files):
+    def test_build_inputs_with_workspace(self, workspace_dir):
         config = make_config("QA Engineer", ["specs", "current_task"])
         agent = QAEngineer(config, "prompt {specs} {current_task} {workspace}", "qa")
-        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_files=sample_workspace_files)
+        state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
 
@@ -175,10 +200,10 @@ class TestQAEngineer:
 # --- FinalQAEngineer Tests ---
 
 class TestFinalQAEngineer:
-    def test_build_inputs_with_workspace(self, sample_workspace_files):
+    def test_build_inputs_with_workspace(self, workspace_dir):
         config = make_config("Final QA", ["specs"])
         agent = FinalQAEngineer(config, "prompt {specs} {workspace}", "final_qa")
-        state = ProjectState(specs="spec", workspace_files=sample_workspace_files)
+        state = ProjectState(specs="spec", workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
 
@@ -201,10 +226,10 @@ class TestFinalQAEngineer:
 # --- Reporter Tests ---
 
 class TestReporter:
-    def test_build_inputs_with_workspace(self, sample_workspace_files):
+    def test_build_inputs_with_workspace(self, workspace_dir):
         config = make_config("Reporter", ["specs"])
         agent = Reporter(config, "prompt {specs} {workspace} {history}", "reporter")
-        state = ProjectState(specs="spec", workspace_files=sample_workspace_files, communication_log=["Log entry 1", "Log entry 2"])
+        state = ProjectState(specs="spec", workspace_path=workspace_dir, communication_log=["Log entry 1", "Log entry 2"])
         inputs = agent._build_inputs(state)
         assert "--- FILE: src/main.py ---" in inputs["workspace"]
         assert "Log entry 1" in inputs["history"]

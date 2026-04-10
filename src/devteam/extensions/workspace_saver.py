@@ -121,8 +121,8 @@ class WorkspaceSaver(CrewExtension):
                             task_dir.mkdir(parents=True, exist_ok=True)
                             self._save_current_task(task_to_markdown(task, task_idx), task_dir)
                 case 'developer':
-                    workspace_files = node_update.get('workspace_files', {})
-                    self._save_workspace(workspace_files, current_rev)
+                    if task_context:
+                        self._save_workspace(task_context.changed_files, current_rev)
                 case 'reviewer':
                     if task_context and (review_feedback := task_context.review_feedback):
                         self._save_code_review(review_feedback, current_rev)

@@ -13,9 +13,6 @@ class PendingTask(TypedDict):
     acceptance_criteria: list[str]
     dependencies: list[str]
 
-def _merge_workspace_files(existing: dict[str, str], update: dict[str, str]) -> dict[str, str]:
-    return {**existing, **update}
-
 class ProjectState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list)
@@ -28,7 +25,6 @@ class ProjectState(BaseModel):
     clarification_question: str = ''
     runtime: str = ''
     pending_tasks: list[PendingTask] = Field(default_factory=list)
-    workspace_files: Annotated[dict[str, str], _merge_workspace_files] = Field(default_factory=dict)
     task_context: TaskContext = Field(default_factory=TaskContext)
     final_report: str = ''
     integration_bugs: list[str] = Field(default_factory=list)

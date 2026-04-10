@@ -8,8 +8,8 @@ class Reporter(BaseAgent[ReporterResponse]):
 
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        if state.workspace_files:
-            workspace_str = workspace.workspace_str_from_files(state.workspace_files)
+        if workspace_files := workspace.read_all_files(state.workspace_path):
+            workspace_str = workspace.workspace_str_from_files(workspace_files)
         else:
             workspace_str = "No files were generated."
         inputs['workspace'] = workspace_str

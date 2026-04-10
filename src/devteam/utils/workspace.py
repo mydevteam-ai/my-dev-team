@@ -38,6 +38,33 @@ def _is_excluded(path: str) -> bool:
     return any(fnmatch.fnmatch(path, pat) for pat in EXCLUDED_PATTERNS)
 
 
+def live_paths(workspace_path: str) -> list[str]:
+    """Return all relative file paths under the live workspace dir, excluding ignored ones."""
+    if not workspace_path:
+        return []
+    live_root = Path(workspace_path)
+    if not live_root.is_dir():
+        return []
+    paths: list[str] = []
+    for f in live_root.rglob('*'):
+        if f.is_file():
+            rel = str(f.relative_to(live_root)).replace('\\', '/')
+            if not _is_excluded(rel):
+                paths.append(rel)
+    return paths
+
+
+def read_all_files(workspace_path: str) -> dict[str, str]:
+    """Load every non-excluded file under the live workspace dir into a {path: content} dict."""
+    result: dict[str, str] = {}
+    if not workspace_path:
+        return result
+    live_root = Path(workspace_path)
+    for rel in live_paths(workspace_path):
+        result[rel] = (live_root / rel).read_text(encoding='utf-8')
+    return result
+
+
 def workspace_str_from_files(workspace_files: dict) -> str:
     workspace_str = ''
     for filepath, content in workspace_files.items():
@@ -46,62 +73,30 @@ def workspace_str_from_files(workspace_files: dict) -> str:
     return workspace_str
 
 
-def read_workspace_file(path: str, workspace_files: dict, workspace_path: str) -> str:
+def read_workspace_file(path: str, workspace_path: str) -> str:
     if _is_excluded(path):
         return f"Access denied: '{path}' is in the excluded files list."
-    if path in workspace_files:
-        return f"--- FILE: {path} ---\n{workspace_files[path]}"
     if workspace_path:
         live_root = Path(workspace_path).resolve()
         target = (live_root / path).resolve()
         if target.is_relative_to(live_root) and target.is_file():
             content = target.read_text(encoding='utf-8')
             return f"--- FILE: {path} ---\n{content}"
-    available = list_workspace_files(workspace_files, workspace_path)
+    available = list_workspace_files(workspace_path)
     return f"File not found: '{path}'. {available}"
 
 
-def list_workspace_files(workspace_files: dict, workspace_path: str) -> str:
-    paths = {p for p in workspace_files if not _is_excluded(p)}
-    if workspace_path:
-        live_root = Path(workspace_path)
-        if live_root.is_dir():
-            for f in live_root.rglob('*'):
-                if f.is_file():
-                    rel = str(f.relative_to(live_root)).replace('\\', '/')
-                    if not _is_excluded(rel):
-                        paths.add(rel)
+def list_workspace_files(workspace_path: str) -> str:
+    paths = sorted(live_paths(workspace_path))
     if not paths:
         return 'No files in workspace.'
-    file_list = '\n'.join(f"- {p}" for p in sorted(paths))
+    file_list = '\n'.join(f"- {p}" for p in paths)
     return f"Workspace files ({len(paths)}):\n{file_list}"
 
 
-def _all_workspace_paths(workspace_files: dict, workspace_path: str) -> dict[str, str]:
-    """Return a dict of {relative_path: content_or_None} from both sources, excluding ignored files."""
-    paths: dict[str, str] = {p: c for p, c in workspace_files.items() if not _is_excluded(p)}
-    if workspace_path:
-        live_root = Path(workspace_path)
-        if live_root.is_dir():
-            for f in live_root.rglob('*'):
-                if f.is_file():
-                    rel = str(f.relative_to(live_root)).replace('\\', '/')
-                    if rel not in paths and not _is_excluded(rel):
-                        paths[rel] = None  # lazy, read on demand
-    return paths
-
-
-def _read_content(path: str, content: str, workspace_path: str) -> str:
-    if content is not None:
-        return content
-    target = (Path(workspace_path) / path).resolve()
-    return target.read_text(encoding='utf-8')
-
-
-def glob_workspace_files(pattern: str, workspace_files: dict, workspace_path: str) -> str:
+def glob_workspace_files(pattern: str, workspace_path: str) -> str:
     """Find workspace files matching a glob pattern."""
-    all_paths = _all_workspace_paths(workspace_files, workspace_path)
-    matches = sorted(p for p in all_paths if fnmatch.fnmatch(p, pattern))
+    matches = sorted(p for p in live_paths(workspace_path) if fnmatch.fnmatch(p, pattern))
     if not matches:
         return f"No files matching '{pattern}'."
     file_list = '\n'.join(f"- {p}" for p in matches[:MAX_RESULTS])
@@ -111,19 +106,20 @@ def glob_workspace_files(pattern: str, workspace_files: dict, workspace_path: st
     return result
 
 
-def grep_workspace_files(pattern: str, workspace_files: dict, workspace_path: str, glob_filter: str = None) -> str:
+def grep_workspace_files(pattern: str, workspace_path: str, glob_filter: str = None) -> str:
     """Search workspace file contents for a regex pattern."""
     try:
         regex = re.compile(pattern)
     except re.error as e:
         return f"Invalid regex pattern: {e}"
-    all_paths = _all_workspace_paths(workspace_files, workspace_path)
+    paths = live_paths(workspace_path)
     if glob_filter:
-        all_paths = {p: c for p, c in all_paths.items() if fnmatch.fnmatch(p, glob_filter)}
+        paths = [p for p in paths if fnmatch.fnmatch(p, glob_filter)]
     matches = []
     files_matched = set()
-    for path in sorted(all_paths):
-        content = _read_content(path, all_paths[path], workspace_path)
+    live_root = Path(workspace_path) if workspace_path else None
+    for path in sorted(paths):
+        content = (live_root / path).read_text(encoding='utf-8')
         for i, line in enumerate(content.splitlines(), 1):
             if regex.search(line):
                 matches.append(f"{path}:{i}: {line.strip()}")

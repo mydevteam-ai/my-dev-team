@@ -9,11 +9,6 @@ from devteam.extensions.hitl_gui import HumanInTheLoopGUI
 from devteam.extensions.workspace_saver import WorkspaceSaver
 from devteam.state import TaskContext
 
-def test_format_value_workspace_files_summary():
-    value = {"a.py": "print(1)", "b.py": "print(2)"}
-    formatted = _format_value("workspace_files", value)
-    assert formatted == "[2 file(s): a.py, b.py]"
-
 def test_format_value_pending_tasks_summary():
     value = [{"task_name": "Auth"}, {"task_name": "API"}]
     formatted = _format_value("pending_tasks", value)
@@ -33,7 +28,6 @@ def test_console_logger_on_step_skips_empty_values(monkeypatch):
     state_update = {
         "developer": {
             "specs": "",
-            "workspace_files": {},
             "current_task": "Implement auth",
         }
     }
@@ -91,7 +85,7 @@ def test_workspace_saver_on_step_saves_all_outputs(tmp_path: Path):
         "thread-1",
         {
             "developer": {
-                "workspace_files": {"src/main.py": "print('ok')"},
+                "task_context": TaskContext(changed_files={"src/main.py": "print('ok')"}),
             },
             "reviewer": {"task_context": TaskContext(review_feedback="Looks good")},
             "qa": {"task_context": TaskContext(test_results="PASSED")},

@@ -2,6 +2,7 @@ from logging import Logger
 from langchain_core.messages import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 from devteam.utils import sanitizer
+from devteam.utils.workspace import read_all_files
 from .event_emitter import EventEmitter
 from .final_result import FinalResult
 
@@ -100,4 +101,5 @@ class Execution(EventEmitter):
             final_state['current_phase'] = 'complete'
         await self.emit_event('finish', thread_id, final_state=final_state)
         final_state['thread_id'] = thread_id
+        final_state['workspace_files'] = read_all_files(final_state.get('workspace_path', ''))
         return FinalResult(**final_state)

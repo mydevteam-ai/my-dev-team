@@ -4,14 +4,11 @@ from rich.panel import Panel
 from rich.text import Text
 from .base_extension import CrewExtension
 
-_TRUNCATE_FIELDS = {'specs', 'workspace_files', 'final_report', 'current_task', 'requirements'}
+_TRUNCATE_FIELDS = {'specs', 'final_report', 'current_task', 'requirements'}
 _MAX_VALUE_LENGTH = 200
 
 def _format_value(key: str, value) -> str:
     """Format a state value for console display, truncating large content."""
-    if key == 'workspace_files' and isinstance(value, dict):
-        paths = list(value.keys())
-        return f"[{len(paths)} file(s): {', '.join(paths)}]"
     if key == 'pending_tasks' and isinstance(value, list):
         names = [t.get('task_name', '?') for t in value]
         return f"[{len(names)} task(s): {', '.join(names)}]"
