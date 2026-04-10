@@ -18,13 +18,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--config', type=str, help='path to a custom configuration folder (overrides default one)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, help='resume a specific thread ID')
-    parser.add_argument('--provider', type=str, default='ollama', choices=['anthropic', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
-    parser.add_argument('--rpm', type=int, default=0, help='API requests per minute (default: 0 = none)')
+    parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
+    parser.add_argument('--rpm', type=int, default=settings.rpm, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
     parser.add_argument('--as-node', type=str, default='reviewer', choices=['pm', 'architect', 'reviewer', 'qa'], help='which agent should deliver this feedback (forces graph routing)')
     parser.add_argument('--history', action='store_true', help='print the timeline of checkpoints for this thread and exit')
     parser.add_argument('--checkpoint', type=str, help='specific checkpoint ID to rewind to before injecting feedback')
-    parser.add_argument('--timeout', type=int, default=120, help='maximum time (in seconds) to wait for an LLM response (default: 120)')
+    parser.add_argument('--timeout', type=int, default=settings.llm_timeout, help='maximum time (in seconds) to wait for an LLM response (default: 120)')
     parser.add_argument('--thinking', action='store_true', help='stream raw LLM thinking output to stderr')
     parser.add_argument('--no-docker', action='store_true', help='run QA engineer without Docker sandbox')
     parser.add_argument('--ask-approval', action='store_true', help='pause after planning to review and approve the plan before development starts')
@@ -69,6 +69,7 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
 def main_ui():
     """Entry point for the devteam-ui command."""
     load_dotenv()
+    settings.load()
     init_retrieve_context_tool()
     from devteam.server import run as run_server  # pylint: disable=import-outside-toplevel
     try:
@@ -79,6 +80,8 @@ def main_ui():
 def main():
     load_dotenv()
 
+    settings.load()
+
     parser = _build_parser()
     args = parser.parse_args()
 
@@ -86,13 +89,15 @@ def main():
     _apply_config(args.config)
     settings.llm_timeout = args.timeout
     settings.llm_streaming = args.thinking
-    settings.no_docker = args.no_docker
-    settings.ask_approval = args.ask_approval
+    if args.no_docker:
+        settings.no_docker = True
+    if args.ask_approval:
+        settings.ask_approval = True
     if args.rag_collection:
         settings.rag_collection = args.rag_collection
     if args.no_rag:
         settings.rag_enabled = False
-    else:
+    if settings.rag_enabled:
         init_retrieve_context_tool()
     if args.skills:
         settings.skills = Path(args.skills)

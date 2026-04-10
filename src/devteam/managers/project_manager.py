@@ -4,12 +4,13 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
 from devteam.state import ProjectState
 from devteam.utils import CommunicationLog, WithLogging
+from devteam import settings
 from .planning_manager import PlanningManager
 from .execution_manager import ExecutionManager
 from .integration_manager import IntegrationManager
 
 class ProjectManager(CommunicationLog, WithLogging, PlanningManager, ExecutionManager, IntegrationManager):
-    max_revision_count: int = 3
+    max_revision_count: int = settings.max_revision_count
 
     def __init__(self, agents: dict):
         self.agents = agents
