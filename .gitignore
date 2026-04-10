@@ -18,7 +18,8 @@ venv/
 *.log
 *.log.*
 
-workspaces/
+/workspaces/
+/skills/
 
 TODO.md
 
