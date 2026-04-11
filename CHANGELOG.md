@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚀 Added
 
+* **User config file (`config.yaml`):** Persistent defaults for all CLI flags can now be set in `./config.yaml` (project-level) or `~/.devteam/config.yaml` (global). Project-level overrides global; CLI flags override both. Pass `--settings <path>` to point to a different file.
+
 * **Lazy workspace loading for Developer:** The Senior Developer agent no longer receives full file contents in its initial prompt. Instead, it receives a file listing and uses `ReadFile`, `GlobFiles` and `GrepFiles` tools to read only the files relevant to the current task.
 
 ### ⚙️ Changed

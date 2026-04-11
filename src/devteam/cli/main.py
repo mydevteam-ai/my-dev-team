@@ -16,6 +16,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Run the AI Dev Team autonomous framework.')
     parser.add_argument('project_file', nargs='?', help='path to the text file containing your project requirements')
     parser.add_argument('--config', type=str, help='path to a custom configuration folder (overrides default one)')
+    parser.add_argument('--settings', type=str, help='path to a custom config.yaml (default: ~/.devteam/config.yaml)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, help='resume a specific thread ID')
     parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
@@ -80,7 +81,10 @@ def main_ui():
 def main():
     load_dotenv()
 
-    settings.load()
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument('--settings', type=str)
+    pre_args, _ = pre.parse_known_args()
+    settings.load(Path(pre_args.settings) if pre_args.settings else None)
 
     parser = _build_parser()
     args = parser.parse_args()

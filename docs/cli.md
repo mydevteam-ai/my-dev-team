@@ -34,7 +34,12 @@ Either `project_file` or `--resume` is required.
 | `--no-rag` | flag | off | Disable RAG context retrieval entirely for all agents. |
 | `--seed` | str | - | Path to a local directory or `.zip` archive to copy into the workspace before agents run. Cannot be combined with `--resume`. |
 | `--config` | str | - | Path to a custom configuration directory, overriding the bundled `config/`. |
+| `--settings` | str | - | Path to a custom `config.yaml`, overriding the default lookup (`./config.yaml` then `~/.devteam/config.yaml`). |
 | `--verbose` | flag | off | Enable debug-level logging to the console. |
+
+### Persistent defaults
+
+Any flag can be set permanently in a `config.yaml` file so you don't have to repeat it on every run. See [Configuration file](config.md) for the full reference.
 
 ### Project file format
 

@@ -1,8 +1,10 @@
 from functools import cached_property
 from pathlib import Path
+import re
 import yaml
 
-USER_CONFIG_PATH = Path.home() / 'config.yaml'
+_LOCAL_CONFIG_PATH = Path('config.yaml')
+_GLOBAL_CONFIG_PATH = Path.home() / '.devteam' / 'config.yaml'
 
 class Settings:
     workspace_dir: Path = Path('workspaces')
@@ -27,16 +29,19 @@ class Settings:
     _INTERNAL = {'config_dir'}
     _COERCE = {Path: lambda v: Path(v).expanduser(), int: int, bool: bool, str: str}
 
-    def load(self, config_path: Path = USER_CONFIG_PATH) -> None:
-        if not config_path.exists():
-            return
-        with open(config_path) as f:
-            cfg = yaml.safe_load(f) or {}
+    def load(self, config_path: Path = None) -> None:
+        paths = [config_path] if config_path else [_GLOBAL_CONFIG_PATH, _LOCAL_CONFIG_PATH]
         hints = type(self).__annotations__
-        for key, value in cfg.items():
-            if key in self._INTERNAL:
+        for path in paths:
+            if not path.exists():
                 continue
-            if key in hints:
-                setattr(self, key, self._COERCE.get(hints[key], str)(value))
+            with open(path) as f:
+                cfg = yaml.safe_load(f) or {}
+            for key, value in cfg.items():
+                normalized = re.sub(r' +', '_', key.lower())
+                if normalized in self._INTERNAL:
+                    continue
+                if normalized in hints:
+                    setattr(self, normalized, self._COERCE.get(hints[normalized], str)(value))
 
 settings = Settings()
