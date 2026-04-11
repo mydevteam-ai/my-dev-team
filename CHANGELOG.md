@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Azure OpenAI provider (`--provider azure-openai`):** Added `azure-openai` as a standalone provider backed by `AzureChatOpenAI` from `langchain-openai`. The deployment name defaults to the model `id` and can be overridden with `AZURE_OPENAI_DEPLOYMENT`. API version defaults to `2024-08-01-preview` and can be overridden with `AZURE_OPENAI_API_VERSION`. Requires `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_API_KEY`.
 
-* **Azure Claude provider (`--provider azure-claude`):** Added `azure-claude` for Anthropic Claude 4.6 models deployed via Azure AI Foundry. Uses the OpenAI-compatible inference endpoint exposed by Azure AI Foundry. Includes `claude-opus-4-6`, `claude-sonnet-4-6` and `claude-haiku-4-5-20251001`. Requires `AZURE_CLAUDE_ENDPOINT` and `AZURE_CLAUDE_API_KEY`.
+* **Azure Anthropic Claude provider (`--provider azure-anthropic`):** Added `azure-anthropic` for Anthropic Claude 4.6 models deployed via Azure AI Foundry. Uses the OpenAI-compatible inference endpoint exposed by Azure AI Foundry. Includes `claude-opus-4-6`, `claude-sonnet-4-6` and `claude-haiku-4-5-20251001`. Requires `AZURE_ANTHROPIC_ENDPOINT` and `AZURE_ANTHROPIC_API_KEY`.
 
 ### ⚙️ Changed
 

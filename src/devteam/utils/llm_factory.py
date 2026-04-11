@@ -163,7 +163,7 @@ class LLMFactory:
                     callbacks=self.callbacks,
                     tags=llm_tags
                 )
-            case 'azure-claude':
+            case 'azure-anthropic':
                 try:
                     from langchain_openai import ChatOpenAI
                 except ImportError:
@@ -171,8 +171,8 @@ class LLMFactory:
                 import os
                 return ChatOpenAI(
                     model=model_name,
-                    base_url=os.environ['AZURE_CLAUDE_ENDPOINT'],
-                    api_key=os.environ['AZURE_CLAUDE_API_KEY'],
+                    base_url=os.environ['AZURE_ANTHROPIC_ENDPOINT'],
+                    api_key=os.environ['AZURE_ANTHROPIC_API_KEY'],
                     temperature=temperature,
                     streaming=settings.llm_streaming,
                     callbacks=self.callbacks,

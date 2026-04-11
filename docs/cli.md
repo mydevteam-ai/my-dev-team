@@ -19,7 +19,8 @@ Either `project_file` or `--resume` is required.
 | Argument | Type | Default | Description |
 |---|---|---|---|
 | `project_file` | positional (optional) | - | Path to the requirements text file. Omit only when using `--resume`. |
-| `--provider` | choice | `ollama` | LLM backend. Options: `anthropic`, `azure-claude`, `azure-openai`, `free`, `groq`, `ollama`, `openai`. See [LLM providers](llm.md) for model lists and required env vars. |
+| `--provider` | choice | `ollama` | LLM backend. Options: `anthropic`, `azure-anthropic`, `azure-openai`, `free`, `groq`, `ollama`, `openai`. See [LLM providers](llm.md) for model lists and required env vars. |
+| `--azure` | flag | off | Use the Azure-hosted variant of the selected provider. `--provider openai --azure` is equivalent to `--provider azure-openai`. Errors if the provider already has an `azure-` prefix. |
 | `--rpm` | int | `0` | API requests per minute. `0` disables rate limiting. |
 | `--timeout` | int | `120` | Maximum seconds to wait for an LLM response. Increase for slow local models. |
 | `--resume` | str | - | Resume an existing thread by ID (e.g. `web_scraper_cli_20260312_083500`). |
@@ -143,6 +144,12 @@ devteam project.txt --seed /path/to/existing/code
 **Seed from a ZIP archive:**
 ```sh
 devteam project.txt --seed export.zip
+```
+
+**Use an Azure-hosted provider:**
+```sh
+devteam project.txt --provider openai --azure
+devteam project.txt --provider anthropic --azure
 ```
 
 ---

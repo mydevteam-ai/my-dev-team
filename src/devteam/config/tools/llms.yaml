@@ -144,7 +144,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
-    azure-claude:
+    azure-anthropic:
         models:
             - id: 'claude-opus-4-6'
               capabilities:
