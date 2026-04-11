@@ -113,3 +113,14 @@ class ReporterResponse(BaseModel):
 
 class SubmitReport(ReporterResponse):
     """Submit the final stakeholder report after the project has concluded."""
+
+class MigrationAnalysisResponse(BaseModel):
+    runtime: str = Field(description="The target runtime environment for the migrated code (e.g. 'python', 'node', 'java')")
+    specs: str = Field(description="A detailed Migration Analysis document in Markdown covering: source language/structure, target language, mapping decisions, idiom translations, and known risks.")
+    pending_tasks: list[DevelopmentTask] = Field(
+        min_length=1,
+        description="A backlog of migration tasks, one per source unit (file, module, class or paragraph), designed for maximum parallel execution."
+    )
+
+class SubmitMigrationPlan(MigrationAnalysisResponse):
+    """Submit the completed migration analysis and task backlog."""

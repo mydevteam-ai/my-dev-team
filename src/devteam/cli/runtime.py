@@ -34,7 +34,12 @@ async def show_history(thread_id: str):
                 f"Checkpoint: {checkpoint['c_id']} | Next: {checkpoint['node']}"
             )
 
-async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None, seed_path: str = None):
+WORKFLOW_CREW = {
+    'development': 'basic.yaml',
+    'migration': 'migration.yaml',
+}
+
+async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None, seed_path: str = None, workflow: str = 'development'):
     if resume_thread:
         thread_id = resume_thread
         project_requirements = None
@@ -63,7 +68,8 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
                 project_folder,
                 checkpointer=checkpointer,
                 rpm=rpm,
-                extensions=my_extensions()
+                extensions=my_extensions(),
+                config_name=WORKFLOW_CREW.get(workflow, 'basic.yaml'),
             )
             logging.info('🚀 Starting AI Dev Team...')
             logging.info('📁 Workspace: %s', project_folder.absolute())

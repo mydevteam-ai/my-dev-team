@@ -1,21 +1,11 @@
 from typing import override
 from devteam.state import ProjectState
-from devteam.utils import status, workspace
+from devteam.utils import status
 from .schemas import FinalQAResponse
 from .base_agent import BaseAgent
 
 class FinalQAEngineer(BaseAgent[FinalQAResponse]):
     output_schema = FinalQAResponse
-
-    @override
-    def _build_inputs(self, state: ProjectState) -> dict:
-        inputs = super()._build_inputs(state)
-        if workspace_files := workspace.read_all_files(state.workspace_path):
-            workspace_str = workspace.workspace_str_from_files(workspace_files)
-        else:
-            workspace_str = "No files exist in the workspace."
-        inputs['workspace'] = workspace_str.strip()
-        return inputs
 
     @override
     def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> FinalQAResponse:

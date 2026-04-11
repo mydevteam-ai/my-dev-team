@@ -14,13 +14,8 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
     @override
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        if workspace_files := workspace.read_all_files(state.workspace_path):
-            workspace_str = workspace.workspace_str_from_files(workspace_files)
-            if state.task_context.raw_test_results:
-                inputs['test_results'] = sanitizer.sanitize_for_prompt(state.task_context.raw_test_results, ['test_results'])
-        else:
-            workspace_str = "No files exist in the workspace."
-        inputs['workspace'] = workspace_str.strip()
+        if state.task_context.raw_test_results:
+            inputs['test_results'] = sanitizer.sanitize_for_prompt(state.task_context.raw_test_results, ['test_results'])
         return inputs
 
     def _run_tests(self, state: ProjectState) -> str:

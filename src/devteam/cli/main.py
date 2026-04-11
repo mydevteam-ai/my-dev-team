@@ -33,6 +33,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--no-rag', action='store_true', help='disable RAG context retrieval for all agents')
     parser.add_argument('--seed', type=str, help='path to an existing directory or ZIP archive to pre-populate the workspace')
     parser.add_argument('--skills', type=str, help='path to the user\'s SKILLs folder')
+    parser.add_argument('--workflow', type=str, default='development', choices=['development', 'migration'], help='workflow type to run (default: development)')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -121,5 +122,6 @@ def main():
             feedback_source=args.as_node,
             checkpoint_id=args.checkpoint,
             seed_path=args.seed,
+            workflow=args.workflow,
         )
     )

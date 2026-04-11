@@ -1,0 +1,21 @@
+manager: MigrationManager
+
+agents:
+    analyzer:
+        class: CodeAnalyzer
+        config: code-analyzer.md
+    developer:
+        class: Migrator
+        config: migrator.md
+    reviewer:
+        class: CodeReviewer
+        config: code-reviewer.md
+    qa:
+        class: EquivalenceChecker
+        config: equivalence-checker.md
+    final_qa:
+        class: FinalQAEngineer
+        config: final-qa-engineer.md
+    reporter:
+        class: Reporter
+        config: reporter.md

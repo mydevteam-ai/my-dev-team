@@ -12,7 +12,7 @@ from devteam import settings
 from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools.extractor import coerce_tool_calls
-from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer
+from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer, workspace
 from .intermediate_tools import IntermediateTools
 
 class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
@@ -58,6 +58,11 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 inputs[key] = state.messages
             elif key == 'skills':
                 inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
+            elif key == 'workspace':
+                if workspace_files := workspace.read_all_files(state.workspace_path):
+                    inputs[key] = workspace.workspace_str_from_files(workspace_files).strip()
+                else:
+                    inputs[key] = "No files exist in the workspace."
             else:
                 val = getattr(state, key, None)
                 if val is None:

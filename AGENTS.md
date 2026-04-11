@@ -112,6 +112,7 @@ mydevteam/
 - **Async execution** ? core loop uses `async/await` with `asyncio.run()` at the CLI boundary. Use `asyncio.wait_for()` for timeouts.
 - **Pydantic `BaseModel`** for all structured LLM outputs and tool-calling schemas. Use `field_validator` with `mode='before'` for input normalization.
 - **Agent config** is defined in Markdown files with YAML frontmatter (`---` delimiters) containing role, model category, temperature, and I/O field names.
+- **Workflow extensibility** - new workflows are added by creating a `config/crews/{name}.yaml` with a `manager:` field pointing to a `BaseManager` subclass, plus the corresponding agent entries. No changes to `CrewFactory` or CLI are required beyond the `choices=` list in `--workflow`.
 
 ### Error Handling
 

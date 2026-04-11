@@ -1,3 +1,5 @@
+manager: ProjectManager
+
 agents:
     pm:
         class: ProductManager

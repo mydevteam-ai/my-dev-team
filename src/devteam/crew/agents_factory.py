@@ -12,12 +12,15 @@ class AgentsFactory(WithLogging):
         self.rate_limiter = rate_limiter
         self.config_dir = config_dir or settings.config_dir
 
-    def _load_crew_config(self, config_name: str) -> dict:
+    def load_crew_config(self, config_name: str) -> dict:
         config_path = self.config_dir / 'crews' / config_name
         return yaml.safe_load(config_path.read_text(encoding='utf-8'))
 
     def create_agents(self, config_name: str) -> dict:
-        crew_config = self._load_crew_config(config_name)
+        crew_config = self.load_crew_config(config_name)
+        return self.create_agents_from_config(crew_config)
+
+    def create_agents_from_config(self, crew_config: dict) -> dict:
         agents = {}
         for node_name, details in crew_config.get('agents', {}).items():
             class_name = details['class']
