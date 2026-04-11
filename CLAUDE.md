@@ -31,11 +31,18 @@ devteam-ui
 
 ### State Machine (LangGraph)
 
-The entire workflow is a cyclic LangGraph state machine. `ProjectManager` (in `managers/`) builds the graph and acts as the central router. It is composed via mixins - `PlanningManager`, `ExecutionManager`, and `IntegrationManager` - each contributing node logic and routing for their respective phase.
+The entire workflow is a cyclic LangGraph state machine. A manager class (in `managers/`) builds the graph and acts as the central router. All managers extend `BaseManager`, which owns the graph structure, error handling and phase dispatch skeleton. Subclasses implement `_planning_node` and `_route_planning` for their specific workflow.
 
-The graph has three phases stored in `ProjectState.current_phase`:
+Two workflows are currently available, selected via `--workflow`:
+
+**`development` (default)** - `ProjectManager` = `BaseManager` + `PlanningManager`:
 - `planning` - PM refines requirements, Architect creates task backlog
-- `development` - Developer/Reviewer/QA loop, runs in parallel fan-out via LangGraph `Send` API
+- `development` - Developer/Reviewer/QA loop per task
+- `integration` - Final QA then Reporter
+
+**`migration`** - `MigrationManager` extends `BaseManager`:
+- `planning` - CodeAnalyzer reads source workspace, produces Migration Analysis and task backlog
+- `development` - Migrator translates source units, EquivalenceChecker validates behavioral equivalence
 - `integration` - Final QA then Reporter
 
 The `officer` node dispatches tasks by finding those whose dependencies are all complete and fanning them out as independent parallel `Send()` branches. Each branch runs its own full dev→review→qa cycle.
@@ -50,10 +57,11 @@ The `officer` node dispatches tasks by finding those whose dependencies are all 
 ### Agent Factory Chain
 
 ```
-CLI (--provider flag)
+CLI (--provider, --workflow flags)
   → LLMFactory(provider)
     → CrewFactory
-      → AgentsFactory  [reads config/crews/basic.yaml]
+      → AgentsFactory  [reads config/crews/{workflow}.yaml]
+        → crew YAML: manager: field  →  ManagerClass resolved via getattr(devteam.managers, ...)
         → AgentClass.from_config(node_name, config_file)
           → parses config/agents/{file}.md  [YAML frontmatter + prompt]
             → BaseAgent.__init__(config, prompt, node_name, llm_factory)
@@ -67,6 +75,11 @@ At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(
 - `output_schema: type[T]` - Pydantic model for the structured result
 - `tools: list[type[BaseModel]]` - tool schemas passed to `bind_tools()`
 - Override `_map_tool_to_output()`, `_update_state()`, `_pre_process()`, `_post_process()` as needed
+
+`_build_inputs` handles three special keys automatically - no override needed:
+- `messages` - injected as-is (not sanitized)
+- `skills` - loads and formats the skills catalog
+- `workspace` - reads all files from `state.workspace_path` via `workspace.read_all_files()`
 
 The `process()` loop invokes the LLM, then calls `_coerce_tool_calls()` to handle models that emit tool calls as plain-text JSON instead of native function calls (common with smaller Ollama models). If no tool call is found after coercion, it retries with an injected reminder message.
 

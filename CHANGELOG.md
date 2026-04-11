@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.0] - 2026-04-09
+## [0.12.0] - 2026-04-11
 
 ### 🚀 Added
 
@@ -13,7 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Lazy workspace loading for Developer:** The Senior Developer agent no longer receives full file contents in its initial prompt. Instead, it receives a file listing and uses `ReadFile`, `GlobFiles` and `GrepFiles` tools to read only the files relevant to the current task.
 
+* **Migration workflow (`--workflow migration`):** A new workflow mode for migrating existing codebases to a different language (e.g. COBOL to Java, PL/SQL to Python). Activated via the `--workflow` CLI flag.
+
+* **`CodeAnalyzer` agent:** Reads the source workspace, identifies structure and business logic, and outputs a `MigrationAnalysisResponse` - a full Migration Analysis document plus a parallel task backlog with one task per source unit.
+
+* **`Migrator` agent:** Translates individual source units to the target language, guided by the Migration Analysis. Produces idiomatic target-language code and equivalence tests for each translated unit.
+
+* **`EquivalenceChecker` agent:** Verifies that migrated code is behaviorally equivalent to the original, checking every branch, edge case and mapping decision defined in the Migration Analysis.
+
+* **`BaseManager` base class:** Extracted the shared graph-building, error-handling and phase-dispatch skeleton from `ProjectManager` into `BaseManager`. New managers only need to implement `_planning_node` and `_route_planning`.
+
 ### ⚙️ Changed
+
+* **`BaseAgent._build_inputs` handles `workspace` natively:** Agents that declare `workspace` in their `inputs:` frontmatter now get the full workspace content injected automatically, without needing to override `_build_inputs`. Removed redundant overrides from `FinalQAEngineer` and `CodeAnalyzer`.
+
+* **`AgentsFactory` exposes `load_crew_config` and `create_agents_from_config`:** Allows callers (e.g. `CrewFactory`) to load a crew config once and pass it to both manager resolution and agent instantiation, avoiding a double YAML parse.
+
+* **`ProjectManager` simplified:** Now a minimal two-mixin class (`BaseManager` + `PlanningManager`) with no duplicated logic.
 
 * **Skills directory:** Removed all built-in skills from the package configuration. By default, the app now searches for a `skills` sub-folder in the current working directory. This location can be overridden using the `--skills` CLI argument.
 
