@@ -1,0 +1,58 @@
+Migrate Payroll System from COBOL to Python
+
+## Source
+
+The source codebase is a COBOL weekly payroll calculator located in the `src/` folder.
+The main program is `PAYROLL.cbl`.
+The input data file format is `employees.dat`.
+
+## Target
+
+Migrate to **Python 3.12**. Produce idiomatic, well-structured Python code.
+
+## Requirements
+
+- Preserve all business logic exactly:
+  - Regular hours: first 40 h at base hourly rate
+  - Overtime hours: hours beyond 40 at 1.5x the base rate
+  - Tax bracket 1: gross pay <= $500 -> 10% tax
+  - Tax bracket 2: gross pay $501-$1500 -> 20% tax
+  - Tax bracket 3: gross pay > $1500 -> 30% tax
+
+- Replace COBOL flat-file I/O with Python file reading. The input file
+  (`employees.dat`) is a fixed-width record file where each line is:
+    - Columns 1-5:   Employee ID (numeric, 5 digits)
+    - Columns 6-35:  Employee name (string, 30 chars, space-padded)
+    - Columns 36-40: Hours worked (numeric, 3 digits + 1 decimal, e.g. 0450 = 45.0)
+    - Columns 41-46: Hourly rate  (numeric, 4 digits + 2 decimal, e.g. 122050 = $1220.50... wait, let me clarify)
+
+  Actually the columns are:
+    - Columns 1-5:   Employee ID (5 chars)
+    - Columns 6-35:  Employee name (30 chars)
+    - Columns 36-39: Hours worked as NNNN where last digit is decimal (e.g. 0450 = 45.0 hours)
+    - Columns 40-45: Hourly rate as NNNNNN where last 2 digits are cents (e.g. 122050 = $1220.50)
+
+- Produce a formatted payroll report to stdout (or a file), matching the
+  structure of the COBOL REPORT-FILE output: header, one detail line per
+  employee showing ID, name, gross, tax and net pay, then a summary line
+  with totals and employee count.
+
+- Use dataclasses or a named tuple to represent an employee record.
+- Separate concerns into distinct functions or classes matching the COBOL paragraph structure:
+  - Parsing / reading input records
+  - Calculating gross pay (regular + overtime)
+  - Calculating tax
+  - Accumulating totals
+  - Formatting and printing the report
+
+- Include comprehensive unit tests using pytest covering:
+  - Regular hours calculation (no overtime)
+  - Overtime hours calculation
+  - All three tax brackets (boundary values)
+  - Full end-to-end run with the provided `employees.dat`
+
+## Constraints
+
+- Use only the Python standard library (no third-party packages).
+- Monetary values must use Python `decimal.Decimal` to avoid floating-point errors.
+- The output report must be human-readable and match the column layout of the original COBOL report.
