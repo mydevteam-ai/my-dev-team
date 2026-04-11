@@ -163,6 +163,21 @@ class LLMFactory:
                     callbacks=self.callbacks,
                     tags=llm_tags
                 )
+            case 'azure-claude':
+                try:
+                    from langchain_openai import ChatOpenAI
+                except ImportError:
+                    raise ImportError("Missing package for Azure Claude provider. Install it with: pip install langchain-openai") from None
+                import os
+                return ChatOpenAI(
+                    model=model_name,
+                    base_url=os.environ['AZURE_CLAUDE_ENDPOINT'],
+                    api_key=os.environ['AZURE_CLAUDE_API_KEY'],
+                    temperature=temperature,
+                    streaming=settings.llm_streaming,
+                    callbacks=self.callbacks,
+                    tags=llm_tags
+                )
             case _:
                 raise ValueError(f"Unsupported provider: {provider}")
 

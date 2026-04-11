@@ -25,6 +25,26 @@ Pass `--provider <name>` on the CLI (or set `provider:` in `config.yaml`). The f
 
 ---
 
+## azure-claude
+
+**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)  
+**Env vars:** `AZURE_CLAUDE_ENDPOINT`, `AZURE_CLAUDE_API_KEY`
+
+```
+AZURE_CLAUDE_ENDPOINT=https://your-resource.services.ai.azure.com/models
+AZURE_CLAUDE_API_KEY=your_key_here
+```
+
+Claude models deployed via Azure AI Foundry expose an OpenAI-compatible REST API. The endpoint URL is available in the Azure AI Foundry portal under your model deployment.
+
+| Model | Best for | Verified |
+|---|---|---|
+| `claude-opus-4-6` | reasoning, planning, code | |
+| `claude-sonnet-4-6` | planning, code generation, code analysis | |
+| `claude-haiku-4-5-20251001` | fast utility tasks | |
+
+---
+
 ## azure-openai
 
 **Package:** `pip install "my-dev-team[openai]"`  

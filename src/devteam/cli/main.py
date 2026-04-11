@@ -19,7 +19,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--settings', type=str, help='path to a custom config.yaml (default: ~/.devteam/config.yaml)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, help='resume a specific thread ID')
-    parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'azure-openai', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
+    parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'azure-claude', 'azure-openai', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
     parser.add_argument('--rpm', type=int, default=settings.rpm, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
     parser.add_argument('--as-node', type=str, default='reviewer', choices=['pm', 'architect', 'reviewer', 'qa'], help='which agent should deliver this feedback (forces graph routing)')
