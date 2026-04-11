@@ -144,6 +144,21 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+    azure-openai:
+        models:
+            - id: 'gpt-5.3-codex'
+              capabilities:
+                  code-generation: 1.0
+                  code-analysis: 1.0
+                  reasoning: 0.9
+                  planning: 0.8
+            - id: 'gpt-5.4-mini'
+              capabilities:
+                  fast-utility: 1.0
+                  planning: 0.5
+                  code-generation: 0.5
+                  code-analysis: 0.5
+                  reasoning: 0.4
     deepseek:
         models:
             - id: 'deepseek-reasoner'

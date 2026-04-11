@@ -90,6 +90,8 @@ Set the corresponding API key in your `.env` file:
 GROQ_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 OPENAI_API_KEY=your_key_here
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_API_KEY=your_key_here
 GOOGLE_API_KEY=your_key_here
 MISTRAL_API_KEY=your_key_here
 DEEPSEEK_API_KEY=your_key_here

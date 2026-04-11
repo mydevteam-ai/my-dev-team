@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **`BaseManager` base class:** Extracted the shared graph-building, error-handling and phase-dispatch skeleton from `ProjectManager` into `BaseManager`. New managers only need to implement `_planning_node` and `_route_planning`.
 
+* **Azure OpenAI provider (`--provider azure-openai`):** Added `azure-openai` as a standalone provider backed by `AzureChatOpenAI` from `langchain-openai`. Each model entry in `llms.yaml` declares a `deployment` field (Azure deployment name) and an optional `api_version` (defaults to `2024-08-01-preview`). Requires `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_API_KEY` in the environment.
+
 ### ⚙️ Changed
 
 * **`BaseAgent._build_inputs` handles `workspace` natively:** Agents that declare `workspace` in their `inputs:` frontmatter now get the full workspace content injected automatically, without needing to override `_build_inputs`. Removed redundant overrides from `FinalQAEngineer` and `CodeAnalyzer`.

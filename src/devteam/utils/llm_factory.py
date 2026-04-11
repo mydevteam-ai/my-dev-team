@@ -147,6 +147,22 @@ class LLMFactory:
                     tags=llm_tags,
                     base_url='https://api.x.ai/v1'
                 )
+            case 'azure-openai':
+                try:
+                    from langchain_openai import AzureChatOpenAI
+                except ImportError:
+                    raise ImportError("Missing package for Azure OpenAI provider. Install it with: pip install langchain-openai") from None
+                import os
+                return AzureChatOpenAI(
+                    azure_deployment=os.environ.get('AZURE_OPENAI_DEPLOYMENT', model_name),
+                    api_version=os.environ.get('AZURE_OPENAI_API_VERSION', '2024-08-01-preview'),
+                    azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT'],
+                    api_key=os.environ['AZURE_OPENAI_API_KEY'],
+                    temperature=temperature,
+                    streaming=settings.llm_streaming,
+                    callbacks=self.callbacks,
+                    tags=llm_tags
+                )
             case _:
                 raise ValueError(f"Unsupported provider: {provider}")
 
