@@ -54,20 +54,23 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = {}
         for key in self.inputs:
-            if key == 'messages': # Do not sanitize messages
-                inputs[key] = state.messages
-            elif key == 'skills':
-                inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
-            elif key == 'workspace':
-                if workspace_files := workspace.read_all_files(state.workspace_path):
-                    inputs[key] = workspace.workspace_str_from_files(workspace_files).strip()
-                else:
-                    inputs[key] = "No files exist in the workspace."
-            else:
-                val = getattr(state, key, None)
-                if val is None:
-                    val = getattr(state.task_context, key, '')
-                inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
+            match key:
+                case 'messages':
+                    inputs[key] = state.messages
+                case 'skills':
+                    inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
+                case 'workspace':
+                    if workspace_files := workspace.read_all_files(state.workspace_path):
+                        inputs[key] = workspace.workspace_str_from_files(workspace_files).strip()
+                    else:
+                        inputs[key] = "No files exist in the workspace."
+                case 'workspace_listing':
+                    inputs[key] = workspace.list_workspace_files(state.workspace_path)
+                case _:
+                    val = getattr(state, key, None)
+                    if val is None:
+                        val = getattr(state.task_context, key, '')
+                    inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
         return inputs
 
     def _update_state(self, parsed_data: T, current_state: ProjectState) -> dict:

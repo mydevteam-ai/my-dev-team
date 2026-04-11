@@ -76,10 +76,11 @@ At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(
 - `tools: list[type[BaseModel]]` - tool schemas passed to `bind_tools()`
 - Override `_map_tool_to_output()`, `_update_state()`, `_pre_process()`, `_post_process()` as needed
 
-`_build_inputs` handles three special keys automatically - no override needed:
+`_build_inputs` handles four special keys automatically - no override needed:
 - `messages` - injected as-is (not sanitized)
 - `skills` - loads and formats the skills catalog
-- `workspace` - reads all files from `state.workspace_path` via `workspace.read_all_files()`
+- `workspace` - reads all file contents from `state.workspace_path` (full text; use for agents that need pre-loaded content)
+- `workspace_listing` - injects only file paths, not content (use for agents that will read files via tools, e.g. CodeAnalyzer)
 
 The `process()` loop invokes the LLM, then calls `_coerce_tool_calls()` to handle models that emit tool calls as plain-text JSON instead of native function calls (common with smaller Ollama models). If no tool call is found after coercion, it retries with an injected reminder message.
 

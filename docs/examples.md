@@ -83,7 +83,7 @@ Demonstrates: `--workflow migration` - CodeAnalyzer decomposes the COBOL program
 examples/cobol_payroll/
 - src/PAYROLL.cbl          # COBOL source (paragraphs, WORKING-STORAGE, EVALUATE)
 - employees.dat            # Fixed-width input records (5 employees)
-migrate_to_python.txt      # Migration brief - pass this to devteam
+cobol_to_python.txt        # Migration brief - pass this to devteam
 ```
 
 **Key COBOL constructs the crew must translate:**
@@ -98,7 +98,7 @@ migrate_to_python.txt      # Migration brief - pass this to devteam
 | `MULTIPLY x BY y GIVING z ROUNDED` | `round(x * y, 2)` |
 
 ```sh
-devteam examples/migrate_to_python.txt --workflow migration --seed examples/cobol_payroll/src --provider anthropic
+devteam examples/cobol_to_python.txt --workflow migration --seed examples/cobol_payroll --provider anthropic
 ```
 
 ---

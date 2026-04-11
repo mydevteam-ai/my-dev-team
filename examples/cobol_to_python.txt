@@ -1,3 +1,7 @@
+Subject: NEW PROJECT: COBOL to Python
+From: cto@human.local
+To: manager@ai-crew.local
+
 Migrate Payroll System from COBOL to Python
 
 ## Source
