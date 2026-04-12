@@ -22,7 +22,7 @@ providers:
               thinking: true
               capabilities:
                   reasoning: 1.0
-                  planning: 0.5
+                  planning: 1.0
             - id: 'qwen2.5-coder:7b'
               thinking: false
               capabilities:

@@ -114,10 +114,26 @@ class ReporterResponse(BaseModel):
 class SubmitReport(ReporterResponse):
     """Submit the final stakeholder report after the project has concluded."""
 
+class MigrationTask(BaseModel):
+    task_name: str = Field(
+        description="A short name for the task (e.g. 'Translate CALC-PAY paragraph')."
+    )
+    description: str = Field(
+        description="What source unit to translate, what target file to produce and any key mapping decisions to apply."
+    )
+    acceptance_criteria: list[str] = Field(
+        min_length=1,
+        description="Specific, testable conditions the Migrator must satisfy (e.g. 'src/payroll.py exists', 'All edge cases covered by tests')."
+    )
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="task_name values that must complete before this task can start. Leave empty when no dependency exists."
+    )
+
 class MigrationAnalysisResponse(BaseModel):
     runtime: str = Field(description="The target runtime environment for the migrated code (e.g. 'python', 'node', 'java')")
     specs: str = Field(description="A detailed Migration Analysis document in Markdown covering: source language/structure, target language, mapping decisions, idiom translations, and known risks.")
-    pending_tasks: list[DevelopmentTask] = Field(
+    pending_tasks: list[MigrationTask] = Field(
         min_length=1,
         description="A backlog of migration tasks, one per source unit (file, module, class or paragraph), designed for maximum parallel execution."
     )
