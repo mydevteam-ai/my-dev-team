@@ -54,14 +54,14 @@ devteam examples/calc_app_python_seed.txt --provider ollama --seed examples/calc
 
 ### Calculator - RAG-augmented (`calc_app_python_rag.txt`)
 
-The same calculator brief with an instruction forcing the Product Manager to call `RetrieveContext` before writing specs. Requires a running RAG MCP server and a knowledge base with ingested documents (e.g. the `examples/python_coding_standards.md` file).
+The same calculator brief with an instruction forcing the Product Manager to call `RetrieveContext` before writing specs. Requires a running RAG MCP server and a knowledge base with ingested documents (e.g. the `examples/rag/python_coding_standards.md` file).
 
 Demonstrates: RAG context retrieval - agents querying an external knowledge base to apply project-specific standards.
 
 ```sh
 # 1. Start the RAG stack (Qdrant + MCP server)
 # 2. Ingest the coding standards
-vectorize-me examples/python_coding_standards.md --source files
+vectorize-me examples/rag/python_coding_standards.md --source files
 
 # 3. Run with RAG enabled
 devteam examples/calc_app_python_rag.txt --provider ollama --rag-collection my-collection
@@ -105,11 +105,11 @@ devteam examples/cobol_to_python.txt --workflow migration --seed examples/cobol_
 
 ## Supporting files
 
-### `examples/python_coding_standards.md`
+### `examples/rag/python_coding_standards.md`
 
 A sample coding standards document. Ingest it into your RAG knowledge base and use it with `calc_app_python_rag.txt` to see agents applying project-specific conventions.
 
-### `examples/rag.yaml`
+### `examples/rag/rag.yaml`
 
 A template RAG source configuration. Copy it to your project root and adjust the MCP server URLs to match your setup. See [RAG documentation](rag.md) for full setup instructions.
 

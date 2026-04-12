@@ -180,10 +180,10 @@ mcp-ingest path/to/large.txt --chunk-size 256 --overlap 32
 mcp-ingest path/to/small.txt --no-split
 ```
 
-A sample standards file is provided in `examples/python_coding_standards.md`:
+A sample standards file is provided in `examples/rag/python_coding_standards.md`:
 
 ```sh
-mcp-ingest examples/python_coding_standards.md --split-by sections --title "Python Coding Standards"
+mcp-ingest examples/rag/python_coding_standards.md --split-by sections --title "Python Coding Standards"
 ```
 
 **All options:**
@@ -232,7 +232,7 @@ By default the app queries a single Qdrant MCP server. To add additional sources
 A template is provided:
 
 ```sh
-cp examples/rag.yaml rag.yaml
+cp examples/rag/rag.yaml rag.yaml
 ```
 
 Edit `rag.yaml` to point each source to its MCP server. The optional `description` field is shown to agents so they know what each source contains:
