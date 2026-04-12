@@ -72,6 +72,37 @@ def test_task_to_markdown_respects_existing_task_prefix():
     markdown = task_to_markdown(task, 1)
     assert "## Task 1: Existing" in markdown
 
+def _make_tracker_with_aliases(aliases: dict):
+    from devteam.utils.telemetry import TelemetryTracker
+    tracker = TelemetryTracker()
+    # Override the cached property so tests don't need the real llms.yaml
+    tracker.__dict__['llm_aliases'] = aliases
+    return tracker
+
+def test_telemetry_resolve_alias_exact_match():
+    tracker = _make_tracker_with_aliases({'groq/compound': 'openai/gpt-oss-120b'})
+    assert tracker._resolve_alias('groq/compound') == 'openai/gpt-oss-120b'
+
+def test_telemetry_resolve_alias_wildcard():
+    tracker = _make_tracker_with_aliases({'google_genai/*': 'gemini/*'})
+    assert tracker._resolve_alias('google_genai/gemini-3.1-flash-lite-preview') == 'gemini/gemini-3.1-flash-lite-preview'
+
+def test_telemetry_resolve_alias_no_match_passthrough():
+    tracker = _make_tracker_with_aliases({'google_genai/*': 'gemini/*'})
+    assert tracker._resolve_alias('anthropic/claude-3-5-sonnet') == 'anthropic/claude-3-5-sonnet'
+
+def test_telemetry_calculate_cost_applies_alias(monkeypatch):
+    from devteam.utils.telemetry import TelemetryTracker
+    captured = {}
+    def fake_cost_per_token(model, prompt_tokens, completion_tokens):
+        captured['model'] = model
+        return (0.001, 0.002)
+    monkeypatch.setattr("devteam.utils.telemetry.cost_per_token", fake_cost_per_token)
+    tracker = _make_tracker_with_aliases({'google_genai/*': 'gemini/*'})
+    cost = tracker._calculate_cost('google_genai', 'gemini-3.1-flash-lite-preview', 100, 50)
+    assert captured['model'] == 'gemini/gemini-3.1-flash-lite-preview'
+    assert cost == 0.003
+
 def test_rate_limiter_noop_when_disabled():
     limiter = RateLimiter(requests_per_minute=0)
     asyncio.run(limiter.wait_if_needed())

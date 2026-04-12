@@ -214,4 +214,6 @@ providers:
                   reasoning: 0.5
 
 aliases:
+    'google_genai/*': 'gemini/*'
+    'google_vertexai/*': 'vertex_ai/*'
     'groq/compound': 'openai/gpt-oss-120b'

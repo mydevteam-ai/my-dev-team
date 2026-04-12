@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
+import fnmatch
 from typing import TypedDict
 import yaml
 from rich.panel import Panel
@@ -85,14 +86,26 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         except Exception: # pylint: disable=broad-exception-caught
             return {}
 
+    def _resolve_alias(self, model: str) -> str:
+        """Resolve a provider/model string against aliases, supporting fnmatch wildcards."""
+        if model in self.llm_aliases:
+            return self.llm_aliases[model]
+        for pattern, replacement in self.llm_aliases.items():
+            if '*' in pattern and fnmatch.fnmatch(model, pattern):
+                # Substitute * in the replacement with the text matched by * in the pattern
+                prefix, _, suffix = pattern.partition('*')
+                captured = model[len(prefix):len(model) - len(suffix) if suffix else len(model)]
+                return replacement.replace('*', captured, 1)
+        return model
+
     def _calculate_cost(self, model_provider: str, model_name: str, input_tokens: int, output_tokens: int):
         """Calculates the cost based on the specific model used"""
         if model_provider == 'ollama':
             return 0
         try:
-            model_name = self.llm_aliases.get(model_name, model_name)
+            resolved = self._resolve_alias(f'{model_provider}/{model_name}')
             p_cost, c_cost = cost_per_token(
-                model=f'{model_provider}/{model_name}',
+                model=resolved,
                 prompt_tokens=input_tokens,
                 completion_tokens=output_tokens
             )
