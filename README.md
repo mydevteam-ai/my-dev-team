@@ -103,7 +103,7 @@ devteam --resume web_scraper_cli_20260312_083500
 devteam --resume web_scraper_cli_20260312_083500 --feedback "Add input validation"
 
 # Print checkpoint timeline for a thread
-devteam --resume web_scraper_cli_20260312_083500 --history
+devteam --history web_scraper_cli_20260312_083500
 
 # Seed the workspace from an existing project before agents run
 devteam project.txt --seed /path/to/existing/code

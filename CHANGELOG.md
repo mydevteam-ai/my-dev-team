@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚙️ Changed
 
+* **`--history` takes a thread ID directly:** `--history <thread_id>` now works as a standalone command without requiring `--resume`. The old `--resume <id> --history` pattern is no longer needed.
+
 * **`BaseAgent._build_inputs` handles `workspace` natively:** Agents that declare `workspace` in their `inputs:` frontmatter now get the full workspace content injected automatically, without needing to override `_build_inputs`. Removed redundant overrides from `FinalQAEngineer` and `CodeAnalyzer`.
 
 * **`AgentsFactory` exposes `load_crew_config` and `create_agents_from_config`:** Allows callers (e.g. `CrewFactory`) to load a crew config once and pass it to both manager resolution and agent instantiation, avoiding a double YAML parse.

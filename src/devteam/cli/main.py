@@ -18,13 +18,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--config', type=str, help='path to a custom configuration folder (overrides default one)')
     parser.add_argument('--settings', type=str, help='path to a custom config.yaml (default: ~/.devteam/config.yaml)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
-    parser.add_argument('--resume', type=str, help='resume a specific thread ID')
+    parser.add_argument('--resume', type=str, metavar='THREAD_ID', help='resume a specific thread ID')
     parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'azure-anthropic', 'azure-openai', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
     parser.add_argument('--azure', action='store_true', help='use the Azure-hosted variant of the selected provider')
     parser.add_argument('--rpm', type=int, default=settings.rpm, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
     parser.add_argument('--as-node', type=str, default='reviewer', choices=['pm', 'architect', 'reviewer', 'qa'], help='which agent should deliver this feedback (forces graph routing)')
-    parser.add_argument('--history', action='store_true', help='print the timeline of checkpoints for this thread and exit')
+    parser.add_argument('--history', type=str, metavar='THREAD_ID', help='print the timeline of checkpoints for the given thread and exit')
     parser.add_argument('--checkpoint', type=str, help='specific checkpoint ID to rewind to before injecting feedback')
     parser.add_argument('--timeout', type=int, default=settings.llm_timeout, help='maximum time (in seconds) to wait for an LLM response (default: 120)')
     parser.add_argument('--thinking', action='store_true', help='stream raw LLM thinking output to stderr')
@@ -47,6 +47,12 @@ def _apply_config(custom_config_path: str):
     settings.config_dir = custom_path
 
 def _validate_inputs(parser: argparse.ArgumentParser, args):
+    if args.history:
+        path = settings.workspace_dir / args.history
+        if not path.exists():
+            logging.error("❌ Error: Could not find workspace for thread '%s'", args.history)
+            sys.exit(1)
+        return
     if args.resume:
         path = settings.workspace_dir / args.resume
         if not path.exists():
@@ -58,8 +64,6 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
             sys.exit(1)
     else:
         parser.error('You must provide either a project_file OR the --resume flag.')
-    if args.history and not args.resume:
-        parser.error('--history requires --resume <thread_id> to specify which project to inspect.')
     if args.seed:
         if args.resume:
             parser.error('--seed cannot be used with --resume (workspace already exists).')
@@ -115,7 +119,7 @@ def main():
     _validate_inputs(parser, args)
 
     if args.history:
-        asyncio.run(show_history(thread_id=args.resume))
+        asyncio.run(show_history(thread_id=args.history))
         return
 
     asyncio.run(

@@ -12,7 +12,7 @@ Runs the autonomous AI development workflow from the terminal.
 devteam [project_file] [options]
 ```
 
-Either `project_file` or `--resume` is required.
+Either `project_file` or `--resume` (or `--history`) is required.
 
 ### Arguments
 
@@ -26,7 +26,7 @@ Either `project_file` or `--resume` is required.
 | `--resume` | str | - | Resume an existing thread by ID (e.g. `web_scraper_cli_20260312_083500`). |
 | `--feedback` | str | - | Human feedback to inject into the state when resuming. |
 | `--as-node` | choice | `reviewer` | Which agent delivers the injected feedback. Options: `pm`, `architect`, `reviewer`, `qa`. Controls graph routing after injection. |
-| `--history` | flag | off | Print the checkpoint timeline for the given `--resume` thread and exit. |
+| `--history` | str | - | Print the checkpoint timeline for the given thread ID and exit (e.g. `--history web_scraper_cli_20260312_083500`). |
 | `--checkpoint` | str | - | Checkpoint ID to rewind to before resuming or injecting feedback. |
 | `--ask-approval` | flag | off | Pause after the PM produces the Technical Specification and again after the Architect produces the task plan, waiting for interactive approval before proceeding. |
 | `--thinking` | flag | off | Stream raw LLM thinking tokens to stderr in real time. |
@@ -123,7 +123,7 @@ devteam --resume web_scraper_cli_20260312_083500 \
 
 **Print the checkpoint timeline for a thread:**
 ```sh
-devteam --resume web_scraper_cli_20260312_083500 --history
+devteam --history web_scraper_cli_20260312_083500
 ```
 
 **Query RAG with a specific collection name:**
