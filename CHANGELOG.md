@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.0] - 2026-04-11
+## [0.12.0] - 2026-04-12
 
 ### 🚀 Added
 
@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🔧 Internal
 
 * **`TaskContext` state isolation:** Extracted all per-task fields from `ProjectState` into a new `TaskContext` Pydantic model. `ProjectState` now holds a single `task_context: TaskContext` field. This separation prepares the state model for future parallel task execution, where each task branch owns its own isolated context.
+
+* **Agent inputs delivered as a HumanMessage:** `BaseAgent._build_prompt` now auto-generates a `HumanMessagePromptTemplate` from the agent's declared `inputs:` frontmatter keys, rendering each as an XML-tagged section. `_build_inputs` returns a flat kwargs dict; LangChain handles substitution at invocation time. System prompts are now pure instruction text. Extra runtime inputs (`drafts` in `CodeJudge`, `history` in `Reporter`) are declared in the frontmatter and populated by `_build_inputs` overrides - no `_data_input_keys` override needed. This also fixes compatibility with providers (Google Gemini) that reject requests with no user turn. `StreamHandler.on_llm_new_token` now skips non-string tokens emitted by Gemini for tool-call chunks.
 
 ## [0.11.6] - 2026-04-07
 

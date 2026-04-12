@@ -1,5 +1,4 @@
 from typing import override
-from langchain_core.messages import HumanMessage
 from devteam.utils import sanitizer
 from .schemas import CodeJudgeResponse
 from .base_agent import BaseAgent
@@ -16,10 +15,7 @@ class CodeJudge(BaseAgent[CodeJudgeResponse]):
             draft_idx = f"draft_{idx}"
             safe_draft = sanitizer.sanitize_for_prompt(draft, [draft_idx, 'drafts'])
             drafts_parts.append(f"<{draft_idx}>\n{safe_draft}\n</{draft_idx}>")
-        if drafts_parts:
-            drafts_section = "<drafts>\n" + "\n\n".join(drafts_parts) + "\n</drafts>"
-            data_msg = inputs['messages'][0]
-            inputs['messages'][0] = HumanMessage(content=data_msg.content + "\n\n" + drafts_section)
+        inputs['drafts'] = '\n\n'.join(drafts_parts)
         return inputs
 
     @override

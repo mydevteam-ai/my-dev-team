@@ -3,7 +3,7 @@ role: Code Judge
 description: Judge the quality of code drafts based on provided specifications and determine the best implementation.
 capabilities: [code-analysis]
 temperature: 0.0
-inputs: ['specs', 'current_task']
+inputs: ['specs', 'current_task', 'drafts']
 tools: [SubmitWinner]
 ---
 # Role
