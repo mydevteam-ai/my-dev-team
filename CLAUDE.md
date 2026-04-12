@@ -76,8 +76,7 @@ At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(
 - `tools: list[type[BaseModel]]` - tool schemas passed to `bind_tools()`
 - Override `_map_tool_to_output()`, `_update_state()`, `_pre_process()`, `_post_process()` as needed
 
-`_build_inputs` handles four special keys automatically - no override needed:
-- `messages` - injected as-is (not sanitized)
+`process()` always injects `messages` from `state.messages` - do not declare it in `inputs:`. `_build_inputs` handles three other special keys automatically:
 - `skills` - loads and formats the skills catalog
 - `workspace` - reads all file contents from `state.workspace_path` (full text; use for agents that need pre-loaded content)
 - `workspace_listing` - injects only file paths, not content (use for agents that will read files via tools, e.g. CodeAnalyzer)

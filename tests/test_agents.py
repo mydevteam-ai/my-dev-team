@@ -258,6 +258,20 @@ class TestBaseAgentRetry:
         msg.tool_calls = [{'name': tool_name, 'args': tool_args, 'id': 'tc1'}]
         return msg
 
+    def test_messages_injected_even_when_not_in_inputs_config(self):
+        # Agents without 'messages' in their config inputs (e.g. CodeReviewer, QAEngineer)
+        # were failing on attempt 1 with a KeyError because the prompt template always
+        # includes a MessagesPlaceholder but _build_inputs only added messages when declared.
+        agent = self._make_agent()
+        assert 'messages' not in agent.inputs
+        captured = {}
+        async def capture_llm(**kwargs):
+            captured.update(kwargs)
+            return self._make_ai_message('ApproveCode', {})
+        agent._invoke_llm = capture_llm
+        asyncio.run(agent.process(ProjectState()))
+        assert 'messages' in captured
+
     def test_succeeds_on_first_attempt(self):
         agent = self._make_agent()
         ai_msg = self._make_ai_message('ApproveCode', {})

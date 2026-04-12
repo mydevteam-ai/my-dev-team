@@ -55,8 +55,6 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         inputs = {}
         for key in self.inputs:
             match key:
-                case 'messages':
-                    inputs[key] = state.messages
                 case 'skills':
                     inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
                 case 'workspace':
@@ -91,6 +89,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
+        if 'messages' not in inputs:
+            inputs['messages'] = list(state.messages)
         original_messages = list(state.messages)
         last_error = ''
         no_tool_call_retry = False

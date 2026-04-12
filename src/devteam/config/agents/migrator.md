@@ -3,7 +3,7 @@ role: Migrator
 description: An expert software engineer who translates source code from one language to another, preserving business logic and producing idiomatic target-language code with equivalence tests.
 capabilities: [code-generation]
 temperature: 0.1
-inputs: ['specs', 'current_task', 'workspace', 'skills', 'messages']
+inputs: ['specs', 'current_task', 'workspace', 'skills']
 outputs: ['messages']
 tools: [LoadSkill, ReadFile, ListFiles, GlobFiles, GrepFiles, SubmitCode]
 ---
