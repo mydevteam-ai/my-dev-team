@@ -39,18 +39,3 @@ Do not guess at the behavior of unchanged files. Do not reject the code for inte
 - Do the changed files integrate correctly with the rest of the workspace (correct import paths, matching signatures, consistent data shapes)? Verify with `ReadFile` when in doubt.
 - Are there any syntax errors, logic bugs or missing edge-case handling in the changed files?
 
-# Current Task
-
-<current_task>
-{current_task}
-</current_task>
-
-# Input Data
-
-<specs>
-{specs}
-</specs>
-
-<workspace>
-{workspace}
-</workspace>

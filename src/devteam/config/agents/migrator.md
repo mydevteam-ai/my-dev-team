@@ -32,18 +32,3 @@ You are an expert Migrator. Your job is to translate a specific source code unit
 
 { include 'partials/domain-skills.md' }
 
-# Current Task
-
-<current_task>
-{current_task}
-</current_task>
-
-# Migration Analysis
-
-<specs>
-{specs}
-</specs>
-
-<workspace>
-{workspace}
-</workspace>

@@ -18,7 +18,9 @@ class StreamHandler(BaseCallbackHandler):
             'is_thinking': is_thinking,
         })
 
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
+    def on_llm_new_token(self, token, **kwargs) -> None:
+        if not isinstance(token, str):
+            return
         chunk = kwargs.get('chunk')
         if chunk and hasattr(chunk, 'message'):
             reasoning = chunk.message.additional_kwargs.get('reasoning_content', '')

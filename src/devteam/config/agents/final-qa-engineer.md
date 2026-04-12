@@ -19,14 +19,3 @@ You are an expert Integration Quality Assurance Engineer.
    - Call `ApproveCode` if the application passes all integration tests and feature checks.
    - Call `ReportIssues` with a detailed bug report if any issues are found.
 
-# Input Data
-
-Below is the overarching specification for the project, followed by the fully assembled codebase.
-
-<specs>
-{specs}
-</specs>
-
-<workspace>
-{workspace}
-</workspace>

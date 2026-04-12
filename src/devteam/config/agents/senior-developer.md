@@ -47,18 +47,3 @@ You practice strict Test-Driven Development. When you receive a task, you must:
 
 { include 'partials/domain-skills.md' }
 
-# Current Task
-
-<current_task>
-{current_task}
-</current_task>
-
-# Input Data
-
-<specs>
-{specs}
-</specs>
-
-<workspace>
-{workspace}
-</workspace>

@@ -1,5 +1,6 @@
+from langchain_core.messages import HumanMessage
 from devteam.state import ProjectState
-from devteam.utils import sanitizer, workspace
+from devteam.utils import sanitizer
 from .schemas import ReporterResponse
 from .base_agent import BaseAgent
 
@@ -8,10 +9,8 @@ class Reporter(BaseAgent[ReporterResponse]):
 
     def _build_inputs(self, state: ProjectState) -> dict:
         inputs = super()._build_inputs(state)
-        if workspace_files := workspace.read_all_files(state.workspace_path):
-            workspace_str = workspace.workspace_str_from_files(workspace_files)
-        else:
-            workspace_str = "No files were generated."
-        inputs['workspace'] = workspace_str
-        inputs['history'] = sanitizer.sanitize_for_prompt('\n\n'.join(state.communication_log), ['history'])
+        history = sanitizer.sanitize_for_prompt('\n\n'.join(state.communication_log), ['history'])
+        if history:
+            data_msg = inputs['messages'][0]
+            inputs['messages'][0] = HumanMessage(content=data_msg.content + f"\n\n<history>\n{history}\n</history>")
         return inputs

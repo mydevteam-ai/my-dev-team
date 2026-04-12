@@ -38,12 +38,3 @@ A separate Migrator agent will write all the code once you hand off the plan. Yo
 
 { include 'partials/domain-skills.md' }
 
-# Input Data
-
-<requirements>
-{requirements}
-</requirements>
-
-<workspace>
-{workspace_listing}
-</workspace>

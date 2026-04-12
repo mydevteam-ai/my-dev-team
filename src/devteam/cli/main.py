@@ -12,6 +12,8 @@ from devteam.tools.rag import init_retrieve_context_tool
 from devteam.utils import setup_logging
 from .runtime import async_main, show_history
 
+_PROVIDERS = ['anthropic', 'free', 'groq', 'ollama', 'openai', 'google']
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Run the AI Dev Team autonomous framework.')
     parser.add_argument('project_file', nargs='?', help='path to the text file containing your project requirements')
@@ -19,7 +21,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--settings', type=str, help='path to a custom config.yaml (default: ~/.devteam/config.yaml)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, metavar='THREAD_ID', help='resume a specific thread ID')
-    parser.add_argument('--provider', type=str, default=settings.provider, choices=['anthropic', 'azure-anthropic', 'azure-openai', 'free', 'groq', 'ollama', 'openai'], help='LLM provider to use (default: ollama)')
+    parser.add_argument('--provider', type=str, default=settings.provider, choices=_PROVIDERS, help='LLM provider to use (default: ollama)')
     parser.add_argument('--azure', action='store_true', help='use the Azure-hosted variant of the selected provider')
     parser.add_argument('--rpm', type=int, default=settings.rpm, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')

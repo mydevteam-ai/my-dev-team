@@ -37,12 +37,3 @@ You strictly enforce Test-Driven Development (TDD).
 
 { include 'partials/knowledge-base.md' }
 
-# Input Data
-
-<requirements>
-{requirements}
-</requirements>
-
-<specs>
-{specs}
-</specs>

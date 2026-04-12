@@ -52,26 +52,33 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         return self.config.get('outputs', [])
 
     def _build_inputs(self, state: ProjectState) -> dict:
-        inputs = {}
+        human_parts = []
+        state_messages = []
         for key in self.inputs:
             match key:
                 case 'messages':
-                    inputs[key] = state.messages
+                    state_messages = state.messages
                 case 'skills':
-                    inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
+                    value = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
+                    human_parts.append(f"<skills>\n{value}\n</skills>")
                 case 'workspace':
                     if workspace_files := workspace.read_all_files(state.workspace_path):
-                        inputs[key] = workspace.workspace_str_from_files(workspace_files).strip()
+                        value = workspace.workspace_str_from_files(workspace_files).strip()
                     else:
-                        inputs[key] = "No files exist in the workspace."
+                        value = "No files exist in the workspace."
+                    human_parts.append(f"<workspace>\n{value}\n</workspace>")
                 case 'workspace_listing':
-                    inputs[key] = workspace.list_workspace_files(state.workspace_path)
+                    value = workspace.list_workspace_files(state.workspace_path)
+                    human_parts.append(f"<workspace>\n{value}\n</workspace>")
                 case _:
                     val = getattr(state, key, None)
                     if val is None:
                         val = getattr(state.task_context, key, '')
-                    inputs[key] = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
-        return inputs
+                    value = sanitizer.sanitize_for_prompt(str(val), key) if val else ''
+                    if value:
+                        human_parts.append(f"<{key}>\n{value}\n</{key}>")
+        data_message = [HumanMessage(content='\n\n'.join(human_parts))] if human_parts else []
+        return {'messages': data_message + state_messages}
 
     def _update_state(self, parsed_data: T, current_state: ProjectState) -> dict:
         return parsed_data.model_dump(exclude_none=True)
@@ -91,7 +98,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
-        original_messages = list(state.messages)
+        original_messages = list(inputs['messages'])
         last_error = ''
         no_tool_call_retry = False
         for attempt in range(self.max_retries + 1):
@@ -168,7 +175,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
     def _build_prompt(self) -> ChatPromptTemplate:
         return ChatPromptTemplate.from_messages([
             ('system', self.prompt_template),
-            MessagesPlaceholder(variable_name='messages', optional=True)
+            MessagesPlaceholder(variable_name='messages')
         ])
 
     @cached_property

@@ -104,19 +104,13 @@ providers:
                   reasoning: 0.4
     google:
         models:
-            - id: 'gemini-3.0-pro'
-              capabilities:
-                  reasoning: 1.0
-                  planning: 0.9
-                  code-generation: 0.9
-                  code-analysis: 0.9
-            - id: 'gemini-3.0-flash'
-              capabilities:
-                  planning: 1.0
-                  code-generation: 1.0
-                  code-analysis: 1.0
-                  reasoning: 0.8
-            - id: 'gemini-3.0-flash-lite'
+#            - id: 'gemini-3.1-pro-preview'
+#              capabilities:
+#                  reasoning: 1.0
+#                  planning: 0.9
+#                  code-generation: 0.9
+#                  code-analysis: 0.9
+            - id: 'gemini-3.1-flash-lite-preview'
               capabilities:
                   fast-utility: 1.0
                   planning: 0.5
