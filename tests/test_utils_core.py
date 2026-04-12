@@ -1,11 +1,31 @@
 import asyncio
 from unittest.mock import AsyncMock
 import pytest
+from devteam.tools.extractor import coerce_tool_calls, _extract_text
 from devteam.utils.rate_limiter import RateLimiter
 from devteam.utils.sanitizer import sanitize_for_prompt
 from devteam.utils.status import is_approved, normalize_status
 from devteam.utils.tasks import task_to_markdown
 from devteam.utils.workspace import workspace_str_from_files
+
+def test_extract_text_passthrough_string():
+    assert _extract_text("hello world") == "hello world"
+
+def test_extract_text_list_of_blocks():
+    blocks = [{'type': 'text', 'text': 'hello'}, {'type': 'text', 'text': 'world'}]
+    assert _extract_text(blocks) == "hello\nworld"
+
+def test_extract_text_list_skips_non_text_blocks():
+    blocks = [{'type': 'image', 'data': 'xxx'}, {'type': 'text', 'text': 'hi'}]
+    assert _extract_text(blocks) == "hi"
+
+def test_coerce_tool_calls_handles_list_content():
+    from langchain_core.messages import AIMessage
+    blocks = [{'type': 'text', 'text': '{"name": "ApproveCode", "args": {}}'}]
+    msg = AIMessage(content=blocks)
+    result = coerce_tool_calls(msg)
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0]['name'] == 'ApproveCode'
 
 def test_sanitize_for_prompt_handles_base64_nulls_and_spacing():
     raw = "line1\n\n\n\x00data:image/png;base64,AAAA\nline2\n"

@@ -112,11 +112,14 @@ Models with `thinking: true` in `llms.yaml` have the reasoning stream enabled (r
 **Package:** `pip install "my-dev-team[google]"`  
 **Env var:** `GOOGLE_API_KEY`
 
+LangChain reports this provider as `google_genai`. The alias `'google_genai/*': 'gemini/*'` in `llms.yaml` maps it to the correct litellm prefix for cost tracking.
+
 | Model | Best for | Verified |
 |---|---|---|
-| `gemini-3.0-pro` | reasoning, planning, code | |
-| `gemini-3.0-flash` | planning, code generation, code analysis | |
-| `gemini-3.0-flash-lite` | fast utility tasks | |
+| `gemini-3.1-flash-lite-preview` | fast utility tasks | 2026-04-12 |
+| `gemini-3.1-pro-preview` | reasoning, planning, code | |
+
+Note: `gemini-3.1-pro-preview` is commented out in `llms.yaml` by default. Uncomment to enable it.
 
 ---
 

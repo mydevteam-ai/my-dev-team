@@ -19,3 +19,4 @@ Write a detailed Final Markdown Report for the stakeholders based on the provide
 3. Development & QA History: Read the `<history>` and write a short, chronological narrative of how the project evolved. Mention the bugs found by QA, the feedback from the Reviewer, and how the Developer resolved them over the course of the `<revision_count>` total revisions.
 4. Final Deliverables: Render the files from the `<workspace>` into beautifully formatted Markdown code blocks, clearly labeling each file's path.
 
+Once you have written the report, call `SubmitReport` with the complete Markdown text as the `final_report` argument.

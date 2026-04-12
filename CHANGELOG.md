@@ -27,7 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Azure Anthropic Claude provider (`--provider azure-anthropic`):** Added `azure-anthropic` for Anthropic Claude 4.6 models deployed via Azure AI Foundry. Uses the OpenAI-compatible inference endpoint exposed by Azure AI Foundry. Includes `claude-opus-4-6`, `claude-sonnet-4-6` and `claude-haiku-4-5-20251001`. Requires `AZURE_ANTHROPIC_ENDPOINT` and `AZURE_ANTHROPIC_API_KEY`.
 
+### 🐛 Fixed
+
+* **`coerce_tool_calls` crashes on Gemini list-format content:** Google Gemini returns `AIMessage.content` as a list of typed blocks (`[{'type': 'text', 'text': '...', 'extras': {...}}]`) when extended thinking is active. `coerce_tool_calls` in `tools/extractor.py` passed this list directly to `_unwrap_fences`, which expected a string, causing a `TypeError`. A new `_extract_text` helper normalises list-of-blocks content to a plain string before processing. Verified with `gemini-3.1-flash-lite-preview` on 2026-04-12.
+
+* **`Reporter` agent returns plain text instead of calling `SubmitReport`:** The reporter prompt gave no explicit instruction to use the `SubmitReport` tool, so the model wrote the report as a plain-text response and exhausted all retries. Added "call `SubmitReport` with the complete Markdown text" to the agent prompt in `config/agents/reporter.md`.
+
 ### ⚙️ Changed
+
+* **`messages` injected automatically in `BaseAgent.process()`:** `messages` from `state.messages` is now always added to the LLM input dict after `_build_inputs`, regardless of whether the agent declares `messages` in its `inputs:` frontmatter. The `messages` switch-case branch has been removed from `_build_inputs`. All agent config files updated to remove the now-redundant `messages` entry from their `inputs:` lists.
+
+* **TelemetryTracker cost resolution uses YAML aliases with wildcard support:** Aliases are read from the existing `aliases:` block in `config/tools/llms.yaml`. Added `'google_genai/*': 'gemini/*'` and `'google_vertexai/*': 'vertex_ai/*'` entries so all Google models resolve to the correct litellm prefix for cost tracking. The `groq/compound` alias for cost normalisation is also defined there.
 
 * **`--history` takes a thread ID directly:** `--history <thread_id>` now works as a standalone command without requiring `--resume`. The old `--resume <id> --history` pattern is no longer needed.
 
