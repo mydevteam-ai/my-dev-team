@@ -1,7 +1,17 @@
 from functools import cached_property
+import os
 import yaml
 from langchain_core.language_models.chat_models import BaseChatModel
 from devteam import settings
+
+def get_valid_providers() -> list[str]:
+    """Return provider names defined in the active llms.yaml."""
+    try:
+        config_path = settings.tools_config_dir / 'llms.yaml'
+        config = yaml.safe_load(config_path.read_text(encoding='utf-8'))
+        return list((config or {}).get('providers', {}).keys())
+    except Exception:
+        return []
 
 class LLMFactory:
     def __init__(self, provider: str, callbacks: list = None):
@@ -132,6 +142,7 @@ class LLMFactory:
                     streaming=settings.llm_streaming,
                     callbacks=self.callbacks,
                     tags=llm_tags,
+                    api_key=os.environ['DEEPSEEK_API_KEY'],
                     base_url='https://api.deepseek.com'
                 )
             case 'grok':
@@ -145,6 +156,7 @@ class LLMFactory:
                     streaming=settings.llm_streaming,
                     callbacks=self.callbacks,
                     tags=llm_tags,
+                    api_key=os.environ['XAI_API_KEY'],
                     base_url='https://api.x.ai/v1'
                 )
             case 'azure-openai':
@@ -152,7 +164,6 @@ class LLMFactory:
                     from langchain_openai import AzureChatOpenAI
                 except ImportError:
                     raise ImportError("Missing package for Azure OpenAI provider. Install it with: pip install langchain-openai") from None
-                import os
                 return AzureChatOpenAI(
                     azure_deployment=os.environ.get('AZURE_OPENAI_DEPLOYMENT', model_name),
                     api_version=os.environ.get('AZURE_OPENAI_API_VERSION', '2024-08-01-preview'),
@@ -168,7 +179,6 @@ class LLMFactory:
                     from langchain_openai import ChatOpenAI
                 except ImportError:
                     raise ImportError("Missing package for Azure Claude provider. Install it with: pip install langchain-openai") from None
-                import os
                 return ChatOpenAI(
                     model=model_name,
                     base_url=os.environ['AZURE_ANTHROPIC_ENDPOINT'],

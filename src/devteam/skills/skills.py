@@ -42,7 +42,7 @@ def load_skill(skill_name: str) -> str:
     skill_path = Path(settings.skills_dir) / safe_skill_name / 'SKILL.md'
 
     if not skill_path.exists():
-        error_msg = f"System Error: The knowledge module '{skill_name}' does not exist. Please check the exact spelling in your <available_modules> list and try again, or proceed with your general knowledge."
+        error_msg = f"System Error: The knowledge module '{skill_name}' does not exist. Please check the exact spelling in your <skills> list and try again, or proceed with your general knowledge."
         print(error_msg)
         return error_msg
 

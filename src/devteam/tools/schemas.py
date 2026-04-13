@@ -4,7 +4,7 @@ class LoadSkill(BaseModel):
     """Call this tool to load specialized framework rules and architectural best practices before writing code. You can load multiple skills at once."""
     skill_names: list[str] = Field(
         min_length=1,
-        description="The exact name(s) of the module(s) to load, as listed in the <skills> section of your prompt (e.g. ['python-expert'] or ['react-expert', 'tailwind-expert'])."
+        description="The exact name(s) of the module(s) to load, as listed in the <skills> section of your prompt."
     )
 
 class RetrieveContext(BaseModel):

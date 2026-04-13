@@ -9,10 +9,8 @@ from dotenv import load_dotenv
 from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.tools.rag import init_retrieve_context_tool
-from devteam.utils import setup_logging
+from devteam.utils import setup_logging, get_valid_providers
 from .runtime import async_main, show_history
-
-_PROVIDERS = ['anthropic', 'free', 'groq', 'ollama', 'openai', 'google']
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Run the AI Dev Team autonomous framework.')
@@ -21,7 +19,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--settings', type=str, help='path to a custom config.yaml (default: ~/.devteam/config.yaml)')
     parser.add_argument('--verbose', action='store_true', help='enable debug logging')
     parser.add_argument('--resume', type=str, metavar='THREAD_ID', help='resume a specific thread ID')
-    parser.add_argument('--provider', type=str, default=settings.provider, choices=_PROVIDERS, help='LLM provider to use (default: ollama)')
+    parser.add_argument('--provider', type=str, default=settings.provider, help='LLM provider to use (default: ollama)')
     parser.add_argument('--azure', action='store_true', help='use the Azure-hosted variant of the selected provider')
     parser.add_argument('--rpm', type=int, default=settings.rpm, help='API requests per minute (default: 0 = none)')
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
@@ -104,6 +102,9 @@ def main():
 
     setup_logging(console_level=logging.DEBUG if args.verbose else logging.INFO)
     _apply_config(args.config)
+    valid = get_valid_providers()
+    if valid and args.provider not in valid:
+        parser.error(f"invalid --provider '{args.provider}'. Valid providers from {settings.tools_config_dir / 'llms.yaml'}: {', '.join(sorted(valid))}")
     settings.llm_timeout = args.timeout
     settings.llm_streaming = args.thinking
     if args.no_docker:
