@@ -82,6 +82,30 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         """Lifecycle Hook: performs actions AFTER the LLM runs."""
         return final_state
 
+    @staticmethod
+    def _repair_tool_call_messages(messages: list) -> list:
+        """Convert HumanMessages that follow tool_calls into ToolMessages to meet OpenAI API contract."""
+        repaired = []
+        i = 0
+        while i < len(messages):
+            msg = messages[i]
+            repaired.append(msg)
+            i += 1
+            if not (isinstance(msg, AIMessage) and msg.tool_calls):
+                continue
+            answered_ids = set()
+            while i < len(messages) and isinstance(messages[i], ToolMessage):
+                repaired.append(messages[i])
+                answered_ids.add(messages[i].tool_call_id)
+                i += 1
+            unanswered = [tc for tc in msg.tool_calls if tc['id'] not in answered_ids]
+            if unanswered and i < len(messages) and isinstance(messages[i], HumanMessage):
+                human_content = messages[i].content
+                for tc in unanswered:
+                    repaired.append(ToolMessage(content=human_content, tool_call_id=tc['id']))
+                i += 1
+        return repaired
+
     async def process(self, state: ProjectState) -> dict:
         """Invoke LLM and use tools to provide structured results."""
         if isinstance(state, dict):
@@ -89,9 +113,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.logger.info("Executing...")
         state = await self._pre_process(state)
         inputs = self._build_inputs(state)
+        original_messages = self._repair_tool_call_messages(list(state.messages))
         if 'messages' not in inputs:
-            inputs['messages'] = list(state.messages)
-        original_messages = list(state.messages)
+            inputs['messages'] = original_messages
         last_error = ''
         no_tool_call_retry = False
         for attempt in range(self.max_retries + 1):

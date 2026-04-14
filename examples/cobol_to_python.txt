@@ -25,21 +25,33 @@ Migrate to **Python 3.12**. Produce idiomatic, well-structured Python code.
 
 - Replace COBOL flat-file I/O with Python file reading. The input file
   (`employees.dat`) is a fixed-width record file where each line is:
-    - Columns 1-5:   Employee ID (numeric, 5 digits)
-    - Columns 6-35:  Employee name (string, 30 chars, space-padded)
-    - Columns 36-40: Hours worked (numeric, 3 digits + 1 decimal, e.g. 0450 = 45.0)
-    - Columns 41-46: Hourly rate  (numeric, 4 digits + 2 decimal, e.g. 122050 = $1220.50... wait, let me clarify)
+    - Columns 1-5:   Employee ID (5 chars, zero-padded numeric)
+    - Columns 6-35:  Employee name (30 chars, space-padded)
+    - Columns 36-39: Hours worked (4 chars, NNNN, last digit is tenths; e.g. 0450 = 45.0 hours, 0425 = 42.5 hours)
+    - Columns 40-45: Hourly rate  (6 chars, NNNNNN, last 2 digits are cents; e.g. 001500 = $15.00, 025000 = $250.00, 122050 = $1220.50)
 
-  Actually the columns are:
-    - Columns 1-5:   Employee ID (5 chars)
-    - Columns 6-35:  Employee name (30 chars)
-    - Columns 36-39: Hours worked as NNNN where last digit is decimal (e.g. 0450 = 45.0 hours)
-    - Columns 40-45: Hourly rate as NNNNNN where last 2 digits are cents (e.g. 122050 = $1220.50)
+  Parse hourly rate as: integer(columns 40-45) / 100 = dollar amount.
+  The system supports rates up to $9,999.99/hour to cover the full range from hourly staff to senior contractors.
 
 - Produce a formatted payroll report to stdout (or a file), matching the
   structure of the COBOL REPORT-FILE output: header, one detail line per
   employee showing ID, name, gross, tax and net pay, then a summary line
-  with totals and employee count.
+  with totals and employee count. The report must match this layout exactly:
+
+  ```
+  WEEKLY PAYROLL REPORT
+  =======================================================================
+  EMP   NAME                           GROSS PAY    TAX          NET PAY
+  ID
+  ----- ------------------------------ ------------ ------------ ------------
+  12345 JOHN SMITH                      $    750.00 $     75.00  $    675.00
+  67890 JANE DOE                        $   2100.00 $    630.00  $   1470.00
+  ----- ------------------------------ ------------ ------------ ------------
+  TOTAL EMPLOYEES: 2                    $   2850.00 $    705.00  $   2145.00
+  ```
+
+  Column widths: ID 5, name 30, gross/tax/net each 12 (right-aligned, with $ prefix).
+  Separator lines use dashes matching each column width.
 
 - Use dataclasses or a named tuple to represent an employee record.
 - Separate concerns into distinct functions or classes matching the COBOL paragraph structure:
