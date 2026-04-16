@@ -11,7 +11,7 @@ All examples live in the `examples/` folder. Each one is a ready-to-run project 
 The simplest possible project file. One sentence of requirements. Good for verifying that installation and LLM connectivity work before trying anything more complex.
 
 ```sh
-devteam examples/hello_world_python.txt --provider ollama
+devteam examples/hello_world_python.txt
 ```
 
 ---
@@ -23,7 +23,7 @@ A well-specified Python CLI calculator. The Product Manager receives enough deta
 Demonstrates: standard planning - development - integration pipeline.
 
 ```sh
-devteam examples/calc_app_python.txt --provider ollama
+devteam examples/calc_app_python.txt
 ```
 
 ---
@@ -35,7 +35,7 @@ The same calculator, but requirements are deliberately minimal ("Develop a calcu
 Demonstrates: the HITL clarification loop - the workflow pauses at the `human` node and waits for your answer before continuing.
 
 ```sh
-devteam examples/vague_reqs_python.txt --provider ollama
+devteam examples/vague_reqs_python.txt
 ```
 
 ---
@@ -47,7 +47,7 @@ The calculator brief with a `--seed` pointing at `examples/calc_app/`. The works
 Demonstrates: `--seed` for building on top of existing code.
 
 ```sh
-devteam examples/calc_app_python_seed.txt --provider ollama --seed examples/calc_app
+devteam examples/calc_app_python_seed.txt --seed examples/calc_app
 ```
 
 ---
@@ -138,5 +138,5 @@ A template RAG source configuration. Copy it to your project root and adjust the
 A sample SKILL that injects Python best-practice instructions (PEP 8, docstrings, error handling) into any agent that loads it. Pass `--skills examples/skills` to activate it.
 
 ```sh
-devteam examples/calc_app_python.txt --provider ollama --skills examples/skills
+devteam examples/calc_app_python.txt --skills examples/skills
 ```
