@@ -1,0 +1,27 @@
+Subject: NEW PROJECT: Harden bookstore login flow against brute-force attacks
+From: cto@human.local
+To: manager@ai-crew.local
+
+We operate a small Flask + SQLAlchemy bookstore backend (see workspace). Our
+authentication endpoints currently accept unlimited login attempts, which
+leaves us open to credential-stuffing and brute-force attacks.
+
+Please harden the authentication flow with the following changes:
+
+1. Add a Redis-backed rate limiter that caps login attempts to 5 per minute
+   per username and 20 per minute per IP address. Reject further attempts
+   with HTTP 429 and a clear error payload.
+
+2. Enforce the same rate limit on the two-factor verification endpoint so an
+   attacker cannot brute-force TOTP codes after stealing a password.
+
+3. When a username hits the limit, trigger a password-reset email via the
+   existing email service so the legitimate owner is notified.
+
+4. Add pytest coverage for the new limiter: allowed attempts, blocked
+   attempts, window expiry and the notification side-effect.
+
+Do not change unrelated areas (book catalog, orders, reviews, recommendations,
+search). Preserve the existing public API shape of `/api/auth/login` and
+`/api/auth/two-factor/verify` - only extend error responses, do not rename
+fields.

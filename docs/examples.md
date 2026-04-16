@@ -52,6 +52,26 @@ devteam examples/calc_app_python_seed.txt --provider ollama --seed examples/calc
 
 ---
 
+### Bookstore - BM25 retrieval tuning (`bookstore_retrieval_demo.txt`)
+
+A realistic 30-file Flask + SQLAlchemy bookstore backend (auth, models, api, services, utils, tests) paired with a focused task brief asking the crew to rate-limit the login endpoints against brute-force attacks. The codebase is large enough that BM25 top-k=10 meaningfully filters, and the task is narrow enough that the expected relevant files (`src/auth/*`, `src/api/auth_routes.py`, `tests/test_auth.py`) are predictable.
+
+Demonstrates: the `workspace_context` / `skills_context` retrieval flow in practice - task-scoped agents (QA, Equivalence Checker, Migrator) receive only relevant files in full, with the rest listed as paths for on-demand reading.
+
+```sh
+devteam examples/bookstore_retrieval_demo.txt --provider anthropic --seed examples/bookstore_flask
+```
+
+**Tuning the retriever:** `examples/retrieval_demo_preview.py` is a standalone harness that runs the same BM25 ranker against `examples/bookstore_flask/` without spinning up the full crew. It ships with five labelled queries plus expected-file sets and prints `precision@k` so you can measure the impact of tokenization or parameter changes on ranking quality.
+
+```sh
+python examples/retrieval_demo_preview.py
+python examples/retrieval_demo_preview.py --top-k 5
+python examples/retrieval_demo_preview.py --query "add two-factor enrollment endpoint"
+```
+
+---
+
 ### Calculator - RAG-augmented (`calc_app_python_rag.txt`)
 
 The same calculator brief with an instruction forcing the Product Manager to call `RetrieveContext` before writing specs. Requires a running RAG MCP server and a knowledge base with ingested documents (e.g. the `examples/rag/python_coding_standards.md` file).

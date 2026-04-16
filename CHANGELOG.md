@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **BM25 skills retrieval (`skills_context` input key):** Same retrieval approach applied to the skills catalog. Agents receive the top-ranked skills in full with the rest listed as names, instead of the entire catalog inlined on every turn.
 
+* **Bookstore retrieval example:** A 30-file Flask + SQLAlchemy bookstore workspace paired with a task brief that hardens the login flow against brute-force attacks. Large enough that BM25 top-k actually filters, and scoped so the expected retrieval set is predictable.
+
 ## [0.12.0] - 2026-04-12
 
 ### 🚀 Added

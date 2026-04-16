@@ -1,0 +1,9 @@
+flask>=3.0
+flask-sqlalchemy>=3.1
+sqlalchemy>=2.0
+pydantic>=2.0
+bcrypt>=4.1
+pyotp>=2.9
+stripe>=9.0
+redis>=5.0
+pytest>=8.0

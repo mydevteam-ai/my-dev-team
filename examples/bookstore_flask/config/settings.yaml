@@ -1,0 +1,22 @@
+app:
+  name: bookstore
+  debug: false
+  secret_key: change-me
+
+database:
+  url: postgresql://bookstore:bookstore@localhost/bookstore
+  pool_size: 10
+
+session:
+  cookie_name: bookstore_session
+  lifetime_minutes: 60
+  secure: true
+
+email:
+  smtp_host: smtp.mailgun.org
+  smtp_port: 587
+  from_address: no-reply@bookstore.example
+
+payments:
+  provider: stripe
+  currency: usd
