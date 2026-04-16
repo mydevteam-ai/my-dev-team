@@ -12,6 +12,8 @@ from devteam.tools.rag import init_retrieve_context_tool
 from devteam.utils import setup_logging, get_valid_providers
 from .runtime import async_main, show_history
 
+_PROVIDERS = ['anthropic', 'free', 'groq', 'ollama', 'openai', 'google']
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Run the AI Dev Team autonomous framework.')
     parser.add_argument('project_file', nargs='?', help='path to the text file containing your project requirements')
