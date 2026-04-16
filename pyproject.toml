@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "my-dev-team"
-version = "0.12.1"
+version = "0.12.2"
 description = "An autonomous, LangGraph-powered AI development agency."
 authors = [
     { name="Alexander Bobrovsky", email="bobrovsky@seznam.cz" },
