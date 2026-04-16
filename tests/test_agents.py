@@ -167,19 +167,19 @@ class TestProductManager:
 # --- QAEngineer Tests ---
 
 class TestQAEngineer:
-    def test_build_inputs_with_workspace(self, workspace_dir):
-        config = make_config("QA Engineer", ["specs", "current_task"])
-        agent = QAEngineer(config, "prompt {specs} {current_task} {workspace}", "qa")
+    def test_build_inputs_with_workspace_context(self, workspace_dir):
+        config = make_config("QA Engineer", ["specs", "current_task", "workspace_context"])
+        agent = QAEngineer(config, "prompt {specs} {current_task} {workspace_context}", "qa")
         state = ProjectState(specs="spec", task_context=TaskContext(current_task="task"), workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
-        assert "--- FILE: src/main.py ---" in inputs["workspace"]
+        assert "--- FILE: src/main.py ---" in inputs["workspace_context"]
 
     def test_build_inputs_empty_workspace(self):
-        config = make_config("QA Engineer", [])
-        agent = QAEngineer(config, "prompt {workspace}", "qa")
+        config = make_config("QA Engineer", ["workspace_context"])
+        agent = QAEngineer(config, "prompt {workspace_context}", "qa")
         state = ProjectState()
         inputs = agent._build_inputs(state)
-        assert "No files exist" in inputs["workspace"]
+        assert "No files exist" in inputs["workspace_context"]
 
     def test_update_state_passed(self):
         config = make_config("QA Engineer")
@@ -200,12 +200,12 @@ class TestQAEngineer:
 # --- FinalQAEngineer Tests ---
 
 class TestFinalQAEngineer:
-    def test_build_inputs_with_workspace(self, workspace_dir):
-        config = make_config("Final QA", ["specs"])
-        agent = FinalQAEngineer(config, "prompt {specs} {workspace}", "final_qa")
+    def test_build_inputs_with_workspace_context(self, workspace_dir):
+        config = make_config("Final QA", ["specs", "workspace_context"])
+        agent = FinalQAEngineer(config, "prompt {specs} {workspace_context}", "final_qa")
         state = ProjectState(specs="spec", workspace_path=workspace_dir)
         inputs = agent._build_inputs(state)
-        assert "--- FILE: src/main.py ---" in inputs["workspace"]
+        assert "--- FILE: src/main.py ---" in inputs["workspace_context"]
 
     def test_update_state_passed(self):
         config = make_config("Final QA")
@@ -227,7 +227,7 @@ class TestFinalQAEngineer:
 
 class TestReporter:
     def test_build_inputs_with_workspace(self, workspace_dir):
-        config = make_config("Reporter", ["specs"])
+        config = make_config("Reporter", ["specs", "workspace"])
         agent = Reporter(config, "prompt {specs} {workspace} {history}", "reporter")
         state = ProjectState(specs="spec", workspace_path=workspace_dir, communication_log=["Log entry 1", "Log entry 2"])
         inputs = agent._build_inputs(state)
@@ -236,11 +236,11 @@ class TestReporter:
         assert "Log entry 2" in inputs["history"]
 
     def test_build_inputs_empty_workspace(self):
-        config = make_config("Reporter", [])
+        config = make_config("Reporter", ["workspace"])
         agent = Reporter(config, "prompt {workspace} {history}", "reporter")
         state = ProjectState()
         inputs = agent._build_inputs(state)
-        assert "No files were generated" in inputs["workspace"]
+        assert "No files exist" in inputs["workspace"]
 
 # --- BaseAgent Retry Tests ---
 

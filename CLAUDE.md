@@ -76,10 +76,12 @@ At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(
 - `tools: list[type[BaseModel]]` - tool schemas passed to `bind_tools()`
 - Override `_map_tool_to_output()`, `_update_state()`, `_pre_process()`, `_post_process()` as needed
 
-`process()` always injects `messages` from `state.messages` - do not declare it in `inputs:`. `_build_inputs` handles three other special keys automatically:
-- `skills` - loads and formats the skills catalog
-- `workspace` - reads all file contents from `state.workspace_path` (full text; use for agents that need pre-loaded content)
+`process()` always injects `messages` from `state.messages` - do not declare it in `inputs:`. `_build_inputs` handles five other special keys automatically:
+- `skills` - loads and formats the full skills catalog
+- `skills_context` - loads the skills catalog and ranks entries by relevance to the current task via BM25; top skills are shown in full, the rest are listed as names (use for agents that use `LoadSkill` to fetch skill bodies on demand)
+- `workspace` - reads all file contents from `state.workspace_path` (full text; use for agents that need pre-loaded content, e.g. Reporter)
 - `workspace_listing` - injects only file paths, not content (use for agents that will read files via tools, e.g. CodeAnalyzer)
+- `workspace_context` - ranks workspace files by BM25 relevance to the current task; top files are shown in full, the rest are listed as paths (use for task-scoped agents that also have `ReadFile` / `GlobFiles` / `GrepFiles` tools, e.g. QA Engineer, Migrator)
 
 The `process()` loop invokes the LLM, then calls `_coerce_tool_calls()` to handle models that emit tool calls as plain-text JSON instead of native function calls (common with smaller Ollama models). If no tool call is found after coercion, it retries with an injected reminder message.
 

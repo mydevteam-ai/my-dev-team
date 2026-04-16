@@ -8,6 +8,7 @@ from .telemetry import TelemetryTracker
 from .with_logging import WithLogging
 from .communication_log import CommunicationLog
 from .workspace import hydrate_workspace
+from .retriever import retrieve_workspace_context, retrieve_skills_context
 from .serializer_deserializer import create_serde
 
 __all__ = [
@@ -26,5 +27,7 @@ __all__ = [
     'WithLogging',
     'CommunicationLog',
     'hydrate_workspace',
+    'retrieve_workspace_context',
+    'retrieve_skills_context',
     'create_serde'
 ]

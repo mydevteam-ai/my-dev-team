@@ -27,6 +27,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **RAG Knowledge Base:** Agents can retrieve context from an external knowledge base (documents, Jira tickets, Confluence pages, etc.) via any MCP-compatible vector store. A bundled Docker image starts the entire Qdrant + MCP stack in one command. Multi-source routing lets you combine Qdrant, Jira, Confluence and custom sources simultaneously.
 * **Workspace Hydrating:** Seed the workspace from an existing local directory or ZIP archive before agents run. Agents can extend, refactor or build on top of real code instead of starting from scratch.
 * **Lazy Workspace Loading:** The Developer agent receives only a file listing instead of the full workspace dump. It reads files on demand via `ReadFile`, `GlobFiles` and `GrepFiles` tools, keeping prompts small and avoiding context window overflow on large projects.
+* **BM25 Context Retrieval:** Task-scoped agents (QA Engineer, Equivalence Checker, Final QA, Migrator) receive only the most relevant workspace files in full via BM25 keyword retrieval, with the rest listed as paths for on-demand reading.
 
 ### AI Agents
 

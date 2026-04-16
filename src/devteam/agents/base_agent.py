@@ -13,7 +13,13 @@ from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools.extractor import coerce_tool_calls
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer, workspace
+from devteam.utils import retrieve_workspace_context, retrieve_skills_context
 from .intermediate_tools import IntermediateTools
+
+_TAG_MAP = {'workspace_listing': 'workspace', 'workspace_context': 'workspace', 'skills_context': 'skills'}
+
+def _prompt_tag(key: str) -> str:
+    return _TAG_MAP.get(key, key)
 
 class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
     """Base agent that uses LLM tool calling to submit structured results."""
@@ -57,9 +63,21 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             match key:
                 case 'skills':
                     inputs[key] = sanitizer.sanitize_for_prompt(self._skills_catalog, 'skills')
+                case 'skills_context':
+                    catalog = skills.load_skills_catalog()
+                    query = getattr(state.task_context, 'current_task', '') or getattr(state, 'specs', '')
+                    inputs[key] = sanitizer.sanitize_for_prompt(
+                        retrieve_skills_context(catalog, query), 'skills'
+                    )
                 case 'workspace':
                     if workspace_files := workspace.read_all_files(state.workspace_path):
                         inputs[key] = workspace.workspace_str_from_files(workspace_files).strip()
+                    else:
+                        inputs[key] = "No files exist in the workspace."
+                case 'workspace_context':
+                    query = getattr(state.task_context, 'current_task', '') or getattr(state, 'specs', '')
+                    if workspace.live_paths(state.workspace_path):
+                        inputs[key] = retrieve_workspace_context(state.workspace_path, query)
                     else:
                         inputs[key] = "No files exist in the workspace."
                 case 'workspace_listing':
@@ -197,7 +215,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         data_keys = self._data_input_keys()
         human_parts = []
         for key in data_keys:
-            tag = 'workspace' if key == 'workspace_listing' else key
+            tag = _prompt_tag(key)
             human_parts.append(f"<{tag}>\n{{{key}}}\n</{tag}>")
         messages = [('system', self.prompt_template)]
         if human_parts:

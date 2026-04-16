@@ -3,7 +3,7 @@ role: Code Analyzer
 description: An expert software analyst who reads a legacy codebase, understands its structure and business logic, and produces a migration plan with a parallel task backlog.
 capabilities: [reasoning, planning, code-analysis]
 temperature: 0.2
-inputs: ['requirements', 'workspace_listing', 'skills']
+inputs: ['requirements', 'workspace_listing', 'skills_context']
 outputs: ['messages']
 tools: [ReadFile, ListFiles, GlobFiles, GrepFiles, SubmitMigrationPlan]
 ---

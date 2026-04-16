@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1] - 2026-04-15
+
+### 🚀 Added
+
+* **BM25 workspace retrieval (`workspace_context` input key):** A new opt-in input key that injects only the top-ranked workspace files by relevance to the current task, with remaining files listed as paths.
+
+* **BM25 skills retrieval (`skills_context` input key):** Same retrieval approach applied to the skills catalog. Agents receive the top-ranked skills in full with the rest listed as names, instead of the entire catalog inlined on every turn.
+
 ## [0.12.0] - 2026-04-12
 
 ### 🚀 Added
