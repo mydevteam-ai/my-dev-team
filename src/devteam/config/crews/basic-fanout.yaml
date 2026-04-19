@@ -13,7 +13,7 @@ agents:
     developer_b:
         class: SeniorDeveloper
         config: senior-developer-b.md
-    code_judge:
+    judge:
         class: CodeJudge
         config: code-judge.md
     reviewer:

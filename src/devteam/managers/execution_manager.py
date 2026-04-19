@@ -57,8 +57,8 @@ class ExecutionManager:
             case 'developer_a':
                 return _next('reviewer' if task_context.winner_developer else 'developer_b')
             case 'developer_b':
-                return _next('code_judge')
-            case 'code_judge' | 'developer':
+                return _next('judge')
+            case 'judge' | 'developer':
                 return _next('reviewer')
             case _ if not task_context.review_feedback:
                 return _next('reviewer')

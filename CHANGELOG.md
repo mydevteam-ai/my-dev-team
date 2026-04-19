@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.3] - 2026-04-19
+
+### 🚀 Added
+
+* **Developer fan-out (`--fanout`):** New optional mode that runs two `SeniorDeveloper` instances with different LLM capability profiles independently on each task. A `CodeJudge` evaluates both implementations and selects the winner before code review. All subsequent revisions (after reviewer or QA rejection) use the winning developer only. Activate with `--fanout`, `--workflow fanout` or `--workflow development-fanout`.
+
+### 🔧 Internal
+
+* **Prompt inheritance via `{ include '...' }`:** Agent prompt files can now include other agent config files (not just partials). When the included file has YAML frontmatter, only the prompt body is substituted - the frontmatter is automatically stripped. This allows fan-out developer configs to inherit the full Senior Developer prompt without duplication.
+
+## [0.12.2] - 2026-04-17
+
+### 🐛 Fixed
+
+* Fixed missing GUI dist packages in the PyPI release.
+
 ## [0.12.1] - 2026-04-16
 
 ### 🚀 Added

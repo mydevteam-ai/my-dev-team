@@ -36,6 +36,8 @@ Either `project_file` or `--resume` (or `--history`) is required.
 | `--seed` | str | - | Path to a local directory or `.zip` archive to copy into the workspace before agents run. Cannot be combined with `--resume`. |
 | `--config` | str | - | Path to a custom configuration directory, overriding the bundled `config/`. |
 | `--settings` | str | - | Path to a custom `config.yaml`, overriding the default lookup (`./config.yaml` then `~/.devteam/config.yaml`). |
+| `--workflow` | str | `development` | Workflow variant to run. Options: `development` (default), `fanout` (or `development-fanout`), `migration`. Use `--fanout` as a shorthand for `--workflow fanout`. |
+| `--fanout` | flag | off | Run two developers independently on each task and let a Code Judge pick the best implementation before code review. The winning developer handles all subsequent revisions. Shorthand for `--workflow fanout`. |
 | `--verbose` | flag | off | Enable debug-level logging to the console. |
 
 ### Persistent defaults
@@ -144,6 +146,13 @@ devteam project.txt --seed /path/to/existing/code
 **Seed from a ZIP archive:**
 ```sh
 devteam project.txt --seed export.zip
+```
+
+**Run two developers on each task and let a judge pick the best:**
+```sh
+devteam project.txt --fanout
+devteam project.txt --workflow fanout
+devteam project.txt --fanout --provider groq --rpm 30
 ```
 
 **Use an Azure-hosted provider:**

@@ -138,7 +138,7 @@ class WorkspaceSaver(CrewExtension):
                 case 'developer':
                     if task_context:
                         self._save_workspace(task_context.changed_files, current_rev)
-                case 'code_judge':
+                case 'judge':
                     if task_context:
                         self._save_workspace(task_context.changed_files, current_rev)
                 case 'developer_a' | 'developer_b':
@@ -146,7 +146,7 @@ class WorkspaceSaver(CrewExtension):
                         if task_context.winner_developer:
                             self._save_workspace(task_context.changed_files, current_rev)
                         else: # Initial draft round
-                            suffix = node_name[-1]  # 'a' or 'b'
+                            suffix = node_name.rsplit('_', 1)[-1]
                             draft_files = task_context.developer_drafts.get(node_name, {})
                             self._save_workspace_draft(draft_files, current_rev, suffix)
                 case 'reviewer':

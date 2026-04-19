@@ -18,6 +18,7 @@ An autonomous, LangGraph-powered AI development agency. **My Dev Team** takes ra
 * **Telemetry & Cost Tracking:** Automatically tallies prompt and completion tokens across the entire workflow. Calculates exact USD costs dynamically using LiteLLM's live pricing registry, printing a detailed receipt at the end of every run.
 * **Incremental Development:** The System Architect breaks down requirements into a manageable backlog of tasks with explicit dependency edges.
 * **Self-Healing Code:** The Developer, Reviewer and QA Engineer agents continuously loop until unit tests pass and code meets specifications.
+* **Developer Fan-out:** Optionally run two developers with different LLMs on the same task simultaneously. A Code Judge evaluates both implementations and selects the best one before code review. All subsequent revisions are handled by the winning developer.
 * **Structured Outputs:** Powered by Pydantic and LangChain, ensuring zero "Markdown spillage" and robust state management.
 * **Tool-Calling Agents:** All agents use LLM-native tool calling to submit their work, enabling free-form reasoning and thinking before structured output.
 * **Extensible:** Easily add custom tools like `HumanInTheLoop` or `ConsoleLogger`.
@@ -96,6 +97,10 @@ devteam project.txt --ask-approval
 
 # Run without Docker (LLM-based QA only)
 devteam project.txt --no-docker
+
+# Run two developers on each task and let a judge pick the best
+devteam project.txt --fanout
+devteam project.txt --workflow fanout
 
 # Resume an interrupted run
 devteam --resume web_scraper_cli_20260312_083500

@@ -37,7 +37,8 @@ async def show_history(thread_id: str):
 WORKFLOW_CREW = {
     'development': 'basic.yaml',
     'development-fanout': 'basic-fanout.yaml',
-    'migration': 'migration.yaml',
+    'fanout': 'basic-fanout.yaml',
+    'migration': 'migration.yaml'
 }
 
 async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None, seed_path: str = None, workflow: str = 'development'):

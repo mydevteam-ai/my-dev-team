@@ -40,6 +40,11 @@ Two workflows are currently available, selected via `--workflow`:
 - `development` - Developer/Reviewer/QA loop per task
 - `integration` - Final QA then Reporter
 
+**`development-fanout`** (activated via `--fanout` or `--workflow fanout` or `--workflow development-fanout`) - same as `development` but replaces the single Developer with a fan-out-fan-in pattern:
+- Two `SeniorDeveloper` instances (`developer_a`, `developer_b`) with different capability profiles work on each task independently
+- `CodeJudge` compares both drafts and selects the winner
+- All subsequent revisions (after code review or QA rejection) use the winning developer only
+
 **`migration`** - `MigrationManager` extends `BaseManager`:
 - `planning` - CodeAnalyzer reads source workspace, produces Migration Analysis and task backlog
 - `development` - Migrator translates source units, EquivalenceChecker validates behavioral equivalence
