@@ -90,6 +90,10 @@ class WorkspaceSaver(CrewExtension):
             live_file_path.parent.mkdir(parents=True, exist_ok=True)
             live_file_path.write_text(content, encoding='utf-8')
 
+    def _save_judge_result(self, winner_developer: str, current_rev: int):
+        judge_file = self._base_dir / f'judge_v{current_rev}.md'
+        judge_file.write_text(winner_developer, encoding='utf-8')
+
     def _save_code_review(self, review_feedback: str, current_rev: int):
         feedback_file = self._base_dir / f'feedback_v{current_rev}.md'
         feedback_file.write_text(review_feedback, encoding='utf-8')
@@ -141,6 +145,8 @@ class WorkspaceSaver(CrewExtension):
                 case 'judge':
                     if task_context:
                         self._save_workspace(task_context.changed_files, current_rev)
+                        if task_context.winner_developer:
+                            self._save_judge_result(task_context.winner_developer, current_rev)
                 case 'developer_a' | 'developer_b':
                     if task_context:
                         if task_context.winner_developer:
