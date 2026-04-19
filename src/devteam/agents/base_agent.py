@@ -269,7 +269,10 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 raise FileNotFoundError(f"Include '{filepath}' not found in {base}") from None
             parts = text.split('---', 2)
             return parts[2].strip() if len(parts) >= 3 else text.strip()
-        return re.sub(r"\{\s*include\s+'([^']+)'\s*\}", replacer, prompt)
+        pattern = re.compile(r"\{\s*include\s+'([^']+)'\s*\}")
+        while pattern.search(prompt):
+            prompt = pattern.sub(replacer, prompt)
+        return prompt
 
     @classmethod
     def from_config(cls, node_name: str, config_path: str, *, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None, capabilities: dict[str, float] | list[str] = None, temperature: float = None):

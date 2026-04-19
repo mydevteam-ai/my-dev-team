@@ -52,6 +52,28 @@ devteam examples/calc_app_python_seed.txt --seed examples/calc_app
 
 ---
 
+### Calculator - developer fan-out (`calc_app_python.txt`)
+
+The same calculator brief run with the `--fanout` flag. Two `SeniorDeveloper` instances with different capability profiles (one optimised for code generation, one for code generation + reasoning) write independent implementations of every task. A `CodeJudge` evaluates both drafts and selects the better one. All subsequent revisions - triggered by code review or QA rejection - are handled exclusively by the winning developer.
+
+Demonstrates: the fan-out-fan-in workflow - both implementations are saved to `rev_0_a` / `rev_0_b` in the task history directory, and the winning code is promoted to `rev_0` and the live workspace.
+
+```sh
+# Via the --fanout shortcut flag
+devteam examples/calc_app_python.txt --fanout
+
+# Equivalent long form
+devteam examples/calc_app_python.txt --workflow fanout
+```
+
+Add `--provider` and `--rpm` as usual to switch backend or cap request rate:
+
+```sh
+devteam examples/calc_app_python.txt --fanout --provider groq --rpm 30
+```
+
+---
+
 ### Bookstore - BM25 retrieval tuning (`bookstore_retrieval_demo.txt`)
 
 A realistic 30-file Flask + SQLAlchemy bookstore backend (auth, models, api, services, utils, tests) paired with a focused task brief asking the crew to rate-limit the login endpoints against brute-force attacks. The codebase is large enough that BM25 top-k=10 meaningfully filters, and the task is narrow enough that the expected relevant files (`src/auth/*`, `src/api/auth_routes.py`, `tests/test_auth.py`) are predictable.
