@@ -100,7 +100,11 @@ devteam project.txt --no-docker
 
 # Run two developers on each task and let a judge pick the best
 devteam project.txt --fanout
-devteam project.txt --workflow fanout
+devteam project.txt --workflow development-fanout
+
+# Fan-out also works with other workflows
+devteam project.txt --workflow migration --fanout
+devteam project.txt --workflow migration-fanout
 
 # Resume an interrupted run
 devteam --resume web_scraper_cli_20260312_083500

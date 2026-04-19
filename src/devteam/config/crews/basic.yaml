@@ -1,5 +1,13 @@
 manager: ProjectManager
 
+fanout:
+    developer_b:
+        capabilities: {code-generation: 1.0, reasoning: 1.0}
+        temperature: 0.2
+    judge:
+        class: CodeJudge
+        config: code-judge.md
+
 agents:
     pm:
         class: ProductManager

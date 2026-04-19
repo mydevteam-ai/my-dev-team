@@ -37,7 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--seed', type=str, help='path to an existing directory or ZIP archive to pre-populate the workspace')
     parser.add_argument('--skills', type=str, help='path to the user\'s SKILLs folder')
     parser.add_argument('--workflow', type=str, default='development', help='workflow type to run (default: development)')
-    parser.add_argument('--fanout', action='store_true', help='run two developers independently on each task and let a Code Judge pick the winner before code review (shorthand for --workflow fanout)')
+    parser.add_argument('--fanout', action='store_true', help='run two developers independently on each task and let a code judge pick the winner before code review')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -122,8 +122,6 @@ def main():
         init_retrieve_context_tool()
     if args.skills:
         settings.skills = Path(args.skills)
-    if args.fanout:
-        args.workflow = 'fanout'
     _validate_inputs(parser, args)
 
     if args.history:
@@ -141,5 +139,6 @@ def main():
             checkpoint_id=args.checkpoint,
             seed_path=args.seed,
             workflow=args.workflow,
+            fanout=args.fanout,
         )
     )

@@ -62,8 +62,8 @@ Demonstrates: the fan-out-fan-in workflow - both implementations are saved to `r
 # Via the --fanout shortcut flag
 devteam examples/calc_app_python.txt --fanout
 
-# Equivalent long form
-devteam examples/calc_app_python.txt --workflow fanout
+# Equivalent long form (workflow suffix)
+devteam examples/calc_app_python.txt --workflow development-fanout
 ```
 
 Add `--provider` and `--rpm` as usual to switch backend or cap request rate:

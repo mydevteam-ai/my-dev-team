@@ -36,8 +36,8 @@ Either `project_file` or `--resume` (or `--history`) is required.
 | `--seed` | str | - | Path to a local directory or `.zip` archive to copy into the workspace before agents run. Cannot be combined with `--resume`. |
 | `--config` | str | - | Path to a custom configuration directory, overriding the bundled `config/`. |
 | `--settings` | str | - | Path to a custom `config.yaml`, overriding the default lookup (`./config.yaml` then `~/.devteam/config.yaml`). |
-| `--workflow` | str | `development` | Workflow variant to run. Options: `development` (default), `fanout` (or `development-fanout`), `migration`. Use `--fanout` as a shorthand for `--workflow fanout`. |
-| `--fanout` | flag | off | Run two developers independently on each task and let a Code Judge pick the best implementation before code review. The winning developer handles all subsequent revisions. Shorthand for `--workflow fanout`. |
+| `--workflow` | str | `development` | Workflow variant to run. Options: `development` (default), `migration`. Append `-fanout` to any workflow (e.g. `development-fanout`, `migration-fanout`) to enable fan-out mode. Use `--fanout` as a shorthand when the workflow flag is already set or defaulted. |
+| `--fanout` | flag | off | Run two developers independently on each task and let a Code Judge pick the best implementation before code review. The winning developer handles all subsequent revisions. Combinable with any `--workflow`. |
 | `--verbose` | flag | off | Enable debug-level logging to the console. |
 
 ### Persistent defaults

@@ -29,11 +29,13 @@ class CrewFactory(WithLogging):
             raise ValueError(f"Configuration Error: '{class_name}' is not a valid class in devteam.managers")
         return ManagerClass
 
-    def create(self, project_folder: Path, *, checkpointer=None, rpm: int = 0, extensions: list = None, config_name: str = None, manager=None):
+    def create(self, project_folder: Path, *, checkpointer=None, rpm: int = 0, extensions: list = None, config_name: str = None, manager=None, fanout: bool = False):
         rate_limiter = self.rate_limiter or (RateLimiter(requests_per_minute=rpm) if rpm > 0 else None)
         self.agents_factory.rate_limiter = rate_limiter
         config_name = config_name or self.BASIC_CREW
         crew_config = self.agents_factory.load_crew_config(config_name)
+        if fanout:
+            crew_config = AgentsFactory.fanout_transform(crew_config)
         agents = self.agents_factory.create_agents_from_config(crew_config)
         ManagerClass = self._resolve_manager(crew_config, manager)
         return VirtualCrew(
