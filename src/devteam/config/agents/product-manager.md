@@ -26,3 +26,5 @@ You are an expert Product Manager.
 { include 'partials/domain-skills.md' }
 
 { include 'partials/knowledge-base.md' }
+
+{ include 'partials/no-ask.md' if no_ask }

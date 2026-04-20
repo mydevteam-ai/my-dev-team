@@ -38,6 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--skills', type=str, help='path to the user\'s SKILLs folder')
     parser.add_argument('--workflow', type=str, default='development', help='workflow type to run (default: development)')
     parser.add_argument('--fanout', action='store_true', help='run two developers independently on each task and let a code judge pick the winner before code review')
+    parser.add_argument('--no-ask', action='store_true', help='disable clarification questions - agents proceed directly to their output tool without asking the user')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -118,6 +119,8 @@ def main():
         settings.rag_collection = args.rag_collection
     if args.no_rag:
         settings.rag_enabled = False
+    if args.no_ask:
+        settings.no_ask = True
     if settings.rag_enabled:
         init_retrieve_context_tool()
     if args.skills:

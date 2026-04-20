@@ -260,6 +260,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         base = base_dir.resolve()
         def replacer(match):
             filepath = match.group(1)
+            condition = match.group(2)
+            if condition and not getattr(settings, condition, False):
+                return ''
             resolved = (base / filepath).resolve()
             if not resolved.is_relative_to(base):
                 raise ValueError(f"Include path '{filepath}' escapes the base directory")
@@ -269,7 +272,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 raise FileNotFoundError(f"Include '{filepath}' not found in {base}") from None
             parts = text.split('---', 2)
             return parts[2].strip() if len(parts) >= 3 else text.strip()
-        pattern = re.compile(r"\{\s*include\s+'([^']+)'\s*\}")
+        pattern = re.compile(r"\{\s*include\s+'([^']+)'(?:\s+if\s+(\w+))?\s*\}")
         while pattern.search(prompt):
             prompt = pattern.sub(replacer, prompt)
         return prompt

@@ -21,6 +21,7 @@ class Settings:
     rag_collection: str = None
     rag_enabled: bool = True
     max_revision_count: int = 3
+    no_ask: bool = False
 
     @cached_property
     def tools_config_dir(self) -> Path:
