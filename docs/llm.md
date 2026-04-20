@@ -14,7 +14,7 @@ Pass `--provider <name>` on the CLI (or set `provider:` in `config.yaml`). The f
 
 ## anthropic
 
-**Package:** `pip install "my-dev-team[anthropic]"`  
+**Package:** `pip install "my-dev-team[anthropic]"`
 **Env var:** `ANTHROPIC_API_KEY`
 
 | Model | Best for | Verified |
@@ -27,7 +27,7 @@ Pass `--provider <name>` on the CLI (or set `provider:` in `config.yaml`). The f
 
 ## azure-anthropic
 
-**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)  
+**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)
 **Env vars:** `AZURE_ANTHROPIC_ENDPOINT`, `AZURE_ANTHROPIC_API_KEY`
 
 ```
@@ -47,7 +47,7 @@ Claude models deployed via Azure AI Foundry expose an OpenAI-compatible REST API
 
 ## azure-openai
 
-**Package:** `pip install "my-dev-team[openai]"`  
+**Package:** `pip install "my-dev-team[openai]"`
 **Env vars:** `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`
 
 ```
@@ -66,7 +66,7 @@ By default the deployment name is assumed to match the model `id` in `llms.yaml`
 
 ## openai
 
-**Package:** `pip install "my-dev-team[openai]"`  
+**Package:** `pip install "my-dev-team[openai]"`
 **Env var:** `OPENAI_API_KEY`
 
 | Model | Best for | Verified |
@@ -80,36 +80,36 @@ By default the deployment name is assumed to match the model `id` in `llms.yaml`
 
 ## groq
 
-**Package:** `pip install "my-dev-team[groq]"`  
+**Package:** `pip install "my-dev-team[groq]"`
 **Env var:** `GROQ_API_KEY`
 
 | Model | Best for | Verified |
 |---|---|---|
-| `qwen/qwen3-32b` | reasoning | |
-| `openai/gpt-oss-120b` | planning, code generation, code analysis | |
-| `llama-3.1-8b-instant` | fast utility tasks | |
+| `qwen/qwen3-32b` | reasoning | 2026-03-28 |
+| `openai/gpt-oss-120b` | planning, code generation, code analysis | 2026-03-28 |
+| `llama-3.1-8b-instant` | fast utility tasks | 2026-03-28 |
 
 ---
 
 ## ollama
 
-**Package:** `pip install "my-dev-team[ollama]"`  
-**Env var:** none (local service)  
+**Package:** `pip install "my-dev-team[ollama]"`
+**Env var:** none (local service)
 **Guide:** [Ollama setup](ollama.md)
 
 Models with `thinking: true` in `llms.yaml` have the reasoning stream enabled (requires `--thinking`).
 
 | Model | Thinking | Best for | Verified |
 |---|---|---|---|
-| `qwen3:8b` | yes | reasoning | |
-| `qwen2.5-coder:7b` | no | planning, code generation, code analysis | |
-| `gemma3:4b` | no | fast utility tasks | |
+| `qwen3:8b` | yes | reasoning | 2026-03-28 |
+| `qwen2.5-coder:7b` | no | planning, code generation, code analysis | 2026-03-28 |
+| `gemma3:4b` | no | fast utility tasks | 2026-03-28 |
 
 ---
 
 ## google
 
-**Package:** `pip install "my-dev-team[google]"`  
+**Package:** `pip install "my-dev-team[google]"`
 **Env var:** `GOOGLE_API_KEY`
 
 LangChain reports this provider as `google_genai`. The alias `'google_genai/*': 'gemini/*'` in `llms.yaml` maps it to the correct litellm prefix for cost tracking.
@@ -125,7 +125,7 @@ Note: `gemini-3.1-pro-preview` is commented out in `llms.yaml` by default. Uncom
 
 ## mistral
 
-**Package:** `pip install "my-dev-team[mistral]"`  
+**Package:** `pip install "my-dev-team[mistral]"`
 **Env var:** `MISTRAL_API_KEY`
 
 | Model | Best for | Verified |
@@ -138,7 +138,7 @@ Note: `gemini-3.1-pro-preview` is commented out in `llms.yaml` by default. Uncom
 
 ## deepseek
 
-**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)  
+**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)
 **Env var:** `DEEPSEEK_API_KEY`
 
 | Model | Best for | Verified |
@@ -150,7 +150,7 @@ Note: `gemini-3.1-pro-preview` is commented out in `llms.yaml` by default. Uncom
 
 ## grok
 
-**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)  
+**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)
 **Env var:** `XAI_API_KEY`
 
 | Model | Best for | Verified |
@@ -167,12 +167,12 @@ No API key required for cloud models when Groq free-tier limits apply. Ollama mo
 
 The `free` provider is a compound provider - each model entry carries a `provider` field pointing to its real backend (`groq` or `ollama`). No separate install is needed beyond those two.
 
-| Model | Backend | Best for | Verified |
-|---|---|---|---|
-| `qwen/qwen3-32b` | groq | reasoning | |
-| `openai/gpt-oss-120b` | groq | planning, code generation, code analysis | |
-| `llama-3.1-8b-instant` | groq | fast utility tasks | |
-| `qwen2.5-coder:7b` | ollama | code generation, code analysis | |
+| Model | Backend | Best for |
+|---|---|---|
+| `qwen/qwen3-32b` | groq | reasoning |
+| `openai/gpt-oss-120b` | groq | planning, code generation, code analysis |
+| `llama-3.1-8b-instant` | groq | fast utility tasks |
+| `qwen2.5-coder:7b` | ollama | code generation, code analysis |
 
 ---
 
