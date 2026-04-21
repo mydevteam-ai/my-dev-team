@@ -12,7 +12,7 @@ class ProductManagerResponse(BaseModel):
         default=None,
         description="Provide detailed Technical Specifications ONLY if the requirements are clear. Must be formatted in clean Markdown with sections for architecture, features, acceptance criteria, constraints, and testing. MUST end with an '## Alignment Confirmation' section."
     )
-    complexity: str | None = Field(
+    project_complexity: str | None = Field(
         default=None,
         description="Overall project complexity. Must be exactly one of: 'low', 'medium', 'high'. 'low' = small scope, well-understood domain, no significant design decisions. 'medium' = moderate scope, some architectural decisions, multiple integrated components. 'high' = large scope, significant architectural complexity, novel requirements, or substantial ambiguity. Leave null if requirements are unclear (clarification needed)."
     )
@@ -26,7 +26,7 @@ class SubmitSpecification(BaseModel):
     specs: str = Field(
         description="Detailed Technical Specifications in clean Markdown with sections for architecture, features, acceptance criteria, constraints, and testing. MUST end with an '## Alignment Confirmation' section."
     )
-    complexity: str = Field(
+    project_complexity: str = Field(
         description="Overall project complexity. Must be exactly one of: 'low', 'medium', 'high'. 'low' = small scope, well-understood domain, no significant design decisions. 'medium' = moderate scope, some architectural decisions, multiple integrated components. 'high' = large scope, significant architectural complexity, novel requirements, or substantial ambiguity."
     )
 

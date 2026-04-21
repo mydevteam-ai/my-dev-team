@@ -115,6 +115,7 @@ class ExecutionManager:
                 current_task=formatted,
                 current_task_name=task['task_name'],
                 current_task_index=task_idx,
+                current_task_complexity=task.get('complexity', ''),
             ),
             'messages': [],
             'communication_log': self.communication(f"Task '{task['task_name']}' ###"),

@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.4] - 2026-04-20
+## [0.12.4] - 2026-04-21
 
 ### 🚀 Added
+
+* **Complexity-aware LLM routing:** Product Manager estimates project complexity, System Architect assigns per-task complexity, and agents opting in with `complexity_routing: true` route each call to a model tuned for that level via `complexity_fit` scores in `llms.yaml`. Disable globally with `--no-complexity-routing` or `no_complexity_routing: true` in `config.yaml`. See [LLM Providers and Models](docs/llm.md#complexity-aware-routing).
 
 * **`--no-ask` flag:** Disables clarification questions for all agents. The `AskClarification` tool is stripped from every agent's bound tools, a conditional prompt partial instructs agents not to ask, and a runtime safety net returns a correction `ToolMessage` if an agent hallucinates the call anyway. Agents proceed with reasonable assumptions based on the provided requirements.
 

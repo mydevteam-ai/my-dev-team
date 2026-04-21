@@ -72,7 +72,7 @@ CLI (--provider, --workflow flags)
             → BaseAgent.__init__(config, prompt, node_name, llm_factory)
 ```
 
-At call time, `BaseAgent._llm` (a `@cached_property`) calls `llm_factory.create(capabilities, temperature)` which scores all models in `config/tools/llms.yaml` and returns the best-fit provider-specific LangChain chat model with tools bound.
+At call time, `BaseAgent._get_chain(complexity)` calls `llm_factory.create(capabilities, temperature, complexity=...)` which scores all models in `config/tools/llms.yaml` and returns the best-fit provider-specific LangChain chat model with tools bound. Chains are cached per complexity level on the agent instance.
 
 ### Agent Base Class (`agents/base_agent.py`)
 
@@ -94,7 +94,9 @@ The `process()` loop invokes the LLM, then calls `_coerce_tool_calls()` to handl
 
 Agents declare `capabilities` in their `.md` frontmatter - either a list (equal weights) or a weighted dict. `LLMFactory._select_model()` scores every model in `config/tools/llms.yaml` by computing a weighted sum of capability scores and returns the highest scorer.
 
-Ollama models additionally require a `thinking: true/false` field; only models with `thinking: true` have the `reasoning` stream enabled.
+**Complexity-aware routing.** Agents can opt in with `complexity_routing: true` in their frontmatter. When enabled, `BaseAgent` reads complexity from `state.task_context.current_task_complexity` (falling back to `state.project_complexity`) and passes it to the factory. Each model in `llms.yaml` declares `complexity_fit: {low, medium, high}` which multiplies the capability score, biasing selection toward models appropriate for the task's difficulty. Complexity signals originate from the Product Manager (project-level, `ProductManagerResponse.project_complexity`) and the System Architect (per-task, `DevelopmentTask.complexity`). Agents can also declare `complexity_overrides:` to tune `temperature` or ollama `thinking` per complexity level.
+
+Ollama models additionally require a `thinking: true/false` field; only models with `thinking: true` have the `reasoning` stream enabled. This can be overridden per-call via the `thinking` kwarg on `LLMFactory.create()`.
 
 **Compound providers** are pseudo-providers defined in `config/tools/llms.yaml` under `providers:` like any other, but each model entry carries a `provider:` field pointing to the real backend. The factory reads `model.get('provider', self.provider)` and dispatches to the correct `_instantiate()` branch. The built-in `free` compound provider combines Groq free-tier models with local Ollama models. Add new compound providers by adding a new key under `providers:` with per-model `provider:` fields — no factory changes needed.
 

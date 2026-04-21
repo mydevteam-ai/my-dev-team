@@ -5,17 +5,20 @@ providers:
               capabilities:
                   reasoning: 1.0
                   planning: 0.5
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'openai/gpt-oss-120b'
               capabilities:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.7
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.9}
             - id: 'llama-3.1-8b-instant'
               capabilities:
                   fast-utility: 1.0
                   reasoning: 0.3
                   code-generation: 0.3
+              complexity_fit: {low: 1.0, medium: 0.5, high: 0.2}
     ollama:
         models:
             - id: 'qwen3:8b'
@@ -23,6 +26,7 @@ providers:
               capabilities:
                   reasoning: 1.0
                   planning: 1.0
+              complexity_fit: {low: 0.5, medium: 0.9, high: 1.0}
             - id: 'qwen2.5-coder:7b'
               thinking: false
               capabilities:
@@ -30,11 +34,13 @@ providers:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.5
+              complexity_fit: {low: 0.9, medium: 0.8, high: 0.5}
             - id: 'gemma3:4b'
               thinking: false
               capabilities:
                   fast-utility: 1.0
                   reasoning: 0.3
+              complexity_fit: {low: 1.0, medium: 0.4, high: 0.2}
     anthropic:
         models:
             - id: 'claude-opus-4-6'
@@ -43,12 +49,14 @@ providers:
                   planning: 0.9
                   code-generation: 0.9
                   code-analysis: 0.9
+              complexity_fit: {low: 0.3, medium: 0.8, high: 1.0}
             - id: 'claude-sonnet-4-6'
               capabilities:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
             - id: 'claude-haiku-4-5-20251001'
               capabilities:
                   fast-utility: 1.0
@@ -56,24 +64,28 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     openai:
         models:
             - id: 'o3'
               capabilities:
                   reasoning: 1.0
                   planning: 0.9
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'codex-mini-latest'
               capabilities:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.9
                   planning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.9}
             - id: 'gpt-4.1'
               capabilities:
                   planning: 1.0
                   code-generation: 0.9
                   code-analysis: 0.9
                   reasoning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
             - id: 'gpt-4.1-mini'
               capabilities:
                   fast-utility: 1.0
@@ -81,6 +93,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     grok:
         models:
             - id: 'grok-3'
@@ -89,12 +102,14 @@ providers:
                   planning: 0.9
                   code-generation: 0.9
                   code-analysis: 0.9
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'grok-3-fast'
               capabilities:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
             - id: 'grok-3-mini-fast'
               capabilities:
                   fast-utility: 1.0
@@ -102,6 +117,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     google:
         models:
 #            - id: 'gemini-3.1-pro-preview'
@@ -110,6 +126,7 @@ providers:
 #                  planning: 0.9
 #                  code-generation: 0.9
 #                  code-analysis: 0.9
+#              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'gemini-3.1-flash-lite-preview'
               capabilities:
                   fast-utility: 1.0
@@ -117,6 +134,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.3
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     mistral:
         models:
             - id: 'mistral-large-latest'
@@ -125,12 +143,14 @@ providers:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
+              complexity_fit: {low: 0.5, medium: 1.0, high: 0.9}
             - id: 'codestral-latest'
               capabilities:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.6
                   planning: 0.5
+              complexity_fit: {low: 0.8, medium: 1.0, high: 0.7}
             - id: 'mistral-small-latest'
               capabilities:
                   fast-utility: 1.0
@@ -138,6 +158,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     azure-anthropic:
         models:
             - id: 'claude-opus-4-6'
@@ -146,12 +167,14 @@ providers:
                   planning: 0.9
                   code-generation: 0.9
                   code-analysis: 0.9
+              complexity_fit: {low: 0.3, medium: 0.8, high: 1.0}
             - id: 'claude-sonnet-4-6'
               capabilities:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
             - id: 'claude-haiku-4-5-20251001'
               capabilities:
                   fast-utility: 1.0
@@ -159,6 +182,7 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     azure-openai:
         models:
             - id: 'gpt-5.3-codex'
@@ -167,6 +191,7 @@ providers:
                   code-analysis: 1.0
                   reasoning: 0.9
                   planning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.9}
             - id: 'gpt-5.4-mini'
               capabilities:
                   fast-utility: 1.0
@@ -174,18 +199,21 @@ providers:
                   code-generation: 0.5
                   code-analysis: 0.5
                   reasoning: 0.4
+              complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
     deepseek:
         models:
             - id: 'deepseek-reasoner'
               capabilities:
                   reasoning: 1.0
                   planning: 0.8
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'deepseek-chat'
               capabilities:
                   planning: 1.0
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.8
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.85}
     free:  # compound: groq free tier + ollama local models
         models:
             - id: 'qwen/qwen3-32b'
@@ -193,6 +221,7 @@ providers:
               capabilities:
                   reasoning: 1.0
                   planning: 0.5
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
             - id: 'openai/gpt-oss-120b'
               provider: groq
               capabilities:
@@ -200,11 +229,13 @@ providers:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.7
+              complexity_fit: {low: 0.7, medium: 1.0, high: 0.9}
             - id: 'llama-3.1-8b-instant'
               provider: groq
               capabilities:
                   fast-utility: 1.0
                   reasoning: 0.3
+              complexity_fit: {low: 1.0, medium: 0.5, high: 0.2}
             - id: 'qwen2.5-coder:7b'
               provider: ollama
               thinking: false
@@ -212,6 +243,7 @@ providers:
                   code-generation: 1.0
                   code-analysis: 1.0
                   reasoning: 0.5
+              complexity_fit: {low: 0.9, medium: 0.8, high: 0.5}
 
 aliases:
     'google_genai/*': 'gemini/*'

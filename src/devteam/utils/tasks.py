@@ -5,13 +5,16 @@ def task_to_markdown(task, idx: int) -> str:
     t_story = task.get('user_story', '')
     t_criteria = task.get('acceptance_criteria', [])
     t_deps = task.get('dependencies', [])
+    t_complexity = task.get('complexity', '')
     acc_criteria = '\n'.join([f'- {c}' for c in t_criteria])
+    complexity_section = f"**Complexity:** {t_complexity}\n\n" if t_complexity else ''
     deps_section = ''
     if t_deps:
         deps_list = '\n'.join([f'- {d}' for d in t_deps])
         deps_section = f"### Dependencies\n\n{deps_list}\n\n"
     return (
         f"## {t_full_name}\n\n"
+        f"{complexity_section}"
         f"### User Story\n\n{t_story}\n\n"
         f"{deps_section}"
         f"### Acceptance Criteria\n\n{acc_criteria}\n\n"

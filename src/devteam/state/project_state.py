@@ -7,11 +7,12 @@ from .task_context import TaskContext
 
 type ProjectPhase = Literal['planning', 'development', 'integration', 'complete']
 
-class PendingTask(TypedDict):
+class PendingTask(TypedDict, total=False):
     task_name: str
     user_story: str
     acceptance_criteria: list[str]
     dependencies: list[str]
+    complexity: str
 
 class ProjectState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -24,6 +25,7 @@ class ProjectState(BaseModel):
     human_answer: str = ''
     clarification_question: str = ''
     runtime: str = ''
+    project_complexity: str = ''
     pending_tasks: list[PendingTask] = Field(default_factory=list)
     task_context: TaskContext = Field(default_factory=TaskContext)
     final_report: str = ''

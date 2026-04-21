@@ -6,6 +6,7 @@ class TaskContext(BaseModel):
     current_task: str = ''
     current_task_name: str = ''
     current_task_index: int = 0
+    current_task_complexity: str = ''
     review_feedback: str = ''
     test_results: str = ''
     raw_test_results: str = ''

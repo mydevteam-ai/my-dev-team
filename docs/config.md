@@ -33,6 +33,7 @@ Keys are case-insensitive and spaces are treated as underscores, so `"LLM timeou
 | `workspace_dir` | path | `workspaces/` | - |
 | `skills_dir` | path | `skills/` | `--skills` |
 | `max_revision_count` | int | `3` | - |
+| `no_complexity_routing` | bool | `false` | `--no-complexity-routing` |
 
 ## Example
 

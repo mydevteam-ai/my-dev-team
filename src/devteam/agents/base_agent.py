@@ -40,6 +40,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.name = config.get('name', None)
         self.capabilities = self._resolve_capabilities(config)
         self.temperature = config.get('temperature', self.temperature)
+        self.complexity_routing = bool(config.get('complexity_routing', False))
+        self.complexity_overrides = config.get('complexity_overrides') or {}
+        self._chain_cache: dict[str, Runnable] = {}
 
     @staticmethod
     def _resolve_capabilities(config: dict) -> dict[str, float]:
@@ -130,6 +133,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             state = ProjectState(**state)
         self.logger.info("Executing...")
         state = await self._pre_process(state)
+        complexity = self._resolve_complexity(state)
+        if complexity:
+            self.logger.info("Routing on complexity=%s", complexity)
         inputs = self._build_inputs(state)
         original_messages = self._repair_tool_call_messages(list(state.messages))
         if 'messages' not in inputs:
@@ -154,7 +160,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                     if conversation_history:
                         inputs['messages'] = original_messages + conversation_history
                     self.logger.debug("Invoking LLM with inputs:\n%s", inputs)
-                    ai_message = await self._invoke_llm(**inputs)
+                    ai_message = await self._invoke_llm(complexity=complexity, **inputs)
                     ai_message = coerce_tool_calls(ai_message)
                     conversation_history.append(ai_message)
                     if not ai_message.tool_calls:
@@ -197,15 +203,40 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             return '\n'.join(f"- `{item['name']}`: {item['description']}" for item in catalog)
         return "No skills available."
 
-    @cached_property
-    def _llm(self) -> Runnable:
+    def _resolve_complexity(self, state: ProjectState) -> str:
+        if not self.complexity_routing or settings.no_complexity_routing:
+            return None
+        task_ctx = getattr(state, 'task_context', None)
+        if task_ctx and (c := getattr(task_ctx, 'current_task_complexity', '')):
+            return c
+        return getattr(state, 'project_complexity', None)
+
+    def _resolve_params(self, complexity: str) -> tuple[float, dict]:
+        temperature = self.temperature
+        extras: dict = {}
+        if complexity and (override := self.complexity_overrides.get(complexity)):
+            temperature = override.get('temperature', temperature)
+            if 'thinking' in override:
+                extras['thinking'] = override['thinking']
+        return temperature, extras
+
+    def _get_llm(self, complexity: str) -> Runnable:
+        temperature, extras = self._resolve_params(complexity)
         llm = self.llm_factory.create(
             capabilities=self.capabilities,
-            temperature=self.temperature,
+            temperature=temperature,
             node_name=self.node_name,
-            json_mode=False
+            json_mode=False,
+            complexity=complexity,
+            **extras,
         )
         return llm.bind_tools(self.tools)
+
+    def _get_chain(self, complexity: str) -> Runnable:
+        cache_key = complexity or '_default'
+        if cache_key not in self._chain_cache:
+            self._chain_cache[cache_key] = self._build_prompt() | self._get_llm(complexity)
+        return self._chain_cache[cache_key]
 
     def _data_input_keys(self) -> list[str]:
         """Input keys that become template variables in the human message (all inputs except messages)."""
@@ -223,16 +254,13 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         messages.append(MessagesPlaceholder(variable_name='messages'))
         return ChatPromptTemplate.from_messages(messages)
 
-    @cached_property
-    def _chain(self) -> Runnable:
-        return self._build_prompt() | self._llm
-
-    async def _invoke_llm(self, **kwargs) -> AIMessage:
+    async def _invoke_llm(self, complexity: str = None, **kwargs) -> AIMessage:
         if self.rate_limiter:
             await self.rate_limiter.wait_if_needed()
+        chain = self._get_chain(complexity)
         try:
             response = await asyncio.wait_for(
-                self._chain.ainvoke(kwargs), timeout=settings.llm_timeout
+                chain.ainvoke(kwargs), timeout=settings.llm_timeout
             )
         except asyncio.TimeoutError:
             raise TimeoutError(

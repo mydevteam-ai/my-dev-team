@@ -8,5 +8,8 @@ class ProductManager(BaseAgent[ProductManagerResponse]):
         if tool_name == 'AskClarification':
             return ProductManagerResponse(clarification_question=tool_args['question'])
         if tool_name == 'SubmitSpecification':
-            return ProductManagerResponse(specs=tool_args['specs'])
+            return ProductManagerResponse(
+                specs=tool_args['specs'],
+                project_complexity=tool_args.get('project_complexity'),
+            )
         raise ValueError(f"Unexpected tool call: {tool_name}")

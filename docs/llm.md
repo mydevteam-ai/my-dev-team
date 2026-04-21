@@ -12,6 +12,93 @@ Pass `--provider <name>` on the CLI (or set `provider:` in `config.yaml`). The f
 
 ---
 
+## Complexity-aware routing
+
+Capabilities describe *what kind of work* an agent does (reasoning, code generation). Complexity describes *how much horsepower* a specific task needs. Both dimensions feed into model selection, so the same agent can run on a cheap model for a trivial task and a strong model for a hard one.
+
+### Where complexity comes from
+
+Two agents produce complexity signals during the planning phase:
+
+- **Product Manager** - assesses the whole project and emits `project_complexity` (`low` / `medium` / `high`) alongside the Technical Specifications. Stored on `state.project_complexity`.
+- **System Architect** - assigns a `complexity` to every task in the backlog. The officer node carries it into `TaskContext.current_task_complexity` when dispatching the task.
+
+Both levels use the same three-value scale:
+
+| Value | Meaning |
+|---|---|
+| `low` | Small, well-understood scope, clear requirements, trivial logic |
+| `medium` | Moderate scope, some design decisions, non-trivial integration |
+| `high` | Large scope, significant architectural complexity, novel algorithms, substantial ambiguity |
+
+### How agents consume it
+
+Routing is **opt-in per agent**. Add `complexity_routing: true` to the agent's frontmatter:
+
+```yaml
+---
+role: Senior Developer
+capabilities: [code-generation]
+complexity_routing: true
+---
+```
+
+When enabled, `BaseAgent` reads `state.task_context.current_task_complexity` (falling back to `state.project_complexity`) and passes it to the factory on every call. Chains are cached per complexity level, so a single agent instance may hold multiple bound LLMs - one per distinct complexity seen during the run.
+
+Currently enabled on: `senior-developer`, `system-architect`. Other agents (code reviewer, QA, judge) stay pinned to capability-only scoring by default.
+
+Pass `--no-complexity-routing` on the CLI (or set `no_complexity_routing: true` in `config.yaml`) to globally disable routing for all agents regardless of their frontmatter - model selection falls back to capability scoring only.
+
+### How the factory scores
+
+Each model in `llms.yaml` may declare a `complexity_fit` block:
+
+```yaml
+- id: 'claude-opus-4-6'
+  capabilities:
+      reasoning: 1.0
+      planning: 0.9
+      code-generation: 0.9
+      code-analysis: 0.9
+  complexity_fit: {low: 0.3, medium: 0.8, high: 1.0}
+```
+
+The selection formula becomes:
+
+```
+score = weighted_capability_score * complexity_fit[complexity]
+```
+
+When `complexity_fit` is missing, the multiplier defaults to `1.0` (neutral). When the agent does not route on complexity, the multiplier is not applied at all.
+
+The multiplication is intentional. A fast model that scores 1.0 on `code-generation` but has `complexity_fit.high = 0.2` loses to a larger model with `code-generation = 0.9` and `complexity_fit.high = 1.0` on high-complexity tasks - but wins on low-complexity ones where the roles reverse. This naturally biases selection toward cheap/fast models for trivial work and strong models for hard work without manual per-agent overrides.
+
+### Per-complexity parameter overrides
+
+Agents can also tune parameters per complexity level via `complexity_overrides`:
+
+```yaml
+---
+role: System Architect
+capabilities: [planning, reasoning]
+temperature: 0.1
+complexity_routing: true
+complexity_overrides:
+  high: {temperature: 0.3, thinking: true}
+  low:  {temperature: 0.1}
+---
+```
+
+Supported override keys:
+- `temperature` - replaces the base temperature for calls at this complexity
+- `thinking` - for Ollama models, overrides the model-level `thinking:` default (enables or disables the reasoning stream)
+
+### Telemetry
+
+When complexity routing kicks in, `BaseAgent.process()` logs `Routing on complexity=<level>` at INFO. The underlying LangChain `node:<name>` tag on the LLM is unchanged, so existing tracing still works - complexity just affects *which* model gets tagged.
+
+---
+
 ## anthropic
 
 **Package:** `pip install "my-dev-team[anthropic]"`
@@ -178,6 +265,6 @@ The `free` provider is a compound provider - each model entry carries a `provide
 
 ## Adding models
 
-To add a model, append an entry under the relevant provider in `config/tools/llms.yaml` and then add a row to the table above with an empty Verified cell. Mark Verified once integration tests confirm the model works end-to-end with the full agent workflow.
+To add a model, append an entry under the relevant provider in `config/tools/llms.yaml` with its `capabilities` scores and, optionally, a `complexity_fit` block (see [Complexity-aware routing](#complexity-aware-routing)). Then add a row to the table above with an empty Verified cell. Mark Verified once integration tests confirm the model works end-to-end with the full agent workflow.
 
 To add an entirely new provider, add a `case` block in `LLMFactory._instantiate()` in `src/devteam/utils/llm_factory.py` and a new section on this page.
