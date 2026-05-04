@@ -37,6 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--workflow', type=str, default='development', help='workflow type to run (default: development)')
     parser.add_argument('--fanout', action='store_true', help='run two developers independently on each task and let a code judge pick the winner before code review')
     parser.add_argument('--no-ask', action='store_true', help='disable clarification questions - agents proceed directly to their output tool without asking the user')
+    parser.add_argument('--max-revisions', type=int, help=f'maximum developer revision cycles per task (default: {settings.max_revision_count})')
     parser.add_argument('--no-complexity-routing', action='store_true', help='disable complexity-based LLM routing for all agents')
     parser.add_argument('--console', action='store_true', help='enable console logger extension')
     return parser

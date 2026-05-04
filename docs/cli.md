@@ -29,6 +29,7 @@ Either `project_file` or `--resume` (or `--history`) is required.
 | `--history` | str | - | Print the checkpoint timeline for the given thread ID and exit (e.g. `--history web_scraper_cli_20260312_083500`). |
 | `--checkpoint` | str | - | Checkpoint ID to rewind to before resuming or injecting feedback. |
 | `--ask-approval` | flag | off | Pause after the PM produces the Technical Specification and again after the Architect produces the task plan, waiting for interactive approval before proceeding. |
+| `--max-revisions` | int | `3` | Maximum developer revision cycles per task before the workflow moves on. |
 | `--console` | flag | off | Enable the `ConsoleLogger` extension, which prints detailed per-node state updates to the terminal. |
 | `--thinking` | flag | off | Stream raw LLM thinking tokens to stderr in real time. Requires `--console`. |
 | `--no-docker` | flag | off | Run the QA Engineer without a Docker sandbox (LLM-based simulation only). |

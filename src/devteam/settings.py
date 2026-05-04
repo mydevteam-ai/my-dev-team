@@ -69,7 +69,7 @@ class Settings:
     rag_mcp_tool = Coerced('qdrant-find')
     rag_collection = Coerced(None, str, cli=True)
     rag_enabled = Coerced(True, cli='no_rag', cli_invert=True)
-    max_revision_count = Coerced(3)
+    max_revision_count = Coerced(3, cli='max_revisions')
     no_ask = Coerced(False, cli=True)
     no_complexity_routing = Coerced(False, cli=True)
     console = Coerced(False, cli=True)
