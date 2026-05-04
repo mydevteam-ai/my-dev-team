@@ -10,6 +10,7 @@ from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.tools.rag import init_retrieve_context_tool
 from devteam.utils import setup_logging, get_valid_providers
+from .request import ResumeRequest, StartRequest
 from .runtime import async_main, show_history
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -75,6 +76,27 @@ def _validate_inputs(parser: argparse.ArgumentParser, args):
         if not (seed_path.is_dir() or (seed_path.is_file() and seed_path.suffix == '.zip')):
             parser.error(f"--seed must be a directory or a .zip file, got: '{seed_path}'.")
 
+def _build_request(args: argparse.Namespace):
+    if args.resume:
+        return ResumeRequest(
+            provider=args.provider,
+            rpm=args.rpm,
+            workflow=args.workflow,
+            fanout=args.fanout,
+            resume_thread=args.resume,
+            feedback=args.feedback,
+            feedback_source=args.as_node,
+            checkpoint_id=args.checkpoint,
+        )
+    return StartRequest(
+        provider=args.provider,
+        rpm=args.rpm,
+        workflow=args.workflow,
+        fanout=args.fanout,
+        project_file_path=args.project_file,
+        seed_path=args.seed,
+    )
+
 def _load_settings_from_argv() -> None:
     """Pre-parse --settings from argv and load settings, allowing override of the default lookup."""
     pre = argparse.ArgumentParser(add_help=False)
@@ -124,17 +146,4 @@ def main():
         asyncio.run(show_history(thread_id=args.history))
         return
 
-    asyncio.run(
-        async_main(
-            args.project_file,
-            args.provider,
-            args.rpm,
-            resume_thread=args.resume,
-            feedback=args.feedback,
-            feedback_source=args.as_node,
-            checkpoint_id=args.checkpoint,
-            seed_path=args.seed,
-            workflow=args.workflow,
-            fanout=args.fanout,
-        )
-    )
+    asyncio.run(async_main(_build_request(args)))

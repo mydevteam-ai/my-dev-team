@@ -5,20 +5,14 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.crew import CrewFactory
-from devteam.extensions import ConsoleLogger, HumanInTheLoop
 from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, load_project_spec, add_file_handler, remove_file_handler, create_serde
 from devteam.utils.workspace import hydrate_workspace
+from .extensions import build_extensions
+from .request import RunRequest, ResumeRequest, StartRequest
 
 logger = logging.getLogger(__name__)
 
 STATE_DB_FILE = 'state.db'
-
-def my_extensions() -> list:
-    extensions = []
-    if settings.console:
-        extensions.append(ConsoleLogger())
-    extensions.append(HumanInTheLoop())
-    return extensions
 
 async def show_history(thread_id: str):
     project_folder = settings.workspace_dir / thread_id
@@ -41,22 +35,25 @@ WORKFLOW_CREW = {
     'migration': 'migration.yaml'
 }
 
-async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume_thread: str = None, feedback: str = None, feedback_source: str = 'reviewer', checkpoint_id: str = None, seed_path: str = None, workflow: str = 'development', fanout: bool = False):
+async def async_main(request: RunRequest):
+    workflow = request.workflow
+    fanout = request.fanout
     if workflow.endswith('-fanout'):
         workflow = workflow[:-7]
         fanout = True
-    if resume_thread:
-        thread_id = resume_thread
+    is_resume = isinstance(request, ResumeRequest)
+    if is_resume:
+        thread_id = request.resume_thread
         project_requirements = None
         print(f"🔄 Resuming existing project thread: {thread_id}")
     else:
-        project_name, project_requirements = load_project_spec(project_file_path)
+        project_name, project_requirements = load_project_spec(request.project_file_path)
         thread_id = generate_thread_id(project_name)
         print(f"🚀 Starting NEW project: {project_name}")
     project_folder = settings.workspace_dir / thread_id
     project_folder.mkdir(parents=True, exist_ok=True)
-    if seed_path:
-        hydrate_workspace(seed_path, project_folder / 'workspace')
+    if isinstance(request, StartRequest) and request.seed_path:
+        hydrate_workspace(request.seed_path, project_folder / 'workspace')
     db_path = project_folder / 'state.db'
     log_file_path = project_folder / 'execution.log'
     log_handler = add_file_handler(log_file_path)
@@ -64,7 +61,7 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
     callbacks = [telemetry]
     if settings.llm_streaming:
         callbacks.append(StreamHandler())
-    llm_factory = LLMFactory(provider=provider, callbacks=callbacks)
+    llm_factory = LLMFactory(provider=request.provider, callbacks=callbacks)
     crew_factory = CrewFactory(llm_factory=llm_factory)
     try:
         async with aiosqlite.connect(db_path) as conn:
@@ -72,8 +69,8 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
             crew = crew_factory.create(
                 project_folder,
                 checkpointer=checkpointer,
-                rpm=rpm,
-                extensions=my_extensions(),
+                rpm=request.rpm,
+                extensions=build_extensions(),
                 config_name=WORKFLOW_CREW.get(workflow, 'basic.yaml'),
                 fanout=fanout,
             )
@@ -82,9 +79,9 @@ async def async_main(project_file_path: str, provider: str, rpm: int = 0, resume
             final_state = await crew.execute(
                 thread_id=thread_id,
                 requirements=project_requirements,
-                feedback=feedback,
-                feedback_source=feedback_source,
-                checkpoint_id=checkpoint_id,
+                feedback=request.feedback if is_resume else None,
+                feedback_source=request.feedback_source if is_resume else 'reviewer',
+                checkpoint_id=request.checkpoint_id if is_resume else None,
             )
         if final_state.abort_requested:
             print("❌ Workflow aborted by user or validation failure.")
