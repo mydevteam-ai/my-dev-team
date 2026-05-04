@@ -70,9 +70,10 @@ mydevteam/
 - YAML keys, config identifiers: `'reasoning'`, `'code-generator'`
 - Variable string values that are not user-facing: `encoding='utf-8'`
 
-### Type Hints
+### Type Hints & Function Signatures
 
 - Use type annotations on all public function signatures (parameters and return types).
+- Surround `=` with spaces when assigning default values in function and method signatures: `def method_a(arg1: int, arg2: int = None, arg3 = 'default', arg4 = True)`. This overrides PEP 8 which recommends no spaces around `=` for defaults.
 - Use modern union syntax: `str | list[str]`, `int | float`.
 - For optional parameters with a `None` default, use `str = None` not `str | None = None` - the `None` default already implies optionality.
 - **Exception:** Pydantic tool schemas exposed to LLMs (subclasses of `BaseModel` used as tools) must use `str | None = None` for nullable fields. Without `| None`, Pydantic generates `"type": "string"` in the JSON schema which rejects `null` values the LLM passes explicitly, causing tool call validation errors.

@@ -38,6 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--fanout', action='store_true', help='run two developers independently on each task and let a code judge pick the winner before code review')
     parser.add_argument('--no-ask', action='store_true', help='disable clarification questions - agents proceed directly to their output tool without asking the user')
     parser.add_argument('--no-complexity-routing', action='store_true', help='disable complexity-based LLM routing for all agents')
+    parser.add_argument('--console', action='store_true', help='enable console logger extension')
     return parser
 
 def _apply_config(custom_config_path: str):
@@ -103,6 +104,9 @@ def main():
             parser.error(f"--azure has no effect: '{args.provider}' is already an Azure provider.")
         args.provider = f'azure-{args.provider}'
 
+    if args.thinking and not args.console:
+        parser.error('--thinking requires --console')
+
     setup_logging(console_level=logging.DEBUG if args.verbose else logging.INFO)
     _apply_config(args.config)
     valid = get_valid_providers()
@@ -110,22 +114,9 @@ def main():
         parser.error(f"invalid --provider '{args.provider}'. Valid providers from {settings.tools_config_dir / 'llms.yaml'}: {', '.join(sorted(valid))}")
     settings.llm_timeout = args.timeout
     settings.llm_streaming = args.thinking
-    if args.no_docker:
-        settings.no_docker = True
-    if args.ask_approval:
-        settings.ask_approval = True
-    if args.rag_collection:
-        settings.rag_collection = args.rag_collection
-    if args.no_rag:
-        settings.rag_enabled = False
-    if args.no_ask:
-        settings.no_ask = True
-    if args.no_complexity_routing:
-        settings.no_complexity_routing = True
+    settings.apply_args(args)
     if settings.rag_enabled:
         init_retrieve_context_tool()
-    if args.skills:
-        settings.skills = Path(args.skills)
     _validate_inputs(parser, args)
 
     if args.history:

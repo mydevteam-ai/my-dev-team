@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 STATE_DB_FILE = 'state.db'
 
 def my_extensions() -> list:
-    return [
-        ConsoleLogger(),
-        HumanInTheLoop(),
-    ]
+    extensions = []
+    if settings.console:
+        extensions.append(ConsoleLogger())
+    extensions.append(HumanInTheLoop())
+    return extensions
 
 async def show_history(thread_id: str):
     project_folder = settings.workspace_dir / thread_id
