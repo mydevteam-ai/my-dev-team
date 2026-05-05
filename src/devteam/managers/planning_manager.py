@@ -10,7 +10,7 @@ class PlanningManager:
 
     def _planning_node(self, state: ProjectState) -> dict:
         if len(state.pending_tasks) > 0 and not state.tasks_approved: # Architect has finished
-            if settings.ask_approval:
+            if settings.ask_approval or settings.ask_all:
                 return {} # Wait for user to approve the task plan
             return {
                 'current_phase': 'development',
@@ -18,7 +18,7 @@ class PlanningManager:
                 'messages': self._cleanup_messages(state.messages)
             }
         if state.specs and not state.specs_approved: # PM has finished
-            if settings.ask_approval:
+            if settings.ask_approval or settings.ask_all:
                 return {} # Wait for user to approve the specifications
             return {
                 'specs_approved': True,

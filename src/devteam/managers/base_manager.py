@@ -31,7 +31,10 @@ class BaseManager(CommunicationLog, WithLogging, ExecutionManager, IntegrationMa
         workflow.add_edge(START, 'manager')
         workflow.add_conditional_edges('manager', self._central_router)
         workflow.add_conditional_edges('officer', self._central_router)
-        return workflow.compile(checkpointer=memory, interrupt_before=interrupt_before or ['human'])
+        if interrupt_before is None:
+            interrupt_before = ['human']
+        interrupt_after = list(self.agents.keys()) if settings.ask_all else []
+        return workflow.compile(checkpointer=memory, interrupt_before=interrupt_before, interrupt_after=interrupt_after)
 
     def _manager_node(self, state: ProjectState) -> dict:
         if state.error:

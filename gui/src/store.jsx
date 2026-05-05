@@ -39,10 +39,12 @@ const initialState = {
 
   // HITL
   hitlPending: false,
-  hitlMode: null,           // clarification | approval_spec | approval_plan
+  hitlMode: null,           // clarification | approval_spec | approval_plan | approval_agent
   hitlQuestion: '',
   hitlSpecs: '',
   hitlTasks: [],
+  hitlAgent: '',
+  hitlTaskName: '',
 }
 
 /** Flush pending thinking buffer into the feed and reset it. */
@@ -88,6 +90,8 @@ function reducer(state, action) {
           hitlQuestion: ev.question || '',
           hitlSpecs: ev.specs || '',
           hitlTasks: ev.pending_tasks || [],
+          hitlAgent: ev.agent || '',
+          hitlTaskName: ev.task_name || '',
         }
       }
 

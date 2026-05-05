@@ -11,6 +11,7 @@ class TaskContext(BaseModel):
     test_results: str = ''
     raw_test_results: str = ''
     revision_count: int = 0
+    human_feedback: str = ''
     developer_drafts: dict[str, dict[str, str]] = Field(default_factory=dict)
     winner_developer: str = ''
 

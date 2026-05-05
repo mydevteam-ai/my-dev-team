@@ -188,10 +188,12 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         rpm = int(data.get('rpm', 0))
         timeout = int(data.get('timeout', 120))
         thinking = bool(data.get('thinking', False))
-        ask_approval = bool(data.get('ask_approval', False))
+        ask_all = bool(data.get('ask_all', False))
+        ask_approval = bool(data.get('ask_approval', False)) and not ask_all
 
         settings.llm_timeout = timeout
         settings.ask_approval = ask_approval
+        settings.ask_all = ask_all
 
         project_name, requirements = parse_spec_from_string(requirements)
         run_request = StartRequest(
@@ -232,7 +234,10 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         feedback = data.get('feedback', '')
         feedback_source = data.get('feedback_source', 'reviewer')
         checkpoint_id = data.get('checkpoint_id') or None
-        ask_approval = bool(data.get('ask_approval', False))
+        ask_all = bool(data.get('ask_all', False))
+        ask_approval = bool(data.get('ask_approval', False)) and not ask_all
+        settings.ask_approval = ask_approval
+        settings.ask_all = ask_all
 
         workspace_path = settings.workspace_dir / thread_id
         if not workspace_path.exists():

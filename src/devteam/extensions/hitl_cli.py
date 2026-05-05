@@ -1,11 +1,26 @@
 import asyncio
 from langchain_core.messages import HumanMessage
+from devteam import settings
 from .base_extension import CrewExtension
+
+_SYSTEM_NODES = frozenset({'manager', 'officer', 'human', '__interrupt__'})
+_PLANNING_AGENTS = frozenset({'pm', 'architect', 'analyzer'})
+_DEVELOPMENT_AGENTS = frozenset({'developer', 'reviewer', 'qa', 'judge', 'developer_a', 'developer_b', 'migrator', 'equivalence_checker'})
 
 class HumanInTheLoop(CrewExtension):
     """Extension that pauses the workflow to get human input at the 'human' node."""
 
+    def __init__(self):
+        self._last_agent: str = ''
+
+    async def on_step(self, thread_id: str, state_update: dict, full_state: dict):
+        for node_name in state_update:
+            if node_name not in _SYSTEM_NODES:
+                self._last_agent = node_name
+
     async def on_pause(self, thread_id: str, current_state: dict, next_node: str) -> dict | None:
+        if next_node == 'manager' and settings.ask_all:
+            return await self._handle_agent_approval(self._last_agent, current_state)
         if next_node != 'human':
             return None
         if current_state.get('clarification_question'):
@@ -13,6 +28,54 @@ class HumanInTheLoop(CrewExtension):
         if current_state.get('specs'):
             return await self._handle_plan_approval(current_state)
         return None
+
+    async def _handle_agent_approval(self, agent: str, current_state: dict) -> dict:
+        task_context = current_state.get('task_context')
+        task_name = getattr(task_context, 'current_task_name', '') if task_context else ''
+        header = f"COMPLETED: {agent}"
+        if task_name:
+            header += f"  |  Task: {task_name}"
+        print("\n" + "="*60)
+        print(f"✅ {header}")
+        print("="*60)
+        user_input = await asyncio.to_thread(
+            input, "[Enter] to continue, type feedback to send back, 'exit' to abort: "
+        )
+        user_input = user_input.strip()
+        if user_input.lower() in ['exit', 'quit']:
+            print("Aborting project...")
+            return {
+                'abort_requested': True,
+                'communication_log': self.communication(f"Aborted after {agent}.")
+            }
+        if not user_input:
+            return {'communication_log': self.communication(f"Approved: {agent}.")}
+        print(f"🔄 Sending feedback back to {agent}...")
+        return self._build_feedback_update(agent, user_input, current_state)
+
+    def _build_feedback_update(self, agent: str, feedback: str, current_state: dict) -> dict:
+        if agent in _DEVELOPMENT_AGENTS:
+            task_context = current_state.get('task_context')
+            if task_context:
+                return {
+                    'task_context': task_context.model_copy(update={'human_feedback': feedback}),
+                    'communication_log': self.communication(f"Human feedback to {agent}: {feedback}")
+                }
+        if agent == 'pm':
+            return {
+                'specs': '',
+                'specs_approved': False,
+                'messages': [HumanMessage(content=f"The user rejected the specifications. Feedback: {feedback}")],
+                'communication_log': self.communication(f"Specification rework requested: {feedback}")
+            }
+        if agent in ('architect', 'analyzer'):
+            return {
+                'pending_tasks': [],
+                'tasks_approved': False,
+                'messages': [HumanMessage(content=f"The user rejected the task plan. Feedback: {feedback}")],
+                'communication_log': self.communication(f"Task plan rework requested: {feedback}")
+            }
+        return {'communication_log': self.communication(f"Note after {agent}: {feedback}")}
 
     async def _handle_clarification(self, current_state: dict) -> dict:
         question = current_state.get('clarification_question', 'The team needs your input.')

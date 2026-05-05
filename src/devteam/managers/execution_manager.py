@@ -53,6 +53,17 @@ class ExecutionManager:
                 'communication_log': self.communication(f"Revision {current_revision + 1} requested by {feedback_label}.")
             }
 
+        if task_context.human_feedback:
+            return {
+                'task_context': task_context.model_copy(update={'human_feedback': ''}),
+                'messages': [HumanMessage(content=(
+                    "A human reviewer provided feedback on your output. "
+                    "Please revise accordingly.\n\n"
+                    f"### Human Feedback ###\n{task_context.human_feedback}"
+                ))],
+                'communication_log': self.communication("Human feedback revision requested.")
+            }
+
         match task_context.current_agent:
             case 'developer_a':
                 return _next('reviewer' if task_context.winner_developer else 'developer_b')

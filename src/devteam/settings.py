@@ -65,6 +65,7 @@ class Settings:
     rpm = Coerced(0)
     no_docker = Coerced(False, cli=True)
     ask_approval = Coerced(False, cli=True)
+    ask_all = Coerced(False, cli=True)
     rag_mcp_url = Coerced('http://localhost:8000/mcp')
     rag_mcp_tool = Coerced('qdrant-find')
     rag_collection = Coerced(None, str, cli=True)

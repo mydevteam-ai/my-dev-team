@@ -60,6 +60,46 @@ export default function HitlInput() {
         {state.hitlMode === 'clarification' ? 'Clarification Required' : 'Approval Required'}
       </div>
 
+      {/* Per-agent approval */}
+      {state.hitlMode === 'approval_agent' && (
+        <>
+          <p className="text-sm text-slate-700">
+            <span className="font-semibold">{state.hitlAgent}</span> has completed.
+            {state.hitlTaskName && <span className="text-slate-500"> Task: {state.hitlTaskName}</span>}
+          </p>
+          <textarea
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            rows={2}
+            placeholder="Optional feedback to send back to the agent…"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          />
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => submit('approved')}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700"
+            >
+              <Check size={14} /> Approve
+            </button>
+            <button
+              onClick={() => submit(answer || 'Please revise.')}
+              disabled={!answer.trim() || loading}
+              className="flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={14} /> Send Feedback
+            </button>
+            <button
+              onClick={abort}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200"
+            >
+              <X size={14} /> Abort
+            </button>
+          </div>
+        </>
+      )}
+
       {/* Clarification */}
       {state.hitlMode === 'clarification' && (
         <>

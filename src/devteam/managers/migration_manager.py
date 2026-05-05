@@ -9,8 +9,8 @@ class MigrationManager(BaseManager):
     def _planning_node(self, state: ProjectState) -> dict:
         """Transition to translation phase once CodeAnalyzer has output specs + tasks."""
         if state.specs and state.pending_tasks:
-            if settings.ask_approval:
-                return {}  # Wait for user to approve before proceeding
+            if settings.ask_approval or settings.ask_all:
+                return {} # Wait for user to approve before proceeding
             return {
                 'current_phase': 'development',
                 'specs_approved': True,
@@ -25,7 +25,7 @@ class MigrationManager(BaseManager):
         if not state.specs:
             return 'analyzer'
         if not state.tasks_approved:
-            if settings.ask_approval:
+            if settings.ask_approval or settings.ask_all:
                 return 'human'
             return 'manager'
         return END
