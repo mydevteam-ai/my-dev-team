@@ -17,6 +17,31 @@ NOISY_LOGGERS = [
     'urllib3.connectionpool',
 ]
 
+_MESSAGE_ICONS = (
+    ("Executing",             "⚙️"),
+    ("Routing on complexity", "🔀"),
+    ("Rate limit reached",    "⏳"),
+    ("Starting task:",        "📋"),
+    ("LLM call failed",       "🔁"),
+    ("failed",                "❌"),
+    ("not found",             "⚠️"),
+    ("Import error",          "🚨"),
+)
+
+_LEVEL_ICONS = {
+    logging.WARNING:  "⚠️",
+    logging.ERROR:    "❌",
+    logging.CRITICAL: "🚨",
+}
+
+def _icon_for(record: logging.LogRecord) -> str:
+    msg = record.getMessage()
+    for pattern, icon in _MESSAGE_ICONS:
+        if pattern in msg:
+            return icon
+    return _LEVEL_ICONS.get(record.levelno, "")
+
+
 class ConsoleDispatchFormatter(logging.Formatter):
     """Custom formatter for console output."""
 
@@ -28,7 +53,9 @@ class ConsoleDispatchFormatter(logging.Formatter):
     def format(self, record):
         if record.name == 'root':
             return self.root_formatter.format(record)
-        return self.default_formatter.format(record)
+        icon = _icon_for(record)
+        formatted = self.default_formatter.format(record)
+        return f"{icon} {formatted}" if icon else formatted
 
 def setup_file_handler(file_name: str | Path, file_level = logging.DEBUG, do_rollover = False) -> logging.Handler:
     file_handler = RotatingFileHandler(
