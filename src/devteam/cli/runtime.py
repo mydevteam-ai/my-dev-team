@@ -74,9 +74,9 @@ async def run(request: RunRequest, thread_id: str, hooks: RunHooks | None = None
 async def async_main(request: RunRequest):
     thread_id = resolve_thread_id(request)
     if isinstance(request, ResumeRequest):
-        print(f"🔄 Resuming existing project thread: {thread_id}")
+        logger.info("Resuming existing project thread: %s", thread_id)
     else:
-        print(f"🚀 Starting NEW project: {request.project_name}")
+        logger.info("Starting new project: %s", request.project_name)
 
     project_folder = settings.workspace_dir / thread_id
     project_folder.mkdir(parents=True, exist_ok=True)
@@ -87,8 +87,8 @@ async def async_main(request: RunRequest):
         callbacks.append(StreamHandler())
     hooks = RunHooks(callbacks=callbacks, extensions=build_extensions())
 
-    print("🚀 Starting AI Dev Team...")
-    print(f"📁 Workspace: {project_folder.absolute()}")
+    logger.info("Starting AI Dev Team...")
+    logger.info("Workspace: %s", project_folder.absolute())
     try:
         final_state = await run(request, thread_id, hooks)
         if final_state.abort_requested:
