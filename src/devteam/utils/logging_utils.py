@@ -11,10 +11,12 @@ LOG_BACKUP_COUNT = 3
 NOISY_LOGGERS = [
     'aiosqlite',
     'asyncio',
+    'flask',
     'httpx',
     'httpcore',
     'LiteLLM',
     'urllib3.connectionpool',
+    'werkzeug',
 ]
 
 _MESSAGE_ICONS = (

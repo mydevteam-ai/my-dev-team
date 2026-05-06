@@ -29,14 +29,37 @@ def test_console_logger_on_step_skips_empty_values(monkeypatch):
         "developer": {
             "specs": "",
             "current_task": "Implement auth",
+            "communication_log": ["[DEV] Working on auth"],
         }
     }
     full_state = {"communication_log": ["[DEV] Working on auth"]}
 
     asyncio.run(logger.on_step("thread-1", state_update, full_state))
 
-    # One panel for node output + one line for latest communication log.
+    # One panel for node output + one line for the new communication log entry.
     assert print_mock.call_count == 2
+
+
+def test_console_logger_on_step_prints_each_new_log_entry(monkeypatch):
+    logger = ConsoleLogger()
+    print_mock = MagicMock()
+    monkeypatch.setattr("devteam.extensions.console_logger.print", print_mock)
+
+    state_update = {
+        "architect": {
+            "communication_log": [
+                "**[SystemArchitect]** uses ReadFile(path='src/foo.py')",
+                "**[SystemArchitect]** uses GlobFiles(pattern='**/*.py')",
+                "**[SystemArchitect]**: Done analyzing",
+            ],
+        }
+    }
+    full_state = {"communication_log": []}
+
+    asyncio.run(logger.on_step("thread-1", state_update, full_state))
+
+    # One panel for node output + one line per new communication log entry.
+    assert print_mock.call_count == 1 + 3
 
 
 def test_workspace_saver_target_dir_rules(tmp_path: Path):

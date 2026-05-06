@@ -38,16 +38,6 @@ export default function Welcome() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
-      {/* Hero */}
-      <div className="space-y-3">
-        <div className="text-4xl">🤖</div>
-        <h1 className="text-3xl font-bold text-slate-900">My AI Dev Team</h1>
-        <p className="text-slate-600 text-lg leading-relaxed max-w-xl">
-          An autonomous, LangGraph-powered development agency. Describe your project and watch a
-          full team of AI agents - PM, Architect, Developer, Reviewer, and QA - build it for you.
-        </p>
-      </div>
-
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card

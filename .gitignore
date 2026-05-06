@@ -1,6 +1,6 @@
 build/
 dist/
-gui/dist/
+src/gui/dist/
 gui/node_modules/
 *.egg-info/
 .eggs/
@@ -20,6 +20,8 @@ venv/
 
 /workspaces/
 
+AGENTS.md
+CLAUDE.md
 TODO.md
 
 .claude/

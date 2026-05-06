@@ -202,7 +202,9 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         final_state = await self._post_process(state, final_state)
         if 'messages' in self.outputs:
             final_state['messages'] = conversation_history
-        final_state['communication_log'] = self.communication(conversation_history[-1].content)
+        tool_log = self._collect_tool_call_log(conversation_history)
+        text_log = self.communication(conversation_history[-1].content)
+        final_state['communication_log'] = tool_log + text_log
         return final_state
 
     async def _run_attempt(self, inputs: dict, messages: list, complexity: str, state: ProjectState) -> tuple[T, list]:
@@ -214,6 +216,8 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             conversation_history.append(ai_message)
             if not ai_message.tool_calls:
                 raise NoToolCallError("The model did not call any tool.")
+            for tc in ai_message.tool_calls:
+                self.logger.info("Tool call: %s", self._format_tool_call(tc))
             intermediate_results = await asyncio.gather(
                 *[self._handle_intermediate_tools(tc['name'], tc['args'], state) for tc in ai_message.tool_calls]
             )
@@ -222,6 +226,30 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                     conversation_history.append(ToolMessage(content=result or '', tool_call_id=tc['id']))
                 continue
             return self._parse_outputs(ai_message), conversation_history
+
+    _TOOL_ARG_MAX_LEN: int = 60
+
+    @classmethod
+    def _format_tool_arg(cls, value) -> str:
+        text = repr(value) if isinstance(value, str) else str(value)
+        if len(text) > cls._TOOL_ARG_MAX_LEN:
+            text = text[:cls._TOOL_ARG_MAX_LEN] + '...'
+        return text
+
+    @classmethod
+    def _format_tool_call(cls, tool_call: dict) -> str:
+        name = tool_call.get('name', 'tool')
+        args = tool_call.get('args') or {}
+        parts = [f"{key}={cls._format_tool_arg(value)}" for key, value in args.items()]
+        return f"{name}({', '.join(parts)})"
+
+    def _collect_tool_call_log(self, conversation_history: list) -> list[str]:
+        """Build communication-log entries describing every intermediate tool call (excludes the final output tool)."""
+        entries: list[str] = []
+        for msg in conversation_history[:-1]:
+            for tc in getattr(msg, 'tool_calls', None) or ():
+                entries.append(f"**[{self.__class__.__name__}]** uses {self._format_tool_call(tc)}")
+        return entries
 
     def _with_tool_reminder(self, messages: list) -> list:
         tool_names = ', '.join(t.__name__ for t in self.tools)

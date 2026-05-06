@@ -22,8 +22,7 @@ export default function Sidebar() {
     <aside className="w-60 shrink-0 bg-slate-800 text-slate-200 flex flex-col h-full">
       {/* Branding */}
       <div className="px-5 py-5 border-b border-slate-700">
-        <div className="text-lg font-bold text-white leading-tight">🤖 My AI</div>
-        <div className="text-sm text-slate-400">Dev Team</div>
+        <div className="text-lg font-bold text-white leading-tight whitespace-nowrap">🤖 My AI Dev Team</div>
       </div>
 
       {/* Navigation */}

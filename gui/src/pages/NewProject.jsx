@@ -107,6 +107,7 @@ export default function NewProject() {
   const [rpm, setRpm] = useState(0)
   const [timeout, setTimeout_] = useState(120)
   const [thinking, setThinking] = useState(false)
+  const [noDocker, setNoDocker] = useState(false)
   const [approvalMode, setApprovalMode] = useState('')   // '' | 'ask_approval' | 'ask_all'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -122,6 +123,7 @@ export default function NewProject() {
     try {
       const { thread_id } = await api.startProject({
         requirements, provider, rpm, timeout, thinking,
+        no_docker: noDocker,
         ask_approval: approvalMode === 'ask_approval',
         ask_all: approvalMode === 'ask_all',
       })
@@ -173,6 +175,12 @@ export default function NewProject() {
             desc="Stream raw LLM reasoning tokens (supported models only)"
             checked={thinking}
             onChange={setThinking}
+          />
+          <Checkbox
+            label="Disable Docker sandbox"
+            desc="Run QA engineer without Docker sandbox (LLM-based simulation only)"
+            checked={noDocker}
+            onChange={setNoDocker}
           />
           <Checkbox
             label="Ask for approval"

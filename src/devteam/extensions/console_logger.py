@@ -68,9 +68,11 @@ class ConsoleLogger(CrewExtension):
 
     @override
     async def on_step(self, thread_id: str, state_update: dict, full_state: dict):
+        new_logs: list[str] = []
         for node_name, node_output in state_update.items():
             if not isinstance(node_output, dict):
                 continue
+            new_logs.extend(node_output.get('communication_log') or [])
             lines = Text()
             for key, value in node_output.items():
                 if value is None or value == '' or value == [] or value == {}:
@@ -81,10 +83,8 @@ class ConsoleLogger(CrewExtension):
             if lines:
                 print(Panel(lines, title=f"[bold yellow]📍 {node_name}[/bold yellow]", border_style="dim"))
 
-        logs = full_state.get('communication_log', [])
-        if logs:
-            latest_log = logs[-1]
-            first_line = latest_log.splitlines()[0] if latest_log else ''
+        for entry in new_logs:
+            first_line = entry.splitlines()[0] if entry else ''
             _, sep, content = first_line.partition(': ')
             if (sep and content.strip()) or (not sep and first_line.strip()):
                 print(f"  [bold]➜[/bold] {first_line}")

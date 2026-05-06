@@ -148,7 +148,7 @@ def create_app(gui_dist: Path | None = None) -> Flask:
 
     if gui_dist is None:
         # Bundled inside the installed package (built by: cd gui && npm run build)
-        gui_dist = Path(__file__).resolve().parent.parent / 'gui' / 'dist'
+        gui_dist = Path(__file__).resolve().parent / 'dist'
 
     # ------------------------------------------------------------------ #
     # Static files - serve the React build                                 #
@@ -188,10 +188,12 @@ def create_app(gui_dist: Path | None = None) -> Flask:
         rpm = int(data.get('rpm', 0))
         timeout = int(data.get('timeout', 120))
         thinking = bool(data.get('thinking', False))
+        no_docker = bool(data.get('no_docker', False))
         ask_all = bool(data.get('ask_all', False))
         ask_approval = bool(data.get('ask_approval', False)) and not ask_all
 
         settings.llm_timeout = timeout
+        settings.no_docker = no_docker
         settings.ask_approval = ask_approval
         settings.ask_all = ask_all
 
@@ -415,16 +417,17 @@ def _msg_to_dict(msg) -> dict:
 # Entry point
 # ---------------------------------------------------------------------------
 
-def run(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
+def run_server(host: str = '127.0.0.1', port: int = 5000, open_browser: bool = True):
     """Start the Flask server."""
     from dotenv import load_dotenv
+    import flask.cli
     load_dotenv()
 
     # File-only logging - no console output while GUI is running
     setup_logging(console_level=None)
-    logging.getLogger('werkzeug').propagate = True  # let it go to the file handler only
+    flask.cli.show_server_banner = lambda *a, **kw: None
 
-    gui_dist = Path(__file__).resolve().parent.parent / 'gui' / 'dist'
+    gui_dist = Path(__file__).resolve().parent / 'dist'
     if not gui_dist.exists():
         print(f"⚠  React build not found at {gui_dist}")
         print("   Run: cd gui && npm install && npm run build")

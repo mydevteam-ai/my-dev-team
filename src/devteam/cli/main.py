@@ -114,7 +114,7 @@ def main_ui():
     load_dotenv()
     _load_settings_from_argv()
     init_retrieve_context_tool()
-    from devteam.server import run as run_server  # pylint: disable=import-outside-toplevel
+    from devteam.gui import run_server  # pylint: disable=import-outside-toplevel
     try:
         run_server()
     except KeyboardInterrupt:

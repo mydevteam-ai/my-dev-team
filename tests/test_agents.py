@@ -300,6 +300,60 @@ class TestBaseAgentRetry:
         assert result.get('error') is True
         assert 'persistent failure' in result.get('error_message', '')
 
+
+class TestBaseAgentToolCallLogging:
+    def _make_agent(self):
+        config = make_config("Test Agent", [])
+        return CodeReviewer(config, "prompt", "reviewer")
+
+    def test_format_tool_call_short_args(self):
+        agent = self._make_agent()
+        formatted = agent._format_tool_call({'name': 'ReadFile', 'args': {'path': 'src/foo.py'}})
+        assert formatted == "ReadFile(path='src/foo.py')"
+
+    def test_format_tool_call_truncates_long_args(self):
+        agent = self._make_agent()
+        long_value = 'x' * 200
+        formatted = agent._format_tool_call({'name': 'GrepFiles', 'args': {'pattern': long_value}})
+        assert formatted.startswith("GrepFiles(pattern='")
+        assert '...' in formatted
+        assert len(formatted) < 120
+
+    def test_format_tool_call_handles_no_args(self):
+        agent = self._make_agent()
+        formatted = agent._format_tool_call({'name': 'ListFiles', 'args': {}})
+        assert formatted == "ListFiles()"
+
+    def test_collect_tool_call_log_skips_final_output_call(self):
+        agent = self._make_agent()
+        intermediate = MagicMock()
+        intermediate.tool_calls = [{'name': 'ReadFile', 'args': {'path': 'a.py'}}]
+        tool_msg = MagicMock(spec=[])
+        final = MagicMock()
+        final.tool_calls = [{'name': 'ApproveCode', 'args': {}}]
+        history = [intermediate, tool_msg, final]
+        entries = agent._collect_tool_call_log(history)
+        assert entries == ["**[CodeReviewer]** uses ReadFile(path='a.py')"]
+
+    def test_run_logs_intermediate_tool_calls_in_communication_log(self):
+        agent = self._make_agent()
+        intermediate = MagicMock()
+        intermediate.content = ''
+        intermediate.tool_calls = [{'name': 'ReadFile', 'args': {'path': 'a.py'}, 'id': 'tc1'}]
+        final = MagicMock()
+        final.content = 'Approving the change'
+        final.tool_calls = [{'name': 'ApproveCode', 'args': {'feedback': 'lgtm'}, 'id': 'tc2'}]
+        agent._invoke_llm = AsyncMock(side_effect=[intermediate, final])
+
+        async def fake_handler(name, args, state):
+            return 'file contents' if name == 'ReadFile' else None
+        agent._handle_intermediate_tools = fake_handler
+
+        result = asyncio.run(agent.process(ProjectState()))
+        log = result['communication_log']
+        assert log[0] == "**[CodeReviewer]** uses ReadFile(path='a.py')"
+        assert log[-1] == "**[CodeReviewer]**: Approving the change"
+
 # --- ProjectManager Error Recovery Tests ---
 
 class TestProjectManagerErrorRecovery:
