@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.5] - 2026-04-23
+## [0.13.0] - 2026-07-03
+
+### 🚀 Added
+
+* **Prompt-injection guard in every agent prompt:** All twelve agent configs now embed the shared `untrusted-data` partial - workspace files, RAG documents, test logs, skills and drafts are framed as data, never instructions - each with a role-specific tail (the Developer and Migrator note an injection attempt in their submission, the Reviewer and QA agents flag it via `ReportIssues`, the Code Judge penalizes a self-praising draft). Complements the `utils/sanitizer.py` wrapping.
+
+* **Shared prompt partials library:** Cross-cutting prompt rules now live in the sibling `my-dev-team-config` repo (`partials/*.md`) and are generated into `config/agents/partials/` by `scripts/sync_partials.py`, shared verbatim with my-dev-team-vs-code. Six partials ship: `untrusted-data`, `clarify-guidance` (the Product Manager's "ask sparingly" bar when `--no-ask` is off), `scope-discipline` and `tdd` (extracted from the Senior Developer prompt), `code-style` (new rules for the Developer and Migrator: match the surrounding style, no narration comments, check the manifest before assuming a dependency, never hardcode secrets) and `faithful-reporting` (QA agents and the Reporter). The pre-commit drift hook now guards partials as well as models.
+
+### 🔧 Internal
+
+* **Unified include syntax:** Agent prompts now use the `{{ include <name> }}` directive shared with my-dev-team-vs-code (name normalised: a leading path and a trailing `.md` are stripped; resolved against `config/agents/partials/`, then `config/agents/` for prompt inheritance). The conditional clause supports negation: `{{ include clarify-guidance if not no_ask }}`. Nested includes are capped to reject cycles; the old `{ include 'path' }` syntax is gone.
+
+* **System Architect capability typo fixed:** `reasosning` -> `reasoning`, so the architect's second capability weight actually matches registry scores again.
 
 ### 🚀 Added
 

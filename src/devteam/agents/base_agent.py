@@ -346,27 +346,38 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         """Map a tool call to the agent's output schema."""
         return self.output_schema(**tool_args)
 
-    @staticmethod
-    def _resolve_includes(prompt: str, base_dir: Path) -> str:
+    _MAX_INCLUDE_DEPTH: int = 10
+    _INCLUDE_PATTERN = re.compile(r"\{\{\s*include\s+([\w./-]+?)(?:\s+if\s+(not\s+)?(\w+))?\s*\}\}")
+
+    @classmethod
+    def _resolve_includes(cls, prompt: str, base_dir: Path) -> str:
+        """Replace `{{ include <name> [if [not] <setting>] }}` with the named file's body.
+
+        The unified include syntax shared with my-dev-team-vs-code: the name is
+        normalised (a leading path and a trailing .md are stripped) and resolved
+        against `partials/` first, then base_dir itself (so a config can inherit a
+        full agent prompt). The optional `if <setting>` / `if not <setting>` clause
+        includes the block only when the named settings flag is truthy / falsy.
+        Frontmatter of the included file is stripped; includes may nest up to
+        _MAX_INCLUDE_DEPTH levels, which rejects cycles.
+        """
         base = base_dir.resolve()
         def replacer(match):
-            filepath = match.group(1)
-            condition = match.group(2)
-            if condition and not getattr(settings, condition, False):
+            arg, negate, condition = match.groups()
+            if condition and bool(getattr(settings, condition, False)) == bool(negate):
                 return ''
-            resolved = (base / filepath).resolve()
-            if not resolved.is_relative_to(base):
-                raise ValueError(f"Include path '{filepath}' escapes the base directory")
-            try:
-                text = resolved.read_text(encoding='utf-8')
-            except FileNotFoundError:
-                raise FileNotFoundError(f"Include '{filepath}' not found in {base}") from None
-            parts = text.split('---', 2)
-            return parts[2].strip() if len(parts) >= 3 else text.strip()
-        pattern = re.compile(r"\{\s*include\s+'([^']+)'(?:\s+if\s+(\w+))?\s*\}")
-        while pattern.search(prompt):
-            prompt = pattern.sub(replacer, prompt)
-        return prompt
+            name = re.sub(r'\.md$', '', arg).split('/')[-1]
+            for candidate in (base / 'partials' / f'{name}.md', base / f'{name}.md'):
+                if candidate.exists():
+                    text = candidate.read_text(encoding='utf-8')
+                    parts = text.split('---', 2)
+                    return parts[2].strip() if len(parts) >= 3 else text.strip()
+            raise FileNotFoundError(f"Include '{arg}': no partial '{name}.md' in {base / 'partials'} or {base}")
+        for _ in range(cls._MAX_INCLUDE_DEPTH):
+            if not cls._INCLUDE_PATTERN.search(prompt):
+                return prompt
+            prompt = cls._INCLUDE_PATTERN.sub(replacer, prompt)
+        raise ValueError(f"Include nesting exceeded {cls._MAX_INCLUDE_DEPTH} levels - most likely a cyclic include")
 
     @classmethod
     def from_config(cls, node_name: str, config_path: str, *, llm_factory: LLMFactory = None, rate_limiter: RateLimiter = None, capabilities: dict[str, float] | list[str] = None, temperature: float = None, top_k: int = None, top_p: float = None):

@@ -1,7 +1,8 @@
 #!/bin/sh
 # Blocks a commit when the generated model registry (config/tools/llms.yaml)
-# has drifted from the shared registry in the sibling my-dev-team-config
-# checkout. Skips silently when that checkout is absent (CI, other machines).
+# or the generated shared prompt partials (config/agents/partials/*.md) have
+# drifted from their sources in the sibling my-dev-team-config checkout.
+# Skips silently when that checkout is absent (CI, other machines).
 # Activate once per clone with:
 #   git config core.hooksPath .githooks
 root="$(git rev-parse --show-toplevel)"
@@ -30,10 +31,12 @@ if ! python_bin="$(find_python)"; then
     exit 0
 fi
 
-if ! "$python_bin" "$config_repo/scripts/sync_models.py" --check; then
-    echo ""
-    echo "pre-commit: generated model files are out of sync with the shared registry."
-    echo "Run: python scripts/sync_models.py (in my-dev-team-config) and stage the result,"
-    echo "or fix models.yaml there if a generated file was edited by hand."
-    exit 1
-fi
+for script in sync_models.py sync_partials.py; do
+    if ! "$python_bin" "$config_repo/scripts/$script" --check; then
+        echo ""
+        echo "pre-commit: generated files are out of sync with the shared config repo."
+        echo "Run: python scripts/$script (in my-dev-team-config) and stage the result,"
+        echo "or fix the source there if a generated file was edited by hand."
+        exit 1
+    fi
+done

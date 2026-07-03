@@ -195,35 +195,83 @@ def test_get_chain_caches_per_complexity():
 # _resolve_includes / from_config
 # =====================================================================
 
-def test_resolve_includes_inlines_file(tmp_path):
-    (tmp_path / 'snippet.md').write_text("---\nx: 1\n---\nINCLUDED BODY", encoding='utf-8')
-    out = BaseAgent._resolve_includes("Before {include 'snippet.md'} After", tmp_path)
+def _make_partial(tmp_path, name, text):
+    (tmp_path / 'partials').mkdir(exist_ok=True)
+    (tmp_path / 'partials' / f'{name}.md').write_text(text, encoding='utf-8')
+
+
+def test_resolve_includes_inlines_partial(tmp_path):
+    _make_partial(tmp_path, 'snippet', "---\nname: snippet\n---\nINCLUDED BODY")
+    out = BaseAgent._resolve_includes("Before {{ include snippet }} After", tmp_path)
     assert 'INCLUDED BODY' in out
     assert 'Before' in out and 'After' in out
 
 
+def test_resolve_includes_normalises_path_and_suffix(tmp_path):
+    _make_partial(tmp_path, 'snippet', "BODY")
+    assert BaseAgent._resolve_includes("{{ include snippet.md }}", tmp_path) == 'BODY'
+    assert BaseAgent._resolve_includes("{{ include partials/snippet.md }}", tmp_path) == 'BODY'
+
+
+def test_resolve_includes_falls_back_to_base_dir(tmp_path):
+    # A config may inherit a full agent prompt; frontmatter is stripped.
+    (tmp_path / 'other-agent.md').write_text("---\nrole: X\n---\nAGENT PROMPT", encoding='utf-8')
+    assert BaseAgent._resolve_includes("{{ include other-agent }}", tmp_path) == 'AGENT PROMPT'
+
+
 def test_resolve_includes_conditional_skipped(tmp_path, monkeypatch):
-    (tmp_path / 'cond.md').write_text("CONDITIONAL", encoding='utf-8')
+    _make_partial(tmp_path, 'cond', "CONDITIONAL")
     monkeypatch.setattr(settings, 'no_docker', False)
-    out = BaseAgent._resolve_includes("{include 'cond.md' if no_docker}", tmp_path)
+    out = BaseAgent._resolve_includes("{{ include cond if no_docker }}", tmp_path)
     assert 'CONDITIONAL' not in out
 
 
 def test_resolve_includes_conditional_included(tmp_path, monkeypatch):
-    (tmp_path / 'cond.md').write_text("CONDITIONAL", encoding='utf-8')
+    _make_partial(tmp_path, 'cond', "CONDITIONAL")
     monkeypatch.setattr(settings, 'no_docker', True)
-    out = BaseAgent._resolve_includes("{include 'cond.md' if no_docker}", tmp_path)
+    out = BaseAgent._resolve_includes("{{ include cond if no_docker }}", tmp_path)
     assert 'CONDITIONAL' in out
 
 
-def test_resolve_includes_missing_file_raises(tmp_path):
+def test_resolve_includes_negated_conditional(tmp_path, monkeypatch):
+    _make_partial(tmp_path, 'cond', "CONDITIONAL")
+    monkeypatch.setattr(settings, 'no_docker', False)
+    assert 'CONDITIONAL' in BaseAgent._resolve_includes("{{ include cond if not no_docker }}", tmp_path)
+    monkeypatch.setattr(settings, 'no_docker', True)
+    assert 'CONDITIONAL' not in BaseAgent._resolve_includes("{{ include cond if not no_docker }}", tmp_path)
+
+
+def test_resolve_includes_missing_partial_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
-        BaseAgent._resolve_includes("{include 'ghost.md'}", tmp_path)
+        BaseAgent._resolve_includes("{{ include ghost }}", tmp_path)
 
 
-def test_resolve_includes_escape_rejected(tmp_path):
-    with pytest.raises(ValueError, match="escapes"):
-        BaseAgent._resolve_includes("{include '../secret.md'}", tmp_path)
+def test_resolve_includes_traversal_normalised_away(tmp_path):
+    # A leading path is stripped, so an include can never escape the agents dir.
+    (tmp_path.parent / 'secret.md').write_text("SECRET", encoding='utf-8')
+    with pytest.raises(FileNotFoundError):
+        BaseAgent._resolve_includes("{{ include ../secret }}", tmp_path)
+
+
+def test_resolve_includes_nested(tmp_path):
+    _make_partial(tmp_path, 'outer', "A {{ include inner }} B")
+    _make_partial(tmp_path, 'inner', "X")
+    assert BaseAgent._resolve_includes("{{ include outer }}", tmp_path) == 'A X B'
+
+
+def test_resolve_includes_cycle_rejected(tmp_path):
+    _make_partial(tmp_path, 'loop', "{{ include loop }}")
+    with pytest.raises(ValueError, match="cyclic"):
+        BaseAgent._resolve_includes("{{ include loop }}", tmp_path)
+
+
+def test_every_agent_prompt_carries_untrusted_data_guard():
+    # TODO 2.1: the shared prompt-injection guard must reach every agent.
+    agents_dir = settings.config_dir / 'agents'
+    for md in agents_dir.glob('*.md'):
+        body = md.read_text(encoding='utf-8').split('---', 2)[2]
+        prompt = BaseAgent._resolve_includes(body, agents_dir)
+        assert 'untrusted data' in prompt, f'{md.name} lacks the untrusted-data guard'
 
 
 def test_from_config_reads_real_agent_md():
