@@ -161,6 +161,21 @@ class LLMFactory(WithLogging):
                     base_url='https://api.deepseek.com',
                     **({'top_p': top_p} if top_p is not None else {}),
                 )
+            case 'zai':
+                try:
+                    from langchain_openai import ChatOpenAI
+                except ImportError:
+                    raise ImportError("Missing package for Z.AI provider. Install it with: pip install langchain-openai") from None
+                return ChatOpenAI(
+                    model=model_name,
+                    temperature=temperature,
+                    streaming=settings.llm_streaming,
+                    callbacks=self.callbacks,
+                    tags=llm_tags,
+                    api_key=os.environ['ZAI_API_KEY'],
+                    base_url='https://api.z.ai/api/paas/v4',
+                    **({'top_p': top_p} if top_p is not None else {}),
+                )
             case 'grok':
                 try:
                     from langchain_openai import ChatOpenAI

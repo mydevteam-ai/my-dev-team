@@ -348,6 +348,12 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
 
     _MAX_INCLUDE_DEPTH: int = 10
     _INCLUDE_PATTERN = re.compile(r"\{\{\s*include\s+([\w./-]+?)(?:\s+if\s+(not\s+)?(\w+))?\s*\}\}")
+    # The unified prompt-body conventions (TODO 1.3) allow a shared body to
+    # carry these placeholders for the loader that renders them. This loader
+    # has no renderer (tools are bound natively, skills and workspace content
+    # ride the `inputs:` sections), so they are stripped - a shared body still
+    # renders here, and a stray brace never reaches the LangChain template.
+    _PLACEHOLDER_PATTERN = re.compile(r'\{\{\s*(tools|skills|environment)\s*\}\}')
 
     @classmethod
     def _resolve_includes(cls, prompt: str, base_dir: Path) -> str:
@@ -391,6 +397,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             raise ValueError(f"Invalid format in {config_path}. Missing YAML frontmatter")
         config = yaml.safe_load(parts[1])
         prompt = cls._resolve_includes(parts[2].strip(), prompt_file.parent)
+        prompt = cls._PLACEHOLDER_PATTERN.sub('', prompt)
         config.update({k: v for k, v in {
             'capabilities': capabilities, 'temperature': temperature, 'top_k': top_k, 'top_p': top_p,
         }.items() if v is not None})

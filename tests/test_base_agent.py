@@ -265,6 +265,23 @@ def test_resolve_includes_cycle_rejected(tmp_path):
         BaseAgent._resolve_includes("{{ include loop }}", tmp_path)
 
 
+def test_from_config_strips_unrendered_placeholders():
+    # The unified prompt-body conventions (TODO 1.3): a shared body may carry
+    # {{tools}}/{{skills}}/{{environment}} for the loader that renders them;
+    # this loader has no renderer, so they must vanish before templating.
+    path = settings.config_dir / 'agents' / 'placeholder_test_agent.md'
+    path.write_text(
+        "---\nrole: X\n---\nA {{tools}} B {{ skills }} C {{environment}} D",
+        encoding='utf-8',
+    )
+    try:
+        agent = CodeReviewer.from_config('reviewer', 'placeholder_test_agent.md')
+        assert '{{' not in agent.prompt_template
+        assert 'A' in agent.prompt_template and 'D' in agent.prompt_template
+    finally:
+        path.unlink()
+
+
 def test_every_agent_prompt_carries_untrusted_data_guard():
     # TODO 2.1: the shared prompt-injection guard must reach every agent.
     agents_dir = settings.config_dir / 'agents'

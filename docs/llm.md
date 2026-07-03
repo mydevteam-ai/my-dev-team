@@ -247,6 +247,18 @@ LangChain reports this provider as `google_genai`. The alias `'google_genai/*': 
 
 ---
 
+## zai
+
+**Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)
+**Env var:** `ZAI_API_KEY`
+
+| Model | Best for | Verified |
+|---|---|---|
+| `glm-5.2` | reasoning, planning, code | |
+| `glm-4.7-flash` | fast utility tasks | |
+
+---
+
 ## grok
 
 **Package:** `pip install "my-dev-team[openai]"` (uses OpenAI-compatible client)

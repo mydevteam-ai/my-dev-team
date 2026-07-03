@@ -381,6 +381,32 @@ providers:
                   structured-output: 0.88
                   long-context: 0.9
               complexity_fit: {low: 1.0, medium: 0.8, high: 0.6}
+    zai:
+        models:
+            - id: 'glm-5.2'
+              context_window: 1000000
+              capabilities:
+                  reasoning: 0.95
+                  code-generation: 0.96
+                  code-analysis: 0.96
+                  classification: 0.9
+                  planning: 0.94
+                  fast-utility: 0.45
+                  structured-output: 0.9
+                  long-context: 0.95
+              complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
+            - id: 'glm-4.7-flash'
+              context_window: 200000
+              capabilities:
+                  reasoning: 0.86
+                  code-generation: 0.88
+                  code-analysis: 0.88
+                  classification: 0.87
+                  planning: 0.85
+                  fast-utility: 0.82
+                  structured-output: 0.86
+                  long-context: 0.85
+              complexity_fit: {low: 1.0, medium: 0.7, high: 0.4}
     free:  # compound: groq free tier + ollama local models
         models:
             - id: 'qwen/qwen3-32b'

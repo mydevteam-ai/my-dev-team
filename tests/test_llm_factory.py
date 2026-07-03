@@ -175,6 +175,14 @@ def test_instantiate_deepseek_uses_env(monkeypatch):
     assert captured['base_url'] == 'https://api.deepseek.com'
 
 
+def test_instantiate_zai_uses_env(monkeypatch):
+    captured = _install_fake_module(monkeypatch, 'langchain_openai', 'ChatOpenAI')
+    monkeypatch.setenv('ZAI_API_KEY', 'secret')
+    factory = LLMFactory('zai')
+    factory._instantiate({'id': 'glm-5.2'}, 'zai', 0.2, node_name='n', json_mode=False)
+    assert captured['base_url'] == 'https://api.z.ai/api/paas/v4'
+
+
 def test_instantiate_grok_uses_env(monkeypatch):
     captured = _install_fake_module(monkeypatch, 'langchain_openai', 'ChatOpenAI')
     monkeypatch.setenv('XAI_API_KEY', 'secret')

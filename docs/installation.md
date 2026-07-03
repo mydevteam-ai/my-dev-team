@@ -97,6 +97,7 @@ AZURE_ANTHROPIC_API_KEY=your_key_here
 GOOGLE_API_KEY=your_key_here
 MISTRAL_API_KEY=your_key_here
 DEEPSEEK_API_KEY=your_key_here
+ZAI_API_KEY=your_key_here
 XAI_API_KEY=your_key_here
 ```
 

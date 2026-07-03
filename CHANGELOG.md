@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **System Architect capability typo fixed:** `reasosning` -> `reasoning`, so the architect's second capability weight actually matches registry scores again.
 
+* **Unified prompt-body placeholders:** `from_config` now strips the `{{tools}}`, `{{skills}}` and `{{environment}}` placeholders of the unified agent config format (this loader has no renderer for them - tools are bound natively, skills and workspace content ride `inputs:`), so a prompt body shared with my-dev-team-vs-code renders here unchanged.
+
 ### 🚀 Added
 
 * **`top_k` and `top_p` sampling parameters:** Agents now support `top_k` and `top_p` in their frontmatter YAML and in crew config overrides. Both parameters are forwarded to all providers (`top_p` universally; `top_k` on Ollama, Anthropic and Google which support it). Complexity overrides also accept them.
