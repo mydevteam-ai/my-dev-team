@@ -2,7 +2,9 @@ import asyncio
 from unittest.mock import AsyncMock
 import pytest
 from devteam.tools.extractor import coerce_tool_calls, _extract_text
-from devteam.utils.rate_limiter import RateLimiter
+from devteam.utils.rate_limiter import (
+    MAX_RETRY_WAIT, RateLimiter, is_rate_limit_error, retry_delay, suggested_delay,
+)
 from devteam.utils.sanitizer import sanitize_for_prompt
 from devteam.utils.status import is_approved, normalize_status
 from devteam.utils.tasks import task_to_markdown
@@ -125,30 +127,118 @@ def test_telemetry_calculate_cost_applies_alias(monkeypatch):
 
 def test_rate_limiter_noop_when_disabled():
     limiter = RateLimiter(requests_per_minute=0)
-    asyncio.run(limiter.wait_if_needed())
-    assert limiter.call_timestamps == []
+    asyncio.run(limiter.wait_if_needed('groq'))
+    assert limiter.call_timestamps == {}
 
 def test_rate_limiter_sleeps_when_limit_reached(monkeypatch):
     limiter = RateLimiter(requests_per_minute=2)
-    limiter.call_timestamps = [0.0, 1.0]
+    limiter.call_timestamps = {'groq': [0.0, 1.0]}
     times = iter([20.0, 80.0, 80.0])
     monkeypatch.setattr("devteam.utils.rate_limiter.time.time", lambda: next(times))
     sleep_mock = AsyncMock()
     monkeypatch.setattr("devteam.utils.rate_limiter.asyncio.sleep", sleep_mock)
-    asyncio.run(limiter.wait_if_needed())
+    asyncio.run(limiter.wait_if_needed('groq'))
     sleep_mock.assert_awaited_once()
     waited = sleep_mock.await_args.args[0]
     assert waited == pytest.approx(40.0)
-    assert len(limiter.call_timestamps) == 1
-    assert limiter.call_timestamps[0] == pytest.approx(80.0)
+    assert len(limiter.call_timestamps['groq']) == 1
+    assert limiter.call_timestamps['groq'][0] == pytest.approx(80.0)
 
 def test_rate_limiter_appends_without_sleep_when_below_limit(monkeypatch):
     limiter = RateLimiter(requests_per_minute=3)
-    limiter.call_timestamps = [10.0]
+    limiter.call_timestamps = {'groq': [10.0]}
     times = iter([20.0, 20.0])
     monkeypatch.setattr("devteam.utils.rate_limiter.time.time", lambda: next(times))
     sleep_mock = AsyncMock()
     monkeypatch.setattr("devteam.utils.rate_limiter.asyncio.sleep", sleep_mock)
-    asyncio.run(limiter.wait_if_needed())
+    asyncio.run(limiter.wait_if_needed('groq'))
     sleep_mock.assert_not_awaited()
-    assert limiter.call_timestamps == [10.0, 20.0]
+    assert limiter.call_timestamps == {'groq': [10.0, 20.0]}
+
+def test_rate_limiter_budgets_are_per_provider(monkeypatch):
+    # A full groq window must not throttle an ollama call (the compound
+    # `free` provider mixes both) - each provider spends only its own budget.
+    limiter = RateLimiter(requests_per_minute=2)
+    limiter.call_timestamps = {'groq': [10.0, 11.0]}
+    monkeypatch.setattr("devteam.utils.rate_limiter.time.time", lambda: 20.0)
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("devteam.utils.rate_limiter.asyncio.sleep", sleep_mock)
+    asyncio.run(limiter.wait_if_needed('ollama'))
+    sleep_mock.assert_not_awaited()
+    assert limiter.call_timestamps['ollama'] == [20.0]
+    assert limiter.call_timestamps['groq'] == [10.0, 11.0]
+
+def test_rate_limiter_uses_provider_default_when_no_override(monkeypatch):
+    limiter = RateLimiter(requests_per_minute=0, provider_defaults={'groq': 1})
+    limiter.call_timestamps = {'groq': [10.0]}
+    times = iter([20.0, 80.0, 80.0])
+    monkeypatch.setattr("devteam.utils.rate_limiter.time.time", lambda: next(times))
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("devteam.utils.rate_limiter.asyncio.sleep", sleep_mock)
+    asyncio.run(limiter.wait_if_needed('groq'))
+    sleep_mock.assert_awaited_once()
+
+def test_rate_limiter_rpm_for_resolution():
+    limiter = RateLimiter(requests_per_minute=0, provider_defaults={'groq': 30})
+    assert limiter.rpm_for('groq') == 30
+    assert limiter.rpm_for('ollama') == 0
+    override = RateLimiter(requests_per_minute=5, provider_defaults={'groq': 30})
+    assert override.rpm_for('groq') == 5
+    assert override.rpm_for('ollama') == 5
+
+
+# =====================================================================
+# 429 detection and retry delays (ported from vs-code's rateLimiter.ts)
+# =====================================================================
+
+class _FakeResponse:
+    def __init__(self, status_code=429, headers=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+
+
+class _Fake429(Exception):
+    def __init__(self, message='rate limited', status_code=429, headers=None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.response = _FakeResponse(status_code, headers)
+
+
+def test_is_rate_limit_error_variants():
+    assert is_rate_limit_error(_Fake429())
+    response_only = Exception('boom')
+    response_only.response = _FakeResponse()
+    assert is_rate_limit_error(response_only)
+    code_attr = Exception('quota')
+    code_attr.code = 429  # google-style
+    assert is_rate_limit_error(code_attr)
+    assert is_rate_limit_error(Exception('Rate limit exceeded, slow down'))
+    assert not is_rate_limit_error(ValueError('schema mismatch'))
+
+def test_suggested_delay_from_retry_after_ms_header():
+    exc = _Fake429(headers={'retry-after-ms': '1500'})
+    assert suggested_delay(exc) == pytest.approx(1.5)
+
+def test_suggested_delay_from_retry_after_seconds_header():
+    exc = _Fake429(headers={'retry-after': '7'})
+    assert suggested_delay(exc) == pytest.approx(7.0)
+
+def test_suggested_delay_from_message_hint():
+    assert suggested_delay(Exception('try again in 3.465s')) == pytest.approx(3.465)
+    assert suggested_delay(Exception('try again in 500ms')) == pytest.approx(0.5)
+
+def test_suggested_delay_none_without_hint():
+    assert suggested_delay(Exception('rate limited')) is None
+
+def test_retry_delay_prefers_suggested_plus_buffer():
+    exc = _Fake429('try again in 2s')
+    assert retry_delay(exc, 0) == pytest.approx(2.25)
+
+def test_retry_delay_exponential_fallback_and_clamp():
+    exc = _Fake429('rate limited')
+    assert retry_delay(exc, 0) == pytest.approx(1.0)
+    assert retry_delay(exc, 2) == pytest.approx(4.0)
+    assert retry_delay(exc, 20) == MAX_RETRY_WAIT
+
+def test_retry_delay_none_for_non_rate_limit():
+    assert retry_delay(ValueError('boom'), 0) is None

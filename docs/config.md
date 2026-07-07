@@ -22,7 +22,7 @@ Keys are case-insensitive and spaces are treated as underscores, so `"LLM timeou
 | Key | Type | Default | Equivalent CLI flag |
 |---|---|---|---|
 | `provider` | str | `ollama` | `--provider` |
-| `rpm` | int | `0` | `--rpm` |
+| `rpm` | int | `0` | `--rpm` (per-provider override; `0` = registry defaults) |
 | `llm_timeout` | int | `120` | `--timeout` |
 | `no_docker` | bool | `false` | `--no-docker` |
 | `ask_approval` | bool | `false` | `--ask-approval` |

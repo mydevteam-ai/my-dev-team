@@ -30,6 +30,15 @@ class LLMFactory(WithLogging):
     def model_map(self) -> dict:
         return self.llm_config.get('providers', {})
 
+    @cached_property
+    def provider_rpm_defaults(self) -> dict[str, int]:
+        """Per-provider default request budgets (requests per minute) from
+        llms.yaml - the shared registry's `providers:` rpm seeds. Keyed by
+        real provider name; a provider without an `rpm` key has no default
+        throttle. Consumed by RateLimiter, where the user's --rpm override
+        wins over every default."""
+        return {name: int(section.get('rpm', 0) or 0) for name, section in self.model_map.items()}
+
     def select_model(self, capabilities: dict[str, float] | list[str], complexity: str = None) -> dict:
         """Select the best model entry for the requested capabilities using weighted scoring.
 

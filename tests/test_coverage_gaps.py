@@ -99,10 +99,69 @@ def test_invoke_llm_waits_for_rate_limiter():
     chain = MagicMock()
     chain.ainvoke = AsyncMock(return_value=AIMessage(content='ok'))
     agent._chain_cache['_default'] = chain
+    agent._chain_providers['_default'] = 'groq'
     agent.rate_limiter = MagicMock()
     agent.rate_limiter.wait_if_needed = AsyncMock()
     asyncio.run(agent._invoke_llm())
-    agent.rate_limiter.wait_if_needed.assert_awaited_once()
+    agent.rate_limiter.wait_if_needed.assert_awaited_once_with('groq')
+
+
+def _fake_429(message='rate limited: try again in 2s'):
+    exc = Exception(message)
+    exc.status_code = 429
+    return exc
+
+
+def test_invoke_llm_retries_429_after_suggested_delay(monkeypatch):
+    agent = CodeReviewer(make_config(), 'p', 'reviewer')
+    chain = MagicMock()
+    chain.ainvoke = AsyncMock(side_effect=[_fake_429(), AIMessage(content='ok')])
+    agent._chain_cache['_default'] = chain
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr('devteam.agents.base_agent.asyncio.sleep', sleep_mock)
+    response = asyncio.run(agent._invoke_llm())
+    assert response.content == 'ok'
+    assert chain.ainvoke.await_count == 2
+    sleep_mock.assert_awaited_once()
+    assert sleep_mock.await_args.args[0] == pytest.approx(2.25)  # suggested 2s + buffer
+
+
+def test_invoke_llm_reacquires_throttle_slot_per_attempt(monkeypatch):
+    agent = CodeReviewer(make_config(), 'p', 'reviewer')
+    chain = MagicMock()
+    chain.ainvoke = AsyncMock(side_effect=[_fake_429(), AIMessage(content='ok')])
+    agent._chain_cache['_default'] = chain
+    agent._chain_providers['_default'] = 'groq'
+    agent.rate_limiter = MagicMock()
+    agent.rate_limiter.wait_if_needed = AsyncMock()
+    monkeypatch.setattr('devteam.agents.base_agent.asyncio.sleep', AsyncMock())
+    asyncio.run(agent._invoke_llm())
+    assert agent.rate_limiter.wait_if_needed.await_count == 2
+
+
+def test_invoke_llm_gives_up_after_capped_429_retries(monkeypatch):
+    from devteam.utils.rate_limiter import MAX_RATE_LIMIT_RETRIES
+    agent = CodeReviewer(make_config(), 'p', 'reviewer')
+    chain = MagicMock()
+    chain.ainvoke = AsyncMock(side_effect=_fake_429())
+    agent._chain_cache['_default'] = chain
+    monkeypatch.setattr('devteam.agents.base_agent.asyncio.sleep', AsyncMock())
+    with pytest.raises(Exception, match='rate limited'):
+        asyncio.run(agent._invoke_llm())
+    assert chain.ainvoke.await_count == MAX_RATE_LIMIT_RETRIES + 1
+
+
+def test_invoke_llm_non_429_raises_immediately(monkeypatch):
+    agent = CodeReviewer(make_config(), 'p', 'reviewer')
+    chain = MagicMock()
+    chain.ainvoke = AsyncMock(side_effect=ValueError('schema mismatch'))
+    agent._chain_cache['_default'] = chain
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr('devteam.agents.base_agent.asyncio.sleep', sleep_mock)
+    with pytest.raises(ValueError):
+        asyncio.run(agent._invoke_llm())
+    assert chain.ainvoke.await_count == 1
+    sleep_mock.assert_not_awaited()
 
 
 def test_with_tool_reminder_lists_tools():

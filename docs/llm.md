@@ -290,7 +290,7 @@ LangChain reports this provider as `google_genai`. The alias `'google_genai/*': 
 
 No API key required for cloud models when Groq free-tier limits apply. Ollama models run locally.
 
-The `free` provider is a compound provider - each model entry carries a `provider` field pointing to its real backend (`groq` or `ollama`). No separate install is needed beyond those two.
+The `free` provider is a compound provider - each model entry carries a `provider` field pointing to its real backend (`groq` or `ollama`). No separate install is needed beyond those two. Rate limiting is charged to the real backend: the Groq models draw from Groq's per-provider budget (30 RPM registry default) while the local Ollama calls stay unthrottled.
 
 | Model | Backend | Best for |
 |---|---|---|
@@ -300,6 +300,12 @@ The `free` provider is a compound provider - each model entry carries a `provide
 | `qwen3-coder:30b` | ollama | code generation, code analysis |
 
 ---
+
+## Rate limiting and 429 retries
+
+Requests are throttled per provider with rolling one-minute windows (`utils/rate_limiter.py`, behavior ported from my-dev-team-vs-code's `rateLimiter.ts`). A provider's budget resolves as: the `--rpm` flag when set (> 0, then it applies to every provider), else the provider's default from the shared registry (the `rpm` key of its `llms.yaml` section - currently only Groq seeds one, 30 RPM for the free tier), else no throttle. Budgets are keyed by the routed model's real backend, so a compound provider like `free` never spends the Groq budget on its local Ollama calls.
+
+Independently of throttling, a rate-limited call (HTTP 429) is retried automatically: the delay comes from the response's `retry-after-ms`/`retry-after` headers or the provider's "try again in Ns" message hint (Groq phrases its limit this way), falling back to exponential backoff - up to 5 attempts, each wait capped at 60 seconds. A 429 that persists past the cap fails the step like before, where checkpoint resume still applies.
 
 ## Adding models
 

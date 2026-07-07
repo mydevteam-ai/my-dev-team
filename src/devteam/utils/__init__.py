@@ -1,7 +1,7 @@
 from .llm_factory import LLMFactory, get_valid_providers
 from .logging_utils import setup_logging, add_file_handler, remove_file_handler
 from .project_spec import generate_thread_id, load_project_spec, parse_spec_from_string
-from .rate_limiter import RateLimiter
+from .rate_limiter import RateLimiter, is_rate_limit_error, retry_delay
 from .tasks import task_to_markdown
 from .stream_handler import StreamHandler
 from .telemetry import TelemetryTracker
@@ -16,6 +16,8 @@ __all__ = [
     'LLMFactory',
     'get_valid_providers',
     'RateLimiter',
+    'is_rate_limit_error',
+    'retry_delay',
     'task_to_markdown',
     'TelemetryTracker',
     'generate_thread_id',

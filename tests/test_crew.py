@@ -162,6 +162,19 @@ class TestCrewFactory:
         cf = CrewFactory(llm_factory=MagicMock())
         crew = cf.create(tmp_path, rpm=10, config_name='basic.yaml')
         assert cf.agents_factory.rate_limiter is not None
+        assert cf.agents_factory.rate_limiter.rpm_limit == 10
+
+    def test_create_without_rpm_still_carries_registry_budgets(self, tmp_path):
+        # --rpm unset (0): the limiter is built anyway so the registry's
+        # per-provider defaults (e.g. groq's free-tier rpm) still throttle.
+        factory = MagicMock()
+        factory.provider_rpm_defaults = {'groq': 30}
+        cf = CrewFactory(llm_factory=factory)
+        cf.create(tmp_path, config_name='basic.yaml')
+        limiter = cf.agents_factory.rate_limiter
+        assert limiter is not None
+        assert limiter.rpm_for('groq') == 30
+        assert limiter.rpm_for('ollama') == 0
 
     def test_create_fanout(self, tmp_path):
         cf = CrewFactory(llm_factory=MagicMock())

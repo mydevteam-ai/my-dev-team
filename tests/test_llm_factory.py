@@ -42,6 +42,22 @@ def test_model_map_and_llm_config_cached():
     assert factory.llm_config is factory.llm_config  # cached_property
 
 
+def test_provider_rpm_defaults_reads_registry_seeds():
+    factory = LLMFactory('ollama')
+    factory.__dict__['model_map'] = {
+        'groq': {'rpm': 30, 'models': []},
+        'ollama': {'models': []},
+    }
+    assert factory.provider_rpm_defaults == {'groq': 30, 'ollama': 0}
+
+
+def test_provider_rpm_defaults_from_generated_llms_yaml():
+    # The shared registry seeds groq's free-tier budget into llms.yaml.
+    factory = LLMFactory('groq')
+    assert factory.provider_rpm_defaults['groq'] == 30
+    assert factory.provider_rpm_defaults['ollama'] == 0
+
+
 # --- select_model ---
 
 def test_select_model_picks_highest_capability_score():

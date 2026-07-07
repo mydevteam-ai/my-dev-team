@@ -13,7 +13,8 @@ from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools.extractor import coerce_tool_calls
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer, workspace
-from devteam.utils import retrieve_workspace_context, retrieve_skills_context, steering_for
+from devteam.utils import retrieve_workspace_context, retrieve_skills_context, retry_delay, steering_for
+from devteam.utils.rate_limiter import MAX_RATE_LIMIT_RETRIES
 from .intermediate_tools import IntermediateTools
 
 class NoToolCallError(Exception):
@@ -77,6 +78,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.llm_factory = llm_factory
         self.rate_limiter = rate_limiter
         self._chain_cache: dict[str, Runnable] = {}
+        self._chain_providers: dict[str, str] = {}
 
     @cached_property
     def inputs(self) -> list[str]:
@@ -303,6 +305,10 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         cache_key = complexity or '_default'
         if cache_key not in self._chain_cache:
             model = self.llm_factory.select_model(self.capabilities, complexity=complexity)
+            # The real backend of the routed model: a compound provider's
+            # entries carry their own provider field, so a `free` run charges
+            # its Groq calls to the Groq budget, not the Ollama one.
+            self._chain_providers[cache_key] = model.get('provider', self.llm_factory.provider)
             steering = steering_for(model.get('capabilities', {}))
             if steering:
                 self.logger.debug("Steering for model %s:\n%s", model.get('id'), steering)
@@ -331,17 +337,31 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         return ChatPromptTemplate.from_messages(messages)
 
     async def _invoke_llm(self, complexity: str = None, **kwargs) -> AIMessage:
-        if self.rate_limiter:
-            await self.rate_limiter.wait_if_needed()
         chain = self._get_chain(complexity)
-        try:
-            response = await asyncio.wait_for(
-                chain.ainvoke(kwargs), timeout=settings.llm_timeout
-            )
-        except asyncio.TimeoutError:
-            raise TimeoutError(
-                f"LLM call timed out after {settings.llm_timeout} seconds"
-            ) from None
+        provider = self._chain_providers.get(complexity or '_default')
+        for attempt in range(MAX_RATE_LIMIT_RETRIES + 1):
+            # The throttle slot is re-acquired per attempt, so retries also
+            # stay within the provider's budget.
+            if self.rate_limiter:
+                await self.rate_limiter.wait_if_needed(provider)
+            try:
+                response = await asyncio.wait_for(
+                    chain.ainvoke(kwargs), timeout=settings.llm_timeout
+                )
+                break
+            except asyncio.TimeoutError:
+                raise TimeoutError(
+                    f"LLM call timed out after {settings.llm_timeout} seconds"
+                ) from None
+            except Exception as exc: # pylint: disable=broad-exception-caught
+                delay = retry_delay(exc, attempt)
+                if delay is None or attempt >= MAX_RATE_LIMIT_RETRIES:
+                    raise
+                self.logger.warning(
+                    "%s rate limited (429); retrying in %.1fs (attempt %d/%d)...",
+                    provider or 'Provider', delay, attempt + 1, MAX_RATE_LIMIT_RETRIES,
+                )
+                await asyncio.sleep(delay)
         self.logger.debug("Raw Response Content:\n%s", response.content)
         self.logger.debug("Tool Calls:\n%s", response.tool_calls)
         return response

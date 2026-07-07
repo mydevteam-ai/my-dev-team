@@ -30,7 +30,12 @@ class CrewFactory(WithLogging):
         return ManagerClass
 
     def create(self, project_folder: Path, *, checkpointer=None, rpm: int = 0, extensions: list = None, config_name: str = None, manager=None, fanout: bool = False):
-        rate_limiter = self.rate_limiter or (RateLimiter(requests_per_minute=rpm) if rpm > 0 else None)
+        # Always built: with --rpm unset (0) the registry's per-provider
+        # default budgets still apply; with neither, the limiter is a no-op.
+        rate_limiter = self.rate_limiter or RateLimiter(
+            requests_per_minute=rpm,
+            provider_defaults=self.llm_factory.provider_rpm_defaults,
+        )
         self.agents_factory.rate_limiter = rate_limiter
         config_name = config_name or self.BASIC_CREW
         crew_config = self.agents_factory.load_crew_config(config_name)

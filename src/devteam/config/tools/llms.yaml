@@ -3,6 +3,7 @@
 # Regenerate with: python scripts/sync_models.py (run in my-dev-team-config).
 providers:
     groq:
+        rpm: 30
         models:
             - id: 'openai/gpt-oss-120b'
               context_window: 131072

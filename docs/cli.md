@@ -21,7 +21,7 @@ Either `project_file` or `--resume` (or `--history`) is required.
 | `project_file` | positional (optional) | - | Path to the requirements text file. Omit only when using `--resume`. |
 | `--provider` | choice | `ollama` | LLM backend. Options: `anthropic`, `azure-anthropic`, `azure-openai`, `free`, `groq`, `ollama`, `openai`. See [LLM providers](llm.md) for model lists and required env vars. |
 | `--azure` | flag | off | Use the Azure-hosted variant of the selected provider. `--provider openai --azure` is equivalent to `--provider azure-openai`. Errors if the provider already has an `azure-` prefix. |
-| `--rpm` | int | `0` | API requests per minute. `0` disables rate limiting. |
+| `--rpm` | int | `0` | API requests per minute, applied per provider (a compound provider's local calls never spend a cloud budget). When set (> 0) it overrides every provider's default; `0` keeps the per-provider defaults from the shared model registry (e.g. Groq's free-tier 30 RPM), and providers without a default are unthrottled. Rate-limited (HTTP 429) calls are retried automatically after the delay the provider suggests, up to 5 times. |
 | `--timeout` | int | `120` | Maximum seconds to wait for an LLM response. Increase for slow local models. |
 | `--resume` | str | - | Resume an existing thread by ID (e.g. `web_scraper_cli_20260312_083500`). |
 | `--feedback` | str | - | Human feedback to inject into the state when resuming. |

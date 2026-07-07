@@ -209,6 +209,24 @@ def test_get_chain_passes_selected_model_to_create():
     assert factory.create.call_args.kwargs['model'] is FRONTIER_ENTRY
 
 
+def test_get_chain_records_routed_provider():
+    # A compound provider's entries carry their real backend, so the rate
+    # limiter charges e.g. a `free` run's Groq calls to the Groq budget.
+    agent = CodeReviewer(make_config(), "p", "reviewer")
+    factory = _mock_factory(agent, {**FRONTIER_ENTRY, 'provider': 'groq'})
+    factory.provider = 'free'
+    agent._get_chain(None)
+    assert agent._chain_providers['_default'] == 'groq'
+
+
+def test_get_chain_provider_falls_back_to_factory():
+    agent = CodeReviewer(make_config(), "p", "reviewer")
+    factory = _mock_factory(agent, FRONTIER_ENTRY)
+    factory.provider = 'ollama'
+    agent._get_chain('high')
+    assert agent._chain_providers['high'] == 'ollama'
+
+
 def test_get_chain_steers_low_scoring_model():
     agent = CodeReviewer(make_config(), "system text", "reviewer")
     _mock_factory(agent, {'id': 'tiny', 'capabilities': {'reasoning': 0.3}})

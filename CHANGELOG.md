@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.2] - 2026-07-07
+
+### 🚀 Added
+
+* **429 retry with provider-suggested delays:** A rate-limited LLM call (HTTP 429) no longer fails the step outright (ported from my-dev-team-vs-code): the call is retried after the delay the provider suggests - the `retry-after`/`retry-after-ms` response headers or Groq's "try again in Ns" message hint, exponential backoff otherwise - up to 5 attempts with each wait capped at 60 seconds. A 429 that persists past the cap fails the step as before, where checkpoint resume still applies. See [LLM Providers and Models](docs/llm.md#rate-limiting-and-429-retries).
+
+* **Per-provider rate-limit budgets:** The `--rpm` throttle now keeps a rolling one-minute window per real backend instead of one global window, so the `free` compound provider's local Ollama calls no longer spend the Groq budget. Providers can carry a default budget in the shared model registry - Groq seeds 30 RPM (its free tier) - so a plain `--provider groq` run stays under quota out of the box.
+
+### ⚙️ Changed
+
+* **`--rpm` semantics:** Setting `--rpm` (> 0) now overrides every provider's budget; leaving it unset (`0`) keeps the registry's per-provider defaults instead of disabling rate limiting entirely. Providers without a registry default remain unthrottled.
+
 ## [0.13.1] - 2026-07-07
 
 ### 🚀 Added
