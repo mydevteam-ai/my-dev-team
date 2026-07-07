@@ -30,8 +30,16 @@ class LLMFactory(WithLogging):
     def model_map(self) -> dict:
         return self.llm_config.get('providers', {})
 
-    def _select_model(self, capabilities: dict[str, float], complexity: str = None) -> dict:
-        """Select the best model entry for the requested capabilities using weighted scoring."""
+    def select_model(self, capabilities: dict[str, float] | list[str], complexity: str = None) -> dict:
+        """Select the best model entry for the requested capabilities using weighted scoring.
+
+        Public so a caller can inspect the routed entry (e.g. derive prompt
+        steering from its capability scores) and hand it back to `create()`
+        via `model=` - selection then happens exactly once and steering and
+        instantiation can never disagree about the routed model.
+        """
+        if isinstance(capabilities, list):
+            capabilities = {cap: 1.0 for cap in capabilities}
         models = self.model_map[self.provider]['models']
         total_weight = sum(capabilities.values()) or 1.0
         best_model = models[0]
@@ -227,11 +235,14 @@ class LLMFactory(WithLogging):
 
     def create(self, capabilities: dict[str, float] | list[str], temperature: float, *,
                node_name: str, json_mode = True, complexity: str = None,
-               thinking: bool = None, top_k: int = None, top_p: float = None) -> BaseChatModel:
-        """Returns a configured LLM instance for the requested capabilities."""
-        if isinstance(capabilities, list):
-            capabilities = {cap: 1.0 for cap in capabilities}
-        model = self._select_model(capabilities, complexity=complexity)
+               thinking: bool = None, top_k: int = None, top_p: float = None,
+               model: dict = None) -> BaseChatModel:
+        """Returns a configured LLM instance for the requested capabilities.
+
+        `model` may carry an entry pre-selected via `select_model()` to skip
+        re-selection; when omitted, the best-fit entry is selected here.
+        """
+        model = model or self.select_model(capabilities, complexity=complexity)
         provider = model.get('provider', self.provider)
         if complexity:
             self.logger.debug(

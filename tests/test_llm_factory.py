@@ -42,7 +42,7 @@ def test_model_map_and_llm_config_cached():
     assert factory.llm_config is factory.llm_config  # cached_property
 
 
-# --- _select_model ---
+# --- select_model ---
 
 def test_select_model_picks_highest_capability_score():
     factory = LLMFactory('ollama')
@@ -53,7 +53,7 @@ def test_select_model_picks_highest_capability_score():
             {'id': 'strong', 'capabilities': {'reasoning': 0.9}},
         ]}
     }
-    chosen = factory._select_model({'reasoning': 1.0})
+    chosen = factory.select_model({'reasoning': 1.0})
     assert chosen['id'] == 'strong'
 
 
@@ -66,9 +66,9 @@ def test_select_model_applies_complexity_fit():
         ]}
     }
     # Without complexity, 'a' wins on raw capability.
-    assert factory._select_model({'reasoning': 1.0})['id'] == 'a'
+    assert factory.select_model({'reasoning': 1.0})['id'] == 'a'
     # With high complexity, fit flips the winner to 'b'.
-    assert factory._select_model({'reasoning': 1.0}, complexity='high')['id'] == 'b'
+    assert factory.select_model({'reasoning': 1.0}, complexity='high')['id'] == 'b'
 
 
 def test_select_model_zero_weight_defaults_to_first():
@@ -79,8 +79,19 @@ def test_select_model_zero_weight_defaults_to_first():
             {'id': 'second', 'capabilities': {}},
         ]}
     }
-    chosen = factory._select_model({})
+    chosen = factory.select_model({})
     assert chosen['id'] == 'first'
+
+
+def test_select_model_accepts_capability_list():
+    factory = LLMFactory('ollama')
+    factory.__dict__['model_map'] = {
+        'ollama': {'models': [
+            {'id': 'weak', 'capabilities': {'reasoning': 0.1}},
+            {'id': 'strong', 'capabilities': {'reasoning': 0.9}},
+        ]}
+    }
+    assert factory.select_model(['reasoning'])['id'] == 'strong'
 
 
 # --- _instantiate dispatch (mock provider SDK modules) ---
@@ -242,3 +253,15 @@ def test_create_routes_to_model_provider_field(monkeypatch):
     }
     factory.create({'reasoning': 1.0}, 0.0, node_name='dev', complexity='low')
     assert captured['model'] == 'llama'
+
+
+def test_create_uses_preselected_model_without_reselecting(monkeypatch):
+    captured = _install_fake_module(monkeypatch, 'langchain_ollama', 'ChatOllama')
+    factory = LLMFactory('ollama')
+    factory.__dict__['model_map'] = {
+        'ollama': {'models': [{'id': 'other', 'capabilities': {'reasoning': 1.0}, 'thinking': False}]}
+    }
+    entry = {'id': 'preselected', 'capabilities': {'reasoning': 0.1}, 'thinking': False}
+    monkeypatch.setattr(factory, 'select_model', MagicMock(side_effect=AssertionError('re-selected')))
+    factory.create({'reasoning': 1.0}, 0.1, node_name='dev', model=entry)
+    assert captured['model'] == 'preselected'

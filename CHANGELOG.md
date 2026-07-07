@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] - 2026-07-07
+
+### 🚀 Added
+
+* **Per-model prompt steering:** The routed model's capability scores now derive a "Model-specific guidance" section appended to the agent's system prompt (ported from my-dev-team-vs-code): a model scoring low on `structured-output` gets a strict tool-call reminder, low `reasoning` gets step-by-step instructions and low `code-generation` gets "do not invent paths/APIs - verify with a tool". Frontier models clear every threshold and keep an unchanged prompt; the small local Ollama models collect most of the lines. No per-model configuration - the shared registry's scores decide automatically. See [LLM Providers and Models](docs/llm.md#per-model-prompt-steering).
+
 ## [0.13.0] - 2026-07-03
 
 ### 🚀 Added

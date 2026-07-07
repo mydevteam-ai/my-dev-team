@@ -108,6 +108,20 @@ When complexity routing kicks in, `BaseAgent.process()` logs `Routing on complex
 
 ---
 
+## Per-model prompt steering
+
+The agent prompts assume a capable model; a weaker model needs extra nudging to hit the same bar. Rather than fork prompts per model, `utils/steering.py` (ported from my-dev-team-vs-code's `engine/config/steering.ts`) derives a small "Model-specific guidance" section from the routed model's capability scores in `llms.yaml` and appends it to the agent's system prompt. Each rule fires only when the model scores **below** its threshold:
+
+| Capability | Below | Guidance |
+|---|---|---|
+| `structured-output` | 0.9 | submit the result as a single tool call, no plain-text JSON or prose around it |
+| `reasoning` | 0.8 | work step by step, do not guess at unproven conclusions |
+| `code-generation` | 0.85 | never invent paths/APIs/identifiers - verify with a tool |
+
+A frontier model (Opus, GPT-5.5, Gemini Pro) clears every threshold and gets nothing - its prompt is byte-identical to before. A small local model (qwen3:8b, gemma3:4b) collects most of the lines. A missing score counts as 0, so an unscored model gets the full set. No per-model configuration is involved: a newly registered model is steered automatically from its registry scores, and the section follows complexity routing (the low-complexity chain of an agent may be steered while its high-complexity chain is not). Fired rules are logged at DEBUG per node and model.
+
+---
+
 ## anthropic
 
 **Package:** `pip install "my-dev-team[anthropic]"`

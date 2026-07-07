@@ -10,6 +10,7 @@ from .communication_log import CommunicationLog
 from .workspace import hydrate_workspace
 from .retriever import retrieve_workspace_context, retrieve_skills_context
 from .serializer_deserializer import create_serde
+from .steering import steering_for
 
 __all__ = [
     'LLMFactory',
@@ -30,4 +31,5 @@ __all__ = [
     'retrieve_workspace_context',
     'retrieve_skills_context',
     'create_serde',
+    'steering_for',
 ]

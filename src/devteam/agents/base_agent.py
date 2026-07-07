@@ -13,7 +13,7 @@ from devteam.skills import skills
 from devteam.state import ProjectState
 from devteam.tools.extractor import coerce_tool_calls
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer, workspace
-from devteam.utils import retrieve_workspace_context, retrieve_skills_context
+from devteam.utils import retrieve_workspace_context, retrieve_skills_context, steering_for
 from .intermediate_tools import IntermediateTools
 
 class NoToolCallError(Exception):
@@ -286,7 +286,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             extras.update({k: override[k] for k in ('thinking', 'top_k', 'top_p') if k in override})
         return temperature, extras
 
-    def _get_llm(self, complexity: str) -> Runnable:
+    def _get_llm(self, complexity: str, model: dict = None) -> Runnable:
         temperature, extras = self._resolve_params(complexity)
         llm = self.llm_factory.create(
             capabilities=self.capabilities,
@@ -294,6 +294,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             node_name=self.node_name,
             json_mode=False,
             complexity=complexity,
+            model=model,
             **extras,
         )
         return llm.bind_tools(self.tools)
@@ -301,20 +302,29 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
     def _get_chain(self, complexity: str) -> Runnable:
         cache_key = complexity or '_default'
         if cache_key not in self._chain_cache:
-            self._chain_cache[cache_key] = self._build_prompt() | self._get_llm(complexity)
+            model = self.llm_factory.select_model(self.capabilities, complexity=complexity)
+            steering = steering_for(model.get('capabilities', {}))
+            if steering:
+                self.logger.debug("Steering for model %s:\n%s", model.get('id'), steering)
+            self._chain_cache[cache_key] = self._build_prompt(steering) | self._get_llm(complexity, model)
         return self._chain_cache[cache_key]
 
     def _data_input_keys(self) -> list[str]:
         """Input keys that become template variables in the human message (all inputs except messages)."""
         return [k for k in self.inputs if k != 'messages']
 
-    def _build_prompt(self) -> ChatPromptTemplate:
+    def _build_prompt(self, steering: str = '') -> ChatPromptTemplate:
         data_keys = self._data_input_keys()
         human_parts = []
         for key in data_keys:
             tag = self._prompt_tag(key)
             human_parts.append(f"<{tag}>\n{{{key}}}\n</{tag}>")
-        messages = [('system', self.prompt_template)]
+        system = self.prompt_template
+        if steering:
+            # The system prompt is a LangChain template - escape the appended
+            # text so a brace in a steering line can never break every agent.
+            system += '\n\n' + steering.replace('{', '{{').replace('}', '}}')
+        messages = [('system', system)]
         if human_parts:
             messages.append(('human', '\n\n'.join(human_parts)))
         messages.append(MessagesPlaceholder(variable_name='messages'))

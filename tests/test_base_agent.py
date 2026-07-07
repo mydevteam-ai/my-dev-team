@@ -179,16 +179,61 @@ def test_resolve_params_complexity_override():
 # _get_llm / _get_chain caching
 # =====================================================================
 
-def test_get_chain_caches_per_complexity():
-    agent = CodeReviewer(make_config(), "p", "reviewer")
+def _mock_factory(agent, model_entry):
     llm = MagicMock()
     llm.bind_tools.return_value = llm
     agent.llm_factory = MagicMock()
     agent.llm_factory.create.return_value = llm
+    agent.llm_factory.select_model.return_value = model_entry
+    return agent.llm_factory
+
+
+FRONTIER_ENTRY = {'id': 'frontier', 'capabilities': {
+    'structured-output': 0.95, 'reasoning': 0.98, 'code-generation': 0.97}}
+
+
+def test_get_chain_caches_per_complexity():
+    agent = CodeReviewer(make_config(), "p", "reviewer")
+    factory = _mock_factory(agent, FRONTIER_ENTRY)
     chain1 = agent._get_chain(None)
     chain2 = agent._get_chain(None)
     assert chain1 is chain2
-    assert agent.llm_factory.create.call_count == 1
+    assert factory.create.call_count == 1
+
+
+def test_get_chain_passes_selected_model_to_create():
+    agent = CodeReviewer(make_config(), "p", "reviewer")
+    factory = _mock_factory(agent, FRONTIER_ENTRY)
+    agent._get_chain('high')
+    factory.select_model.assert_called_once_with({'reasoning': 1.0}, complexity='high')
+    assert factory.create.call_args.kwargs['model'] is FRONTIER_ENTRY
+
+
+def test_get_chain_steers_low_scoring_model():
+    agent = CodeReviewer(make_config(), "system text", "reviewer")
+    _mock_factory(agent, {'id': 'tiny', 'capabilities': {'reasoning': 0.3}})
+    chain = agent._get_chain(None)
+    system = chain.first.messages[0].prompt.template
+    assert system.startswith('system text')
+    assert '## Model-specific guidance' in system
+    assert 'single tool call' in system
+
+
+def test_get_chain_leaves_strong_model_prompt_untouched():
+    agent = CodeReviewer(make_config(), "system text", "reviewer")
+    _mock_factory(agent, FRONTIER_ENTRY)
+    chain = agent._get_chain(None)
+    assert chain.first.messages[0].prompt.template == 'system text'
+
+
+def test_build_prompt_escapes_braces_in_steering():
+    agent = CodeReviewer(make_config(), "system text", "reviewer")
+    prompt = agent._build_prompt('## Guidance\n\n- emit {"key": "value"} only')
+    template = prompt.messages[0].prompt.template
+    assert '{{"key": "value"}}' in template
+    # The escaped template still renders, with the braces restored.
+    rendered = prompt.invoke({'messages': []})
+    assert '{"key": "value"}' in rendered.messages[0].content
 
 
 # =====================================================================
