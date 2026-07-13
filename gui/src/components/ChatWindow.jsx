@@ -33,13 +33,17 @@ export default function ChatWindow() {
           <p className="text-slate-400 text-center py-8 font-sans text-sm">No activity yet</p>
         )}
 
-        {state.activityFeed.map((entry, i) => (
-          entry.type === 'log'
-            ? <div key={i} className="border-l-2 border-blue-300 pl-2 [&_*]:font-bold [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs">
-                <Markdown>{entry.text}</Markdown>
-              </div>
-            : <p key={i} className="text-slate-400 whitespace-pre-wrap font-mono text-xs">{entry.text}</p>
-        ))}
+        {state.activityFeed.map((entry, i) => {
+          if (entry.type === 'log') return (
+            <div key={i} className="border-l-2 border-blue-300 pl-2 [&_*]:font-bold [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs">
+              <Markdown>{entry.text}</Markdown>
+            </div>
+          )
+          if (entry.type === 'warning') return (
+            <p key={i} className="border-l-2 border-amber-400 pl-2 text-amber-600 font-medium">⚠ {entry.text}</p>
+          )
+          return <p key={i} className="text-slate-400 whitespace-pre-wrap font-mono text-xs">{entry.text}</p>
+        })}
 
         {/* Live thinking buffer (not yet flushed) */}
         {state.thinkingBuffer && (

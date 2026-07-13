@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.3] - 2026-07-13
+
+### 🚀 Added
+
+* **Live context-window budgeting:** `TelemetryTracker` now compares every prompt against the routed model's `context_window` from the shared model registry and logs a warning the moment an agent crosses 75/85/95 % of the window - mid-run, not just in the final receipt (ported from my-dev-team-vs-code). Warnings fire once per crossed threshold per agent; models without a verified `context_window` are skipped. See [Telemetry & Optimization](README.md#telemetry--optimization).
+
+* **Context Pressure diagnostic:** The post-run optimization report gained a fourth detector that flags each agent's peak context fill (≥ 75 %) with the model it was routed to - an absolute complement to the relative-growth "Context Bloat" check.
+
+* **Telemetry in the web dashboard:** GUI runs now track telemetry too. Context-window warnings appear live in the activity feed, and when the run ends the dashboard renders a telemetry panel with the request/token/cost receipt and all optimization diagnostics (new `context_warning` and `telemetry` SSE events).
+
 ## [0.13.2] - 2026-07-07
 
 ### 🚀 Added

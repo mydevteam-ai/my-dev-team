@@ -279,3 +279,31 @@ def test_run_in_thread_failure(monkeypatch, tmp_path):
     gui_app._run_in_thread(req, 'thread1', q, holder)
     assert 'worker boom' in holder['error']
     assert q.get_nowait()['type'] == 'error'
+
+
+def test_run_in_thread_emits_telemetry_event(monkeypatch, tmp_path):
+    from devteam import settings
+    from devteam.utils import TelemetryTracker
+    monkeypatch.setattr(settings, 'workspace_dir', tmp_path)
+    monkeypatch.setattr(gui_app, 'add_file_handler', lambda p: MagicMock())
+    monkeypatch.setattr(gui_app, 'remove_file_handler', lambda h: None)
+
+    async def fake_run(request, thread_id, hooks):
+        tracker = hooks.callbacks[0]
+        assert isinstance(tracker, TelemetryTracker)
+        # Simulate one LLM call so the finally-block emits a telemetry event
+        tracker.total_requests = 1
+        tracker.input_tokens = 100
+        tracker.output_tokens = 50
+        return 'FINAL'
+    monkeypatch.setattr(gui_app, 'run', fake_run)
+
+    from devteam.cli.request import StartRequest
+    req = StartRequest(provider='ollama', project_name='App', requirements='r')
+    q = Queue()
+    gui_app._run_in_thread(req, 'thread1', q, {})
+    event = q.get_nowait()
+    assert event['type'] == 'telemetry'
+    assert event['total_requests'] == 1
+    assert event['total_tokens'] == 150
+    assert event['diagnostics'] == []

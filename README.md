@@ -227,10 +227,13 @@ Estimated Cost:      $0.0145
 ========================================
 ⚠️ Thrashing Detected: `qa` was called 8 times. The agent might be stuck in a failure loop.
 📈 Context Bloat: `reviewer` input grew by 3.2x (Started: 1200, Ended: 3840).
+🪟 Context Pressure: `developer` peak context fill 87% of the qwen3:8b window.
 ========================================
 ```
 
 This allows you to easily identify architectural token leaks, pinpoint which specific agent is struggling, and adjust your `llms.yaml` or prompt templates accordingly!
+
+The tracker also budgets each prompt against the routed model's `context_window` from the shared model registry **live, during the run**: crossing 75/85/95 % of the window logs a warning immediately (console and `execution.log`), so an approaching context overflow is visible before the final receipt. The web dashboard shows the same warnings in the activity feed and renders the receipt and diagnostics in a telemetry panel when the run finishes. Models without a verified `context_window` in the registry are skipped.
 
 ## Usage (Python API)
 

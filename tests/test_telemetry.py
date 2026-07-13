@@ -192,3 +192,121 @@ def test_optimization_panel_no_growth_when_first_input_zero():
     opt = _Opt(history, {'dev': 3})
     panel = opt.get_optimization_panel()
     assert panel.border_style == 'green'
+
+
+# --- context-window budgeting (TODO 2.4) ---
+
+def _make_tracker_with_windows(windows: dict, callback=None):
+    t = TelemetryTracker(warning_callback=callback)
+    t.__dict__['model_windows'] = windows
+    return t
+
+
+def test_model_windows_built_from_config():
+    t = TelemetryTracker()
+    t.__dict__['_llm_config'] = {'providers': {
+        'groq': {'models': [
+            {'id': 'a', 'context_window': 1000},
+            {'id': 'b'},  # unverified window - skipped
+        ]},
+        'free': {'models': [{'id': 'c', 'provider': 'groq', 'context_window': 2000}]},
+    }}
+    assert t.model_windows == {'a': 1000, 'c': 2000}
+
+
+def test_lookup_window_exact_and_prefix():
+    t = _make_tracker_with_windows({'o3': 200, 'gpt-4.1': 100, 'gpt-4.1-mini': 50})
+    assert t._lookup_window('o3') == 200
+    assert t._lookup_window('o3-2025-04-16') == 200
+    # Longest matching id wins over a shorter shared prefix
+    assert t._lookup_window('gpt-4.1-mini-2025-04-14') == 50
+    assert t._lookup_window('unknown-model') is None
+
+
+def test_track_context_fill_below_threshold_no_warning():
+    calls = []
+    t = _make_tracker_with_windows({'m': 1000}, callback=calls.append)
+    fill = t._track_context_fill('dev', 'm', 500)
+    assert fill == pytest.approx(0.5)
+    assert calls == []
+
+
+def test_track_context_fill_warns_once_per_threshold():
+    calls = []
+    t = _make_tracker_with_windows({'m': 1000}, callback=calls.append)
+    t._track_context_fill('dev', 'm', 800)   # crosses 75%
+    t._track_context_fill('dev', 'm', 820)   # still 75% band - no repeat
+    assert len(calls) == 1
+    assert calls[0]['threshold'] == 0.75
+    assert calls[0]['agent'] == 'dev'
+    assert '80%' in calls[0]['message']
+
+
+def test_track_context_fill_escalates_to_higher_threshold():
+    calls = []
+    t = _make_tracker_with_windows({'m': 1000}, callback=calls.append)
+    t._track_context_fill('dev', 'm', 800)
+    t._track_context_fill('dev', 'm', 960)   # jumps past 85% straight to 95%
+    assert [c['threshold'] for c in calls] == [0.75, 0.95]
+
+
+def test_track_context_fill_tracks_agents_independently():
+    calls = []
+    t = _make_tracker_with_windows({'m': 1000}, callback=calls.append)
+    t._track_context_fill('dev', 'm', 800)
+    t._track_context_fill('qa', 'm', 800)
+    assert [c['agent'] for c in calls] == ['dev', 'qa']
+
+
+def test_track_context_fill_unknown_window_returns_none():
+    t = _make_tracker_with_windows({})
+    assert t._track_context_fill('dev', 'mystery', 999999) is None
+
+
+def test_on_llm_end_records_model_and_context_fill():
+    t = _make_tracker_with_windows({'gpt-x': 1000})
+    resp = _make_response([[_make_generation(800, 20, provider='ollama', model='gpt-x')]])
+    t.on_llm_end(resp, tags=['node:developer'])
+    record = t.call_history[0]
+    assert record['model'] == 'gpt-x'
+    assert record['context_fill'] == pytest.approx(0.8)
+
+
+def test_summary_returns_totals_and_diagnostics():
+    t = _make_tracker_with_windows({'gpt-x': 1000})
+    resp = _make_response([[_make_generation(800, 20, provider='ollama', model='gpt-x')]])
+    t.on_llm_end(resp, tags=['node:developer'])
+    summary = t.summary()
+    assert summary['total_requests'] == 1
+    assert summary['input_tokens'] == 800
+    assert summary['total_tokens'] == 820
+    assert any(d['kind'] == 'context_pressure' for d in summary['diagnostics'])
+
+
+def test_diagnostics_context_pressure_reports_peak_fill():
+    history = [
+        {'agent': 'dev', 'model': 'm', 'input_tokens': 100, 'output_tokens': 100, 'context_fill': 0.76},
+        {'agent': 'dev', 'model': 'm', 'input_tokens': 100, 'output_tokens': 100, 'context_fill': 0.9},
+        {'agent': 'qa', 'model': 'm', 'input_tokens': 100, 'output_tokens': 100, 'context_fill': 0.5},
+    ]
+    opt = _Opt(history, {'dev': 2, 'qa': 1})
+    warnings = opt.collect_diagnostics()
+    pressure = [w for w in warnings if w['kind'] == 'context_pressure']
+    assert len(pressure) == 1
+    assert pressure[0]['agent'] == 'dev'
+    assert '90%' in pressure[0]['detail']
+
+
+def test_diagnostics_context_pressure_ignores_records_without_fill():
+    history = [{'agent': 'dev', 'input_tokens': 100, 'output_tokens': 100}]
+    opt = _Opt(history, {'dev': 1})
+    assert not [w for w in opt.collect_diagnostics() if w['kind'] == 'context_pressure']
+
+
+def test_optimization_panel_renders_context_pressure():
+    history = [
+        {'agent': 'dev', 'model': 'm', 'input_tokens': 100, 'output_tokens': 100, 'context_fill': 0.96},
+    ]
+    opt = _Opt(history, {'dev': 1})
+    panel = opt.get_optimization_panel()
+    assert panel.border_style == 'red'
