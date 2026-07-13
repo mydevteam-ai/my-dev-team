@@ -28,7 +28,7 @@ class CodeReviewer(BaseAgent[CodeReviewerResponse]):
         return '\n\n'.join(sections).strip() or "No files exist in the workspace."
 
     @override
-    def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> CodeReviewerResponse:
+    def _map_tool_to_output(self, tool_name: str, tool_args: dict, state: ProjectState = None) -> CodeReviewerResponse:
         if tool_name == 'ApproveCode':
             return CodeReviewerResponse(review_feedback='APPROVED')
         if tool_name == 'ReportIssues':

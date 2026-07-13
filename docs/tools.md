@@ -37,7 +37,7 @@ The `tools` list controls which tool schemas are bound to the LLM. An agent can 
 | `AskClarification` | Output | Ask the stakeholder a clarifying question. |
 | `SubmitSpecification` | Output | Submit technical specifications. |
 | `SubmitArchitecture` | Output | Submit the development task backlog. |
-| `SubmitCode` | Output | Submit created or modified code files. |
+| `SubmitCode` | Output | Submit created or modified code files. Each file carries either its full `content` (new files, small files, rewrites) or a list of `{old_text, new_text}` `edits` applied to the file's current workspace content (small changes to large files - a big token saver). Each `old_text` must match exactly one place; LF/CRLF differences are bridged, and a failed or ambiguous match re-prompts the agent with the exact failure. |
 | `ApproveCode` | Output | Approve code that meets acceptance criteria. |
 | `ReportIssues` | Output | Report bugs or failing tests. |
 | `SubmitWinner` | Output | Submit the index of the best code draft. |

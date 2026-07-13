@@ -73,15 +73,23 @@ def workspace_str_from_files(workspace_files: dict) -> str:
     return workspace_str
 
 
+def read_live_file(path: str, workspace_path: str) -> str | None:
+    """Raw content of a live workspace file, or None when it does not exist (or escapes the root)."""
+    if not workspace_path:
+        return None
+    live_root = Path(workspace_path).resolve()
+    target = (live_root / path).resolve()
+    if target.is_relative_to(live_root) and target.is_file():
+        return target.read_text(encoding='utf-8')
+    return None
+
+
 def read_workspace_file(path: str, workspace_path: str) -> str:
     if _is_excluded(path):
         return f"Access denied: '{path}' is in the excluded files list."
-    if workspace_path:
-        live_root = Path(workspace_path).resolve()
-        target = (live_root / path).resolve()
-        if target.is_relative_to(live_root) and target.is_file():
-            content = target.read_text(encoding='utf-8')
-            return f"--- FILE: {path} ---\n{content}"
+    content = read_live_file(path, workspace_path)
+    if content is not None:
+        return f"--- FILE: {path} ---\n{content}"
     available = list_workspace_files(workspace_path)
     return f"File not found: '{path}'. {available}"
 

@@ -8,7 +8,7 @@ class FinalQAEngineer(BaseAgent[FinalQAResponse]):
     output_schema = FinalQAResponse
 
     @override
-    def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> FinalQAResponse:
+    def _map_tool_to_output(self, tool_name: str, tool_args: dict, state: ProjectState = None) -> FinalQAResponse:
         if tool_name == 'ApproveCode':
             return FinalQAResponse(test_results='PASSED')
         if tool_name == 'ReportIssues':

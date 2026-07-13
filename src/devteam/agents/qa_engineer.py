@@ -25,7 +25,7 @@ class QAEngineer(BaseAgent[QAEngineerResponse]):
         return test_results
 
     @override
-    def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> QAEngineerResponse:
+    def _map_tool_to_output(self, tool_name: str, tool_args: dict, state: ProjectState = None) -> QAEngineerResponse:
         if tool_name == 'ApproveCode':
             return QAEngineerResponse(test_results='PASSED')
         if tool_name == 'ReportIssues':

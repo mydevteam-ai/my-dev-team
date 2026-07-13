@@ -1,5 +1,10 @@
 import asyncio
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
+import pytest
+from langchain_core.messages import HumanMessage
+from pydantic import ValidationError
+from devteam.agents.base_agent import BaseAgent
 from devteam.agents.code_reviewer import CodeReviewer
 from devteam.agents.developer import SeniorDeveloper
 from devteam.agents.product_manager import ProductManager
@@ -12,6 +17,7 @@ from devteam.state import ProjectState, TaskContext
 from devteam.agents.schemas import (
     CodeReviewerResponse,
     DeveloperResponse,
+    FileEdit,
     WorkspaceFile,
     QAEngineerResponse,
     FinalQAResponse,
@@ -154,6 +160,106 @@ class TestSeniorDeveloper:
         result = agent._update_state(parsed, prior)
         # changed_files reflects only what the developer just wrote.
         assert result["task_context"].changed_files == {"new.py": "new file"}
+
+# --- Edit-based code submission (TODO 2.7) ---
+
+def _submit_code(files: list[dict]) -> MagicMock:
+    msg = MagicMock()
+    msg.content = 'text'
+    msg.tool_calls = [{'name': 'SubmitCode', 'args': {'workspace_files': files}, 'id': 'tc1'}]
+    return msg
+
+
+class TestEditSubmission:
+    def _agent(self):
+        return SeniorDeveloper(make_config("Developer"), "prompt", "developer")
+
+    def test_workspace_file_rejects_neither_form(self):
+        with pytest.raises(ValidationError, match="exactly one submission form"):
+            WorkspaceFile(path="a.py")
+
+    def test_workspace_file_rejects_both_forms(self):
+        with pytest.raises(ValidationError, match="exactly one submission form"):
+            WorkspaceFile(path="a.py", content="x", edits=[FileEdit(old_text="a", new_text="b")])
+
+    def test_workspace_file_rejects_empty_edits(self):
+        with pytest.raises(ValidationError, match="exactly one submission form"):
+            WorkspaceFile(path="a.py", edits=[])
+
+    def test_workspace_file_accepts_edit_form(self):
+        wf = WorkspaceFile(path="a.py", edits=[FileEdit(old_text="a", new_text="b")])
+        assert wf.content is None
+        assert wf.edits[0].old_text == "a"
+
+    def test_map_tool_resolves_edits_against_workspace(self, workspace_dir):
+        agent = self._agent()
+        state = ProjectState(workspace_path=workspace_dir)
+        out = agent._map_tool_to_output('SubmitCode', {'workspace_files': [
+            {'path': 'src/main.py', 'edits': [{'old_text': 'print("hello")', 'new_text': 'print("hi")'}]},
+            {'path': 'new.py', 'content': 'x = 1\n'},
+        ]}, state)
+        by_path = {f.path: f for f in out.workspace_files}
+        assert by_path['src/main.py'].content == 'print("hi")'
+        assert by_path['src/main.py'].edits is None
+        assert by_path['new.py'].content == 'x = 1\n'
+
+    def test_resolved_edits_flow_into_changed_files(self, workspace_dir):
+        agent = self._agent()
+        state = ProjectState(workspace_path=workspace_dir)
+        parsed = agent._map_tool_to_output('SubmitCode', {'workspace_files': [
+            {'path': 'src/main.py', 'edits': [{'old_text': '"hello"', 'new_text': '"hi"'}]},
+        ]}, state)
+        result = agent._update_state(parsed, state)
+        assert result['task_context'].changed_files == {'src/main.py': 'print("hi")'}
+
+    def test_edit_on_missing_file_reprompts_with_content_hint(self, workspace_dir):
+        agent = self._agent()
+        state = ProjectState(workspace_path=workspace_dir)
+        with pytest.raises(ValidationError) as exc_info:
+            agent._map_tool_to_output('SubmitCode', {'workspace_files': [
+                {'path': 'ghost.py', 'edits': [{'old_text': 'a', 'new_text': 'b'}]},
+            ]}, state)
+        repair = BaseAgent._repair_instruction(exc_info.value)
+        assert 'File does not exist: ghost.py' in repair
+        assert "full `content`" in repair
+
+    def test_ambiguous_edit_reprompts_with_count(self, workspace_dir):
+        (Path(workspace_dir) / 'dup.py').write_text('x = 1\nx = 1\n', encoding='utf-8')
+        agent = self._agent()
+        state = ProjectState(workspace_path=workspace_dir)
+        with pytest.raises(ValidationError) as exc_info:
+            agent._map_tool_to_output('SubmitCode', {'workspace_files': [
+                {'path': 'dup.py', 'edits': [{'old_text': 'x = 1', 'new_text': 'y = 1'}]},
+            ]}, state)
+        repair = BaseAgent._repair_instruction(exc_info.value)
+        assert 'matches 2 places in dup.py' in repair
+        assert 'workspace_files.0.edits.0.old_text' in repair
+
+    def test_all_edit_failures_collected_into_one_reask(self, workspace_dir):
+        agent = self._agent()
+        state = ProjectState(workspace_path=workspace_dir)
+        with pytest.raises(ValidationError) as exc_info:
+            agent._map_tool_to_output('SubmitCode', {'workspace_files': [
+                {'path': 'ghost.py', 'edits': [{'old_text': 'a', 'new_text': 'b'}]},
+                {'path': 'src/main.py', 'edits': [{'old_text': 'nope', 'new_text': 'x'}]},
+            ]}, state)
+        assert exc_info.value.error_count() == 2
+
+    def test_process_reprompts_on_failed_edit_then_succeeds(self, workspace_dir):
+        agent = self._agent()
+        agent.max_retries = 1
+        bad = _submit_code([{'path': 'src/main.py', 'edits': [{'old_text': 'nope', 'new_text': 'x'}]}])
+        good = _submit_code([{'path': 'src/main.py', 'edits': [{'old_text': '"hello"', 'new_text': '"hi"'}]}])
+        agent._invoke_llm = AsyncMock(side_effect=[bad, good])
+        result = asyncio.run(agent.process(ProjectState(workspace_path=workspace_dir)))
+        assert 'error' not in result
+        assert result['task_context'].changed_files == {'src/main.py': 'print("hi")'}
+        retry_kwargs = agent._invoke_llm.call_args_list[1].kwargs
+        assert retry_kwargs['repaired'] is True
+        repair = retry_kwargs['messages'][-1]
+        assert isinstance(repair, HumanMessage)
+        assert 'old_text was not found in src/main.py' in repair.content
+
 
 # --- ProductManager Tests ---
 
