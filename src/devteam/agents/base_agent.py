@@ -7,7 +7,7 @@ import yaml
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from devteam import settings
 from devteam.skills import skills
 from devteam.state import ProjectState
@@ -15,6 +15,7 @@ from devteam.tools.extractor import coerce_tool_calls
 from devteam.utils import LLMFactory, RateLimiter, WithLogging, CommunicationLog, sanitizer, workspace
 from devteam.utils import retrieve_workspace_context, retrieve_skills_context, retry_delay, steering_for
 from devteam.utils.rate_limiter import MAX_RATE_LIMIT_RETRIES
+from devteam.utils.telemetry import REPAIRED_TAG
 from .intermediate_tools import IntermediateTools
 
 class NoToolCallError(Exception):
@@ -178,14 +179,15 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         inputs = self._build_inputs(state)
         base_messages = self._repair_tool_call_messages(list(state.messages))
         last_error = ''
-        inject_reminder = False
+        repair_message = None
         for attempt in range(self.max_retries + 1):
             if attempt > 0:
                 self.logger.warning("LLM call failed. Retrying (attempt %d/%d)...", attempt + 1, self.max_retries + 1)
-            messages = self._with_tool_reminder(base_messages) if inject_reminder else base_messages
-            inject_reminder = False
+            messages = self._with_repair_message(base_messages, repair_message) if repair_message else base_messages
+            repaired = repair_message is not None
+            repair_message = None
             try:
-                parsed_data, conversation_history = await self._run_attempt(inputs, messages, complexity, state)
+                parsed_data, conversation_history = await self._run_attempt(inputs, messages, complexity, state, repaired=repaired)
                 break
             except ImportError as e:
                 self.logger.exception("Import error")
@@ -193,11 +195,16 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
             except NoToolCallError:
                 last_error = traceback.format_exc()
                 self.logger.exception("Attempt %d/%d failed - no tool call", attempt + 1, self.max_retries + 1)
-                inject_reminder = True
+                repair_message = self._tool_reminder()
+            except ValidationError as exc:
+                last_error = traceback.format_exc()
+                self.logger.exception("Attempt %d/%d failed - schema validation", attempt + 1, self.max_retries + 1)
+                repair_message = self._repair_instruction(exc)
             except Exception as exc: # pylint: disable=broad-exception-caught
                 last_error = traceback.format_exc()
                 self.logger.exception("Attempt %d/%d failed", attempt + 1, self.max_retries + 1)
-                inject_reminder = self._is_tool_validation_error(exc)
+                if self._is_tool_validation_error(exc):
+                    repair_message = self._tool_reminder()
         else:
             return {'error': True, 'error_message': last_error}
         final_state = self._update_state(parsed_data, state)
@@ -209,12 +216,15 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         final_state['communication_log'] = tool_log + text_log
         return final_state
 
-    async def _run_attempt(self, inputs: dict, messages: list, complexity: str, state: ProjectState) -> tuple[T, list]:
+    async def _run_attempt(self, inputs: dict, messages: list, complexity: str, state: ProjectState, repaired: bool = False) -> tuple[T, list]:
         conversation_history = []
         while True:
             attempt_inputs = {**inputs, 'messages': messages + conversation_history}
             self.logger.debug("Invoking LLM with inputs:\n%s", attempt_inputs)
-            ai_message = coerce_tool_calls(await self._invoke_llm(complexity=complexity, **attempt_inputs))
+            ai_message = coerce_tool_calls(await self._invoke_llm(complexity=complexity, repaired=repaired, **attempt_inputs))
+            # Only the call answering the corrective message is a repair;
+            # follow-up intermediate-tool calls are normal continuation.
+            repaired = False
             conversation_history.append(ai_message)
             if not ai_message.tool_calls:
                 raise NoToolCallError("The model did not call any tool.")
@@ -253,13 +263,28 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 entries.append(f"**[{self.__class__.__name__}]** uses {self._format_tool_call(tc)}")
         return entries
 
-    def _with_tool_reminder(self, messages: list) -> list:
+    def _with_repair_message(self, messages: list, repair_message: str) -> list:
+        self.logger.debug("Injected repair message into retry messages: %s", repair_message)
+        return messages + [HumanMessage(content=repair_message)]
+
+    def _tool_reminder(self) -> str:
         tool_names = ', '.join(t.__name__ for t in self.tools)
-        self.logger.debug("Injected tool-call reminder into retry messages.")
-        return messages + [HumanMessage(content=(
+        return (
             f"You must respond by calling one of the available tools: {tool_names}. "
             "Do not return plain text - use a tool call to submit your response."
-        ))]
+        )
+
+    @staticmethod
+    def _repair_instruction(error: ValidationError) -> str:
+        """Render a schema-validation failure as a short, model-facing instruction."""
+        issues = '; '.join(
+            f"{'.'.join(str(loc) for loc in issue['loc']) or '(root)'}: {issue['msg']}"
+            for issue in error.errors()
+        )
+        return (
+            f"Your previous response failed validation: {issues}. "
+            "Call the tool again with the corrected arguments - emit only the corrected tool call, with no commentary."
+        )
 
     @staticmethod
     def _is_tool_validation_error(exc: Exception) -> bool:
@@ -336,9 +361,13 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         messages.append(MessagesPlaceholder(variable_name='messages'))
         return ChatPromptTemplate.from_messages(messages)
 
-    async def _invoke_llm(self, complexity: str = None, **kwargs) -> AIMessage:
+    async def _invoke_llm(self, complexity: str = None, repaired: bool = False, **kwargs) -> AIMessage:
         chain = self._get_chain(complexity)
         provider = self._chain_providers.get(complexity or '_default')
+        # A repair re-ask is a real, billed model call - tag it so telemetry
+        # can meter how often output needs repair (rides the run tags next to
+        # the LLM's own `node:` tag).
+        config = {'tags': [REPAIRED_TAG]} if repaired else None
         for attempt in range(MAX_RATE_LIMIT_RETRIES + 1):
             # The throttle slot is re-acquired per attempt, so retries also
             # stay within the provider's budget.
@@ -346,7 +375,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 await self.rate_limiter.wait_if_needed(provider)
             try:
                 response = await asyncio.wait_for(
-                    chain.ainvoke(kwargs), timeout=settings.llm_timeout
+                    chain.ainvoke(kwargs, config=config), timeout=settings.llm_timeout
                 )
                 break
             except asyncio.TimeoutError:

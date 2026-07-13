@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any
 from rich.panel import Panel
 from rich.table import Table
@@ -11,6 +12,7 @@ _KIND_STYLES = {
     'context_bloat': ('bold yellow', '📈 Context Bloat'),
     'high_waste': ('bold red', '🗑️ High Waste'),
     'context_pressure': ('bold red', '🪟 Context Pressure'),
+    'output_repair': ('bold yellow', '🔧 Output Repair'),
 }
 
 class CostOptimization:
@@ -61,6 +63,17 @@ class CostOptimization:
                 'kind': 'context_pressure',
                 'agent': agent,
                 'detail': f"Peak context fill {peak['fill']:.0%} of the {peak['model']} window."
+            })
+        # 5. Detect Output Repair (calls that re-asked after invalid output - each one is a full re-billed prompt)
+        repairs: dict[str, int] = defaultdict(int)
+        for call in self.call_history:
+            if call.get('repaired'):
+                repairs[call['agent']] += 1
+        for agent, count in repairs.items():
+            warnings_data.append({
+                'kind': 'output_repair',
+                'agent': agent,
+                'detail': f"{count} of {self.agent_calls.get(agent, count)} calls re-asked after invalid output."
             })
         return warnings_data
 

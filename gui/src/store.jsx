@@ -32,7 +32,7 @@ const initialState = {
   error: null,
 
   // Telemetry summary emitted by the backend when the run ends
-  // { totalRequests, inputTokens, cachedTokens, outputTokens, totalTokens, totalCost, diagnostics: [{kind, agent, detail}] }
+  // { totalRequests, repairedCalls, inputTokens, cachedTokens, outputTokens, totalTokens, totalCost, diagnostics: [{kind, agent, detail}] }
   telemetry: null,
 
   // Interleaved activity feed: [{type: 'log'|'thinking'|'warning', text: string}]
@@ -111,6 +111,7 @@ function reducer(state, action) {
           ...next,
           telemetry: {
             totalRequests: ev.total_requests || 0,
+            repairedCalls: ev.repaired_calls || 0,
             inputTokens: ev.input_tokens || 0,
             cachedTokens: ev.cached_tokens || 0,
             outputTokens: ev.output_tokens || 0,

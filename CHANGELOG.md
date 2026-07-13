@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.4] - 2026-07-13
+
+### 🚀 Added
+
+* **Structured-output self-repair:** When a submitted tool call fails schema validation, the agent now re-asks with the *actual* validation errors appended - the failing field paths and messages, plus an order to re-emit only the corrected tool call (ported from my-dev-team-vs-code's `repair.ts`) - instead of retrying blind. Attempts stay bounded by the existing `max_retries` cap, and the no-tool-call reminder keeps covering the case where the model returned plain text. See [Structured-output self-repair](docs/llm.md#structured-output-self-repair).
+
+* **Repaired-call metering:** Every corrective re-ask is tagged and counted by `TelemetryTracker`, so prompt and model changes can be measured by how often output needs repair: the receipt gained a "Repaired Calls" row, per-call records carry a `repaired` flag, the optimization report gained an "Output Repair" detector (repaired vs. total calls per agent) and the web dashboard shows a "Repaired" stat plus the new diagnostic.
+
 ## [0.13.3] - 2026-07-13
 
 ### 🚀 Added

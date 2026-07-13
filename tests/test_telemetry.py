@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 import pytest
 from rich.panel import Panel
 from devteam import settings
-from devteam.utils.telemetry import TelemetryTracker
+from devteam.utils.telemetry import TelemetryTracker, REPAIRED_TAG
 from devteam.utils.cost_optimization import CostOptimization
 
 
@@ -74,6 +74,45 @@ def test_on_llm_end_unknown_agent_without_tags():
     resp = _make_response([[_make_generation(1, 1, provider='ollama')]])
     t.on_llm_end(resp)
     assert t.agent_calls['unknown'] == 1
+
+
+# --- repaired-call metering (TODO 2.5) ---
+
+def test_on_llm_end_counts_repaired_calls():
+    t = TelemetryTracker()
+    resp = _make_response([[_make_generation(10, 5, provider='ollama')]])
+    t.on_llm_end(resp, tags=['node:developer', REPAIRED_TAG])
+    t.on_llm_end(resp, tags=['node:developer'])
+    assert t.repaired_calls == 1
+    assert t.call_history[0]['repaired'] is True
+    assert t.call_history[1]['repaired'] is False
+
+
+def test_summary_includes_repaired_calls():
+    t = TelemetryTracker()
+    resp = _make_response([[_make_generation(10, 5, provider='ollama')]])
+    t.on_llm_end(resp, tags=['node:developer', REPAIRED_TAG])
+    assert t.summary()['repaired_calls'] == 1
+
+
+def test_diagnostics_output_repair_counts_per_agent():
+    history = [
+        {'agent': 'dev', 'input_tokens': 1, 'output_tokens': 1, 'repaired': True},
+        {'agent': 'dev', 'input_tokens': 1, 'output_tokens': 1, 'repaired': False},
+        {'agent': 'qa', 'input_tokens': 1, 'output_tokens': 1},  # no key at all
+    ]
+    opt = _Opt(history, {'dev': 2, 'qa': 1})
+    repairs = [w for w in opt.collect_diagnostics() if w['kind'] == 'output_repair']
+    assert len(repairs) == 1
+    assert repairs[0]['agent'] == 'dev'
+    assert '1 of 2' in repairs[0]['detail']
+
+
+def test_optimization_panel_renders_output_repair():
+    history = [{'agent': 'dev', 'input_tokens': 1, 'output_tokens': 1, 'repaired': True}]
+    opt = _Opt(history, {'dev': 1})
+    panel = opt.get_optimization_panel()
+    assert panel.border_style == 'red'
 
 
 # --- alias resolution ---

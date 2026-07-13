@@ -12,6 +12,8 @@ from devteam import settings
 from .with_logging import WithLogging
 from .cost_optimization import CostOptimization, CONTEXT_FILL_THRESHOLDS
 
+REPAIRED_TAG = 'repaired'
+
 class CallRecord(TypedDict):
     agent: str
     model: str
@@ -20,11 +22,13 @@ class CallRecord(TypedDict):
     output_tokens: int
     iteration: int
     context_fill: float | None
+    repaired: bool
 
 class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
     """Tracks token usage and estimates costs across all agent LLM calls"""
     def __init__(self, warning_callback: Callable[[dict], None] = None):
         self.total_requests = 0
+        self.repaired_calls = 0
         self.input_tokens = 0
         self.cached_tokens = 0
         self.output_tokens = 0
@@ -49,6 +53,9 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             'unknown'
         )
         self.agent_calls[agent_name] += 1
+        repaired = REPAIRED_TAG in tags
+        if repaired:
+            self.repaired_calls += 1
         context_fill = self._track_context_fill(agent_name, metadata['model_name'], metadata['input_tokens'])
         self.call_history.append(CallRecord(
             agent=agent_name,
@@ -57,7 +64,8 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             cached_tokens=metadata['cached_tokens'],
             output_tokens=metadata['output_tokens'],
             iteration=self.agent_calls[agent_name],
-            context_fill=context_fill
+            context_fill=context_fill,
+            repaired=repaired
         ))
 
     def _extract_metadata(self, response) -> dict:
@@ -171,6 +179,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         """JSON-serializable run totals plus diagnostics, for the GUI."""
         return {
             'total_requests': self.total_requests,
+            'repaired_calls': self.repaired_calls,
             'input_tokens': self.input_tokens,
             'cached_tokens': self.cached_tokens,
             'output_tokens': self.output_tokens,
@@ -184,6 +193,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         table.add_column("Metric", style='cyan', no_wrap=True)
         table.add_column("Value", justify='right', style='yellow')
         table.add_row("Total API Requests:", str(self.total_requests))
+        table.add_row("Repaired Calls:", str(self.repaired_calls))
         table.add_row("Prompt Tokens:", f"{self.input_tokens:,}")
         table.add_row("Cached Tokens:", f"{self.cached_tokens:,}")
         table.add_row("Completion Tokens:", f"{self.output_tokens:,}")

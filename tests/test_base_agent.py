@@ -4,7 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
+from pydantic import ValidationError
 from devteam import settings
+from devteam.utils.telemetry import REPAIRED_TAG
 from devteam.agents.base_agent import BaseAgent, NoToolCallError, ConfigField, _resolve_capabilities
 from devteam.agents.code_reviewer import CodeReviewer
 from devteam.agents.code_judge import CodeJudge
@@ -429,6 +431,73 @@ def test_process_no_tool_call_retries_with_reminder():
 def test_is_tool_validation_error():
     assert BaseAgent._is_tool_validation_error(Exception("model attempted to call tool foo"))
     assert not BaseAgent._is_tool_validation_error(Exception("network down"))
+
+
+# =====================================================================
+# Structured-output self-repair (TODO 2.5)
+# =====================================================================
+
+def test_process_validation_error_repairs_with_actual_errors():
+    # A schema-validation failure re-asks with the failing field paths and
+    # messages appended (not the generic tool reminder), and the retry call
+    # is flagged as repaired for telemetry.
+    agent = CodeReviewer(make_config(inputs=[]), "p", "reviewer")
+    agent.max_retries = 1
+    bad = _ai('ReportIssues', {'feedback': None})  # review_feedback must be a string
+    good = _ai('ApproveCode')
+    agent._invoke_llm = AsyncMock(side_effect=[bad, good])
+    result = asyncio.run(agent.process(ProjectState()))
+    assert 'error' not in result
+    first_kwargs = agent._invoke_llm.call_args_list[0].kwargs
+    retry_kwargs = agent._invoke_llm.call_args_list[1].kwargs
+    assert first_kwargs['repaired'] is False
+    assert retry_kwargs['repaired'] is True
+    repair = retry_kwargs['messages'][-1]
+    assert isinstance(repair, HumanMessage)
+    assert 'failed validation' in repair.content
+    assert 'review_feedback' in repair.content
+
+
+def test_process_validation_error_exhausts_bounded_attempts():
+    agent = CodeReviewer(make_config(inputs=[]), "p", "reviewer")
+    agent.max_retries = 1
+    bad = _ai('ReportIssues', {'feedback': None})
+    agent._invoke_llm = AsyncMock(side_effect=[bad, bad])
+    result = asyncio.run(agent.process(ProjectState()))
+    assert result['error'] is True
+    assert 'ValidationError' in result['error_message']
+    assert agent._invoke_llm.call_count == 2
+
+
+def test_repair_instruction_lists_paths_and_messages():
+    with pytest.raises(ValidationError) as exc_info:
+        CodeJudgeResponse(winner_index='not-a-number')
+    text = BaseAgent._repair_instruction(exc_info.value)
+    assert text.startswith('Your previous response failed validation: winner_index:')
+    assert 'no commentary' in text
+
+
+def test_process_no_tool_call_reminder_flags_retry_as_repaired():
+    agent = CodeReviewer(make_config(inputs=[]), "p", "reviewer")
+    agent.max_retries = 1
+    no_tool = MagicMock()
+    no_tool.content = 'plain text'
+    no_tool.tool_calls = []
+    agent._invoke_llm = AsyncMock(side_effect=[no_tool, _ai('ApproveCode')])
+    asyncio.run(agent.process(ProjectState()))
+    assert agent._invoke_llm.call_args_list[1].kwargs['repaired'] is True
+
+
+def test_invoke_llm_tags_repaired_call():
+    agent = CodeReviewer(make_config(inputs=[]), "p", "reviewer")
+    chain = MagicMock()
+    response = MagicMock()
+    chain.ainvoke = AsyncMock(return_value=response)
+    agent._get_chain = MagicMock(return_value=chain)
+    asyncio.run(agent._invoke_llm(repaired=True, messages=[]))
+    assert chain.ainvoke.call_args.kwargs['config'] == {'tags': [REPAIRED_TAG]}
+    asyncio.run(agent._invoke_llm(messages=[]))
+    assert chain.ainvoke.call_args.kwargs['config'] is None
 
 
 # =====================================================================

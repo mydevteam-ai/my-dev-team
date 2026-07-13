@@ -215,6 +215,7 @@ At the end of every workflow, the framework prints a granular receipt and an opt
 📊 TELEMETRY & COST REPORT
 ========================================
 Total API Requests:  12
+Repaired Calls:      1
 Prompt Tokens:       45,200
 Completion Tokens:   3,100
 Total Tokens:        48,300
@@ -228,12 +229,15 @@ Estimated Cost:      $0.0145
 ⚠️ Thrashing Detected: `qa` was called 8 times. The agent might be stuck in a failure loop.
 📈 Context Bloat: `reviewer` input grew by 3.2x (Started: 1200, Ended: 3840).
 🪟 Context Pressure: `developer` peak context fill 87% of the qwen3:8b window.
+🔧 Output Repair: `developer` 1 of 4 calls re-asked after invalid output.
 ========================================
 ```
 
 This allows you to easily identify architectural token leaks, pinpoint which specific agent is struggling, and adjust your `llms.yaml` or prompt templates accordingly!
 
 The tracker also budgets each prompt against the routed model's `context_window` from the shared model registry **live, during the run**: crossing 75/85/95 % of the window logs a warning immediately (console and `execution.log`), so an approaching context overflow is visible before the final receipt. The web dashboard shows the same warnings in the activity feed and renders the receipt and diagnostics in a telemetry panel when the run finishes. Models without a verified `context_window` in the registry are skipped.
+
+Malformed structured output is self-repaired rather than failed outright: a tool call that flunks schema validation triggers a bounded re-ask carrying the exact validation errors ("emit only the corrected tool call"). Each of these repair calls is metered - the "Repaired Calls" receipt row and the "Output Repair" diagnostic above - so you can measure how often a given model or prompt needs repair. See [Structured-output self-repair](docs/llm.md#structured-output-self-repair).
 
 ## Usage (Python API)
 

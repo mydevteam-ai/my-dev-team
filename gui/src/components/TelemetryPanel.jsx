@@ -6,6 +6,7 @@ const KIND_LABELS = {
   context_bloat: '📈 Context Bloat',
   high_waste: '🗑️ High Waste',
   context_pressure: '🪟 Context Pressure',
+  output_repair: '🔧 Output Repair',
 }
 
 function Stat({ label, value }) {
@@ -31,6 +32,7 @@ export default function TelemetryPanel() {
         <span className="text-sm font-semibold text-slate-700">Telemetry & Cost</span>
         <div className="ml-auto flex divide-x divide-slate-200">
           <Stat label="Requests" value={fmt(t.totalRequests)} />
+          <Stat label="Repaired" value={fmt(t.repairedCalls)} />
           <Stat label="Prompt" value={fmt(t.inputTokens)} />
           <Stat label="Cached" value={fmt(t.cachedTokens)} />
           <Stat label="Completion" value={fmt(t.outputTokens)} />
