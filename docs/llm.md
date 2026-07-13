@@ -122,6 +122,14 @@ A frontier model (Opus, GPT-5.5, Gemini Pro) clears every threshold and gets not
 
 ---
 
+## Structured-output self-repair
+
+Steering reduces malformed output up front; self-repair handles what still slips through. When a submitted tool call fails validation against the agent's output schema (a missing required field, a wrong type), `BaseAgent` re-asks the same model with the *actual* validation errors appended to the conversation - the failing field paths and their messages, plus an order to re-emit only the corrected tool call, no commentary (ported from my-dev-team-vs-code's `repair.ts`). A response with no tool call at all keeps getting the generic "you must call one of the available tools" reminder. Both repair paths ride the existing retry loop, so attempts stay bounded by `max_retries` (2 extra attempts); a failure that survives every attempt fails the step exactly as before.
+
+Each corrective re-ask is a real, billed model call, so it is metered: the call carries a `repaired` run tag that `TelemetryTracker` counts. The final receipt prints a "Repaired Calls" row, each call record carries a `repaired` flag, and the optimization report flags agents whose calls needed repair ("Output Repair": repaired vs. total calls). Watch that number when swapping models or editing prompts - a rising repair rate means the model needs the steering or a stronger registry entry, and every repair doubles that step's prompt cost.
+
+---
+
 ## anthropic
 
 **Package:** `pip install "my-dev-team[anthropic]"`

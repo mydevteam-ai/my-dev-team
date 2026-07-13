@@ -164,9 +164,9 @@ def test_invoke_llm_non_429_raises_immediately(monkeypatch):
     sleep_mock.assert_not_awaited()
 
 
-def test_with_tool_reminder_lists_tools():
+def test_tool_reminder_lists_tools():
     agent = CodeReviewer(make_config(tools=['ApproveCode', 'ReportIssues']), 'p', 'reviewer')
-    reminded = agent._with_tool_reminder([])
+    reminded = agent._with_repair_message([], agent._tool_reminder())
     assert 'ApproveCode' in reminded[-1].content
 
 
