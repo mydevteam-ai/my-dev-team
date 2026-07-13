@@ -4,6 +4,7 @@ import NodeStatus from '../components/NodeStatus'
 import LeftPanel from '../components/LeftPanel'
 import ChatWindow from '../components/ChatWindow'
 import HitlInput from '../components/HitlInput'
+import TelemetryPanel from '../components/TelemetryPanel'
 import { CheckCircle, XCircle, AlertTriangle, LayoutDashboard } from 'lucide-react'
 
 function Banner({ type, message }) {
@@ -69,6 +70,13 @@ export default function Dashboard() {
                 <Banner type="success" message="🎉 Project completed successfully!" />
               )}
             </>
+          )}
+
+          {/* Telemetry receipt (arrives when the run ends) */}
+          {state.telemetry && (
+            <div className="shrink-0">
+              <TelemetryPanel />
+            </div>
           )}
 
           {/* HITL */}

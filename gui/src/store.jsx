@@ -31,7 +31,11 @@ const initialState = {
   aborted: false,
   error: null,
 
-  // Interleaved activity feed: [{type: 'log'|'thinking', text: string}]
+  // Telemetry summary emitted by the backend when the run ends
+  // { totalRequests, inputTokens, cachedTokens, outputTokens, totalTokens, totalCost, diagnostics: [{kind, agent, detail}] }
+  telemetry: null,
+
+  // Interleaved activity feed: [{type: 'log'|'thinking'|'warning', text: string}]
   activityFeed: [],
   // Current in-progress thinking buffer (not yet flushed to feed)
   thinkingBuffer: '',
@@ -92,6 +96,28 @@ function reducer(state, action) {
           hitlTasks: ev.pending_tasks || [],
           hitlAgent: ev.agent || '',
           hitlTaskName: ev.task_name || '',
+        }
+      }
+
+      if (ev.type === 'context_warning') {
+        const feed = [...state.activityFeed]
+        flushThinking(feed, state.thinkingBuffer)
+        feed.push({ type: 'warning', text: ev.message || 'Context window is filling up' })
+        return { ...next, activityFeed: feed, thinkingBuffer: '', thinkingActive: false }
+      }
+
+      if (ev.type === 'telemetry') {
+        return {
+          ...next,
+          telemetry: {
+            totalRequests: ev.total_requests || 0,
+            inputTokens: ev.input_tokens || 0,
+            cachedTokens: ev.cached_tokens || 0,
+            outputTokens: ev.output_tokens || 0,
+            totalTokens: ev.total_tokens || 0,
+            totalCost: ev.total_cost || 0,
+            diagnostics: ev.diagnostics || [],
+          },
         }
       }
 

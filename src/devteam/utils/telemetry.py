@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import cached_property
 import fnmatch
-from typing import TypedDict
+from typing import Callable, TypedDict
 import yaml
 from rich.panel import Panel
 from rich.table import Table
@@ -10,18 +10,20 @@ from langchain_core.outputs import LLMResult
 from litellm import cost_per_token
 from devteam import settings
 from .with_logging import WithLogging
-from .cost_optimization import CostOptimization
+from .cost_optimization import CostOptimization, CONTEXT_FILL_THRESHOLDS
 
 class CallRecord(TypedDict):
     agent: str
+    model: str
     input_tokens: int
     cached_tokens: int
     output_tokens: int
     iteration: int
+    context_fill: float | None
 
 class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
     """Tracks token usage and estimates costs across all agent LLM calls"""
-    def __init__(self):
+    def __init__(self, warning_callback: Callable[[dict], None] = None):
         self.total_requests = 0
         self.input_tokens = 0
         self.cached_tokens = 0
@@ -29,6 +31,8 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.total_cost = 0.0
         self.call_history: list[CallRecord] = []
         self.agent_calls = defaultdict(int)
+        self.warning_callback = warning_callback
+        self._context_warned: dict[str, float] = {}
 
     def on_llm_end(self, response: LLMResult, **kwargs) -> None:
         """Fires automatically every time an LLM finishes generating text"""
@@ -45,12 +49,15 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             'unknown'
         )
         self.agent_calls[agent_name] += 1
+        context_fill = self._track_context_fill(agent_name, metadata['model_name'], metadata['input_tokens'])
         self.call_history.append(CallRecord(
             agent=agent_name,
+            model=metadata['model_name'],
             input_tokens=metadata['input_tokens'],
             cached_tokens=metadata['cached_tokens'],
             output_tokens=metadata['output_tokens'],
-            iteration=self.agent_calls[agent_name]
+            iteration=self.agent_calls[agent_name],
+            context_fill=context_fill
         ))
 
     def _extract_metadata(self, response) -> dict:
@@ -78,13 +85,59 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         }
 
     @cached_property
-    def llm_aliases(self) -> dict:
+    def _llm_config(self) -> dict:
         try:
             config_path = settings.tools_config_dir / 'llms.yaml'
-            config = yaml.safe_load(config_path.read_text(encoding='utf-8'))
-            return config.get('aliases', {})
+            return yaml.safe_load(config_path.read_text(encoding='utf-8')) or {}
         except Exception: # pylint: disable=broad-exception-caught
             return {}
+
+    @cached_property
+    def llm_aliases(self) -> dict:
+        return self._llm_config.get('aliases', {})
+
+    @cached_property
+    def model_windows(self) -> dict[str, int]:
+        """Map every registry model id to its context_window (models without one are skipped)."""
+        windows: dict[str, int] = {}
+        for provider_config in self._llm_config.get('providers', {}).values():
+            for model in provider_config.get('models', []):
+                if window := model.get('context_window'):
+                    windows[model['id']] = window
+        return windows
+
+    def _lookup_window(self, model_name: str) -> int | None:
+        if window := self.model_windows.get(model_name):
+            return window
+        # Providers may report versioned names (e.g. 'o3-2025-04-16') for a registry id ('o3');
+        # take the longest matching id so 'gpt-4.1-mini-...' resolves to gpt-4.1-mini, not gpt-4.1.
+        matches = [model_id for model_id in self.model_windows if model_name.startswith(model_id)]
+        if matches:
+            return self.model_windows[max(matches, key=len)]
+        return None
+
+    def _track_context_fill(self, agent: str, model_name: str, input_tokens: int) -> float | None:
+        """Return the fraction of the model's context window the prompt used; warn on newly crossed thresholds."""
+        window = self._lookup_window(model_name)
+        if not window or input_tokens <= 0:
+            return None
+        fill = input_tokens / window
+        crossed = max((t for t in CONTEXT_FILL_THRESHOLDS if fill >= t), default=None)
+        if crossed and crossed > self._context_warned.get(agent, 0.0):
+            self._context_warned[agent] = crossed
+            message = f"Context window {fill:.0%} full for '{agent}' ({model_name}: {input_tokens:,}/{window:,} tokens)"
+            self.logger.warning("⚠️ %s", message)
+            if self.warning_callback:
+                self.warning_callback({
+                    'agent': agent,
+                    'model': model_name,
+                    'fill': round(fill, 4),
+                    'threshold': crossed,
+                    'input_tokens': input_tokens,
+                    'context_window': window,
+                    'message': message,
+                })
+        return fill
 
     def _resolve_alias(self, model: str) -> str:
         """Resolve a provider/model string against aliases, supporting fnmatch wildcards."""
@@ -113,6 +166,18 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         except Exception: # pylint: disable=broad-exception-caught
             self.logger.exception("Cost calculation failed for %s/%s", model_provider, model_name)
             return 0
+
+    def summary(self) -> dict:
+        """JSON-serializable run totals plus diagnostics, for the GUI."""
+        return {
+            'total_requests': self.total_requests,
+            'input_tokens': self.input_tokens,
+            'cached_tokens': self.cached_tokens,
+            'output_tokens': self.output_tokens,
+            'total_tokens': self.input_tokens + self.output_tokens,
+            'total_cost': round(self.total_cost, 6),
+            'diagnostics': self.collect_diagnostics(),
+        }
 
     def get_receipt_panel(self, panel_width: int = 75) -> Panel:
         table = Table(show_header=False, box=None, expand=True)

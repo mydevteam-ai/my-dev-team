@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "my-dev-team"
-version = "0.13.2"
+version = "0.13.3"
 description = "An autonomous, LangGraph-powered AI development agency."
 authors = [
     { name="Alexander Bobrovsky", email="bobrovsky@seznam.cz" },
+    { name="Ivan Kuzmych", email="i.kuzmych@hotmail.com" },
 ]
 license = { text="Apache-2.0" }
 readme = "README.md"

@@ -3,20 +3,31 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
+# Fractions of the routed model's context window that trigger a warning (mirrors my-dev-team-vs-code)
+CONTEXT_FILL_THRESHOLDS = (0.75, 0.85, 0.95)
+
+_KIND_STYLES = {
+    'thrashing': ('bold yellow', '⚠️ Thrashing'),
+    'context_bloat': ('bold yellow', '📈 Context Bloat'),
+    'high_waste': ('bold red', '🗑️ High Waste'),
+    'context_pressure': ('bold red', '🪟 Context Pressure'),
+}
+
 class CostOptimization:
     call_history: list[dict[str, Any]]
     agent_calls: dict[str, int]
 
-    def get_optimization_panel(self, panel_width: int = 75) -> Panel:
+    def collect_diagnostics(self) -> list[dict]:
+        """Analyze the call history and return plain-data warnings (rendered by the CLI panel and the GUI)."""
         warnings_data = []
         # 1. Detect Thrashing (too many loops for one agent)
         for agent, count in self.agent_calls.items():
             if count > 5:
-                warnings_data.append((
-                    "[bold yellow]⚠️ Thrashing[/bold yellow]",
-                    f"[cyan]{agent}[/cyan]",
-                    f"Called [bold red]{count}[/bold red] times. Possible failure loop."
-                ))
+                warnings_data.append({
+                    'kind': 'thrashing',
+                    'agent': agent,
+                    'detail': f"Called {count} times. Possible failure loop."
+                })
         # 2. Detect Context Bloat (Input tokens growing exponentially)
         for agent in {c['agent'] for c in self.call_history}:
             agent_calls = [c for c in self.call_history if c['agent'] == agent]
@@ -25,29 +36,43 @@ class CostOptimization:
                 last_input = agent_calls[-1]['input_tokens']
                 if first_input > 0 and (last_input / first_input) > 2.5:
                     growth = last_input / first_input
-                    warnings_data.append((
-                        "[bold yellow]📈 Context Bloat[/bold yellow]",
-                        f"[cyan]{agent}[/cyan]",
-                        f"Input grew by [bold red]{growth:.1f}x[/bold red] (Started: {first_input}, Ended: {last_input})."
-                    ))
+                    warnings_data.append({
+                        'kind': 'context_bloat',
+                        'agent': agent,
+                        'detail': f"Input grew by {growth:.1f}x (Started: {first_input}, Ended: {last_input})."
+                    })
         # 3. Detect High Waste Ratio (Massive input, tiny output)
-        waste_flagged = False
         for call in self.call_history:
-            if call['input_tokens'] > 5000 and call['output_tokens'] < 50 and not waste_flagged:
-                warnings_data.append((
-                    "[bold red]🗑️ High Waste[/bold red]",
-                    f"[cyan]{call['agent']}[/cyan]",
-                    f"Received {call['input_tokens']} tokens but generated only {call['output_tokens']}."
-                ))
-                waste_flagged = True
-        # 4. Render the output dynamically based on findings
-        if warnings_data:
+            if call['input_tokens'] > 5000 and call['output_tokens'] < 50:
+                warnings_data.append({
+                    'kind': 'high_waste',
+                    'agent': call['agent'],
+                    'detail': f"Received {call['input_tokens']} tokens but generated only {call['output_tokens']}."
+                })
+                break
+        # 4. Detect Context Pressure (input tokens near the routed model's context window)
+        peaks: dict[str, dict] = {}
+        for call in self.call_history:
+            fill = call.get('context_fill')
+            if fill and fill >= CONTEXT_FILL_THRESHOLDS[0] and fill > peaks.get(call['agent'], {}).get('fill', 0.0):
+                peaks[call['agent']] = {'fill': fill, 'model': call.get('model', 'unknown')}
+        for agent, peak in peaks.items():
+            warnings_data.append({
+                'kind': 'context_pressure',
+                'agent': agent,
+                'detail': f"Peak context fill {peak['fill']:.0%} of the {peak['model']} window."
+            })
+        return warnings_data
+
+    def get_optimization_panel(self, panel_width: int = 75) -> Panel:
+        if warnings_data := self.collect_diagnostics():
             table = Table(show_edge=False, show_lines=True, box=box.SIMPLE)
             table.add_column("Issue Type", justify='left')
             table.add_column("Agent", justify='center')
             table.add_column("Diagnostic Detail", justify='left')
-            for w_type, w_agent, w_detail in warnings_data:
-                table.add_row(w_type, w_agent, w_detail)
+            for warning in warnings_data:
+                style, label = _KIND_STYLES[warning['kind']]
+                table.add_row(f"[{style}]{label}[/{style}]", f"[cyan]{warning['agent']}[/cyan]", warning['detail'])
             return Panel(
                 table,
                 title="[bold red]🔍 TOKEN OPTIMIZATION DIAGNOSTICS[/bold red]",

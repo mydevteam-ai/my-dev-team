@@ -19,7 +19,7 @@ from devteam.cli.request import ResumeRequest, RunHooks, RunRequest, StartReques
 from devteam.cli.runtime import resolve_thread_id, run
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
-from devteam.utils import StreamHandler, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde
+from devteam.utils import StreamHandler, TelemetryTracker, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde
 from devteam.utils.workspace import read_all_files
 
 logger = logging.getLogger(__name__)
@@ -91,8 +91,11 @@ def _run_in_thread(
     thinking: bool = False,
 ):
     """Async crew execution inside a dedicated thread / event loop."""
+    telemetry = TelemetryTracker(warning_callback=lambda warning: event_queue.put(
+        {'type': 'context_warning', 'ts': time.time(), **warning}))
+
     async def _inner():
-        callbacks = []
+        callbacks = [telemetry]
         settings.llm_streaming = thinking
         if thinking:
             callbacks.append(StreamHandler(queue=event_queue))
@@ -117,6 +120,8 @@ def _run_in_thread(
         event_queue.put({'type': 'error', 'ts': time.time(),
                          'state': {'error': True, 'error_message': msg}})
     finally:
+        if telemetry.total_requests:
+            event_queue.put({'type': 'telemetry', 'ts': time.time(), **telemetry.summary()})
         loop.close()
         remove_file_handler(exec_log_handler)
 
