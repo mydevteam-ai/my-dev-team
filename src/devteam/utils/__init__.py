@@ -5,6 +5,7 @@ from .rate_limiter import RateLimiter, is_rate_limit_error, retry_delay
 from .tasks import task_to_markdown
 from .stream_handler import StreamHandler
 from .telemetry import TelemetryTracker
+from .run_log import RunLog, build_run_record, write_run_record
 from .with_logging import WithLogging
 from .communication_log import CommunicationLog
 from .workspace import hydrate_workspace
@@ -20,6 +21,9 @@ __all__ = [
     'retry_delay',
     'task_to_markdown',
     'TelemetryTracker',
+    'RunLog',
+    'build_run_record',
+    'write_run_record',
     'generate_thread_id',
     'load_project_spec',
     'parse_spec_from_string',

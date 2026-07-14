@@ -15,67 +15,82 @@ _KIND_STYLES = {
     'output_repair': ('bold yellow', '🔧 Output Repair'),
 }
 
+def collect_diagnostics(call_history: list[dict[str, Any]],
+                        agent_calls: dict[str, int] | None = None) -> list[dict]:
+    """Analyze a call history and return plain-data warnings.
+
+    Pure function so it serves the live tracker (CLI panel, GUI) and the
+    persistent run log's cross-run trends alike. `agent_calls` defaults to
+    the per-agent counts derived from the history itself.
+    """
+    if agent_calls is None:
+        agent_calls = defaultdict(int)
+        for call in call_history:
+            agent_calls[call['agent']] += 1
+    warnings_data = []
+    # 1. Detect Thrashing (too many loops for one agent)
+    for agent, count in agent_calls.items():
+        if count > 5:
+            warnings_data.append({
+                'kind': 'thrashing',
+                'agent': agent,
+                'detail': f"Called {count} times. Possible failure loop."
+            })
+    # 2. Detect Context Bloat (Input tokens growing exponentially)
+    for agent in {c['agent'] for c in call_history}:
+        agent_history = [c for c in call_history if c['agent'] == agent]
+        if len(agent_history) > 2:
+            first_input = agent_history[0]['input_tokens']
+            last_input = agent_history[-1]['input_tokens']
+            if first_input > 0 and (last_input / first_input) > 2.5:
+                growth = last_input / first_input
+                warnings_data.append({
+                    'kind': 'context_bloat',
+                    'agent': agent,
+                    'detail': f"Input grew by {growth:.1f}x (Started: {first_input}, Ended: {last_input})."
+                })
+    # 3. Detect High Waste Ratio (Massive input, tiny output)
+    for call in call_history:
+        if call['input_tokens'] > 5000 and call['output_tokens'] < 50:
+            warnings_data.append({
+                'kind': 'high_waste',
+                'agent': call['agent'],
+                'detail': f"Received {call['input_tokens']} tokens but generated only {call['output_tokens']}."
+            })
+            break
+    # 4. Detect Context Pressure (input tokens near the routed model's context window)
+    peaks: dict[str, dict] = {}
+    for call in call_history:
+        fill = call.get('context_fill')
+        if fill and fill >= CONTEXT_FILL_THRESHOLDS[0] and fill > peaks.get(call['agent'], {}).get('fill', 0.0):
+            peaks[call['agent']] = {'fill': fill, 'model': call.get('model', 'unknown')}
+    for agent, peak in peaks.items():
+        warnings_data.append({
+            'kind': 'context_pressure',
+            'agent': agent,
+            'detail': f"Peak context fill {peak['fill']:.0%} of the {peak['model']} window."
+        })
+    # 5. Detect Output Repair (calls that re-asked after invalid output - each one is a full re-billed prompt)
+    repairs: dict[str, int] = defaultdict(int)
+    for call in call_history:
+        if call.get('repaired'):
+            repairs[call['agent']] += 1
+    for agent, count in repairs.items():
+        warnings_data.append({
+            'kind': 'output_repair',
+            'agent': agent,
+            'detail': f"{count} of {agent_calls.get(agent, count)} calls re-asked after invalid output."
+        })
+    return warnings_data
+
+
 class CostOptimization:
     call_history: list[dict[str, Any]]
     agent_calls: dict[str, int]
 
     def collect_diagnostics(self) -> list[dict]:
         """Analyze the call history and return plain-data warnings (rendered by the CLI panel and the GUI)."""
-        warnings_data = []
-        # 1. Detect Thrashing (too many loops for one agent)
-        for agent, count in self.agent_calls.items():
-            if count > 5:
-                warnings_data.append({
-                    'kind': 'thrashing',
-                    'agent': agent,
-                    'detail': f"Called {count} times. Possible failure loop."
-                })
-        # 2. Detect Context Bloat (Input tokens growing exponentially)
-        for agent in {c['agent'] for c in self.call_history}:
-            agent_calls = [c for c in self.call_history if c['agent'] == agent]
-            if len(agent_calls) > 2:
-                first_input = agent_calls[0]['input_tokens']
-                last_input = agent_calls[-1]['input_tokens']
-                if first_input > 0 and (last_input / first_input) > 2.5:
-                    growth = last_input / first_input
-                    warnings_data.append({
-                        'kind': 'context_bloat',
-                        'agent': agent,
-                        'detail': f"Input grew by {growth:.1f}x (Started: {first_input}, Ended: {last_input})."
-                    })
-        # 3. Detect High Waste Ratio (Massive input, tiny output)
-        for call in self.call_history:
-            if call['input_tokens'] > 5000 and call['output_tokens'] < 50:
-                warnings_data.append({
-                    'kind': 'high_waste',
-                    'agent': call['agent'],
-                    'detail': f"Received {call['input_tokens']} tokens but generated only {call['output_tokens']}."
-                })
-                break
-        # 4. Detect Context Pressure (input tokens near the routed model's context window)
-        peaks: dict[str, dict] = {}
-        for call in self.call_history:
-            fill = call.get('context_fill')
-            if fill and fill >= CONTEXT_FILL_THRESHOLDS[0] and fill > peaks.get(call['agent'], {}).get('fill', 0.0):
-                peaks[call['agent']] = {'fill': fill, 'model': call.get('model', 'unknown')}
-        for agent, peak in peaks.items():
-            warnings_data.append({
-                'kind': 'context_pressure',
-                'agent': agent,
-                'detail': f"Peak context fill {peak['fill']:.0%} of the {peak['model']} window."
-            })
-        # 5. Detect Output Repair (calls that re-asked after invalid output - each one is a full re-billed prompt)
-        repairs: dict[str, int] = defaultdict(int)
-        for call in self.call_history:
-            if call.get('repaired'):
-                repairs[call['agent']] += 1
-        for agent, count in repairs.items():
-            warnings_data.append({
-                'kind': 'output_repair',
-                'agent': agent,
-                'detail': f"{count} of {self.agent_calls.get(agent, count)} calls re-asked after invalid output."
-            })
-        return warnings_data
+        return collect_diagnostics(self.call_history, self.agent_calls)
 
     def get_optimization_panel(self, panel_width: int = 75) -> Panel:
         if warnings_data := self.collect_diagnostics():

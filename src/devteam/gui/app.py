@@ -19,7 +19,7 @@ from devteam.cli.request import ResumeRequest, RunHooks, RunRequest, StartReques
 from devteam.cli.runtime import resolve_thread_id, run
 from devteam.crew import CrewFactory
 from devteam.extensions import HumanInTheLoopGUI, StreamlitLogger
-from devteam.utils import StreamHandler, TelemetryTracker, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde
+from devteam.utils import StreamHandler, TelemetryTracker, parse_spec_from_string, setup_logging, add_file_handler, remove_file_handler, create_serde, write_run_record
 from devteam.utils.workspace import read_all_files
 
 logger = logging.getLogger(__name__)
@@ -111,15 +111,23 @@ def _run_in_thread(
     project_folder.mkdir(parents=True, exist_ok=True)
     exec_log_handler = add_file_handler(project_folder / 'execution.log')
     loop = asyncio.new_event_loop()
+    started = time.monotonic()
+    outcome, error = 'error', None
     try:
         loop.run_until_complete(_inner())
+        final_state = result_holder.get('final_state')
+        if final_state is not None:
+            outcome = ('aborted' if getattr(final_state, 'abort_requested', False)
+                       else 'success' if getattr(final_state, 'success', False) else 'failed')
     except Exception as exc:  # pylint: disable=broad-exception-caught
         msg = str(exc)
+        error = msg
         logger.exception("Worker thread failed: %s", msg)
         result_holder['error'] = msg
         event_queue.put({'type': 'error', 'ts': time.time(),
                          'state': {'error': True, 'error_message': msg}})
     finally:
+        write_run_record(telemetry, request, thread_id, outcome, started, error=error)
         if telemetry.total_requests:
             event_queue.put({'type': 'telemetry', 'ts': time.time(), **telemetry.summary()})
         loop.close()

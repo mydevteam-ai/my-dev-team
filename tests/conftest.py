@@ -2,6 +2,21 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from devteam.state import ProjectState
 
+@pytest.fixture(autouse=True)
+def _isolate_run_log(tmp_path):
+    """Keep the persistent run log out of the real ~/.devteam during tests.
+
+    Patched by hand rather than via the monkeypatch fixture: requesting
+    monkeypatch here would reorder its teardown after module-local autouse
+    fixtures that undo their own patches in teardown.
+    """
+    from devteam.utils import run_log
+    original = run_log.default_run_log_path
+    run_log.default_run_log_path = lambda: tmp_path / 'run-log.jsonl'
+    yield
+    run_log.default_run_log_path = original
+
+
 @pytest.fixture
 def sample_state():
     return ProjectState(requirements='Build a REST API')
