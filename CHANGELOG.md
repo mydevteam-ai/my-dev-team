@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.5] - 2026-07-13
+
+### 🚀 Added
+
+* **Edit-based code submission:** The Developer and Migrator can now submit a small change to a large file as targeted `{old_text, new_text}` replacements instead of re-emitting the whole file - a big token saver on revision loops (ported from my-dev-team-vs-code's `edit` tool). Each `SubmitCode` file carries either the full `content` (still the rule for new files, small files and rewrites) or an `edits` list resolved against the live workspace before the draft is stored, so reviewers, QA and the workspace saver keep seeing full file content. Matching follows the vs-code semantics: `old_text` must match exactly one place (include surrounding lines to disambiguate), LF/CRLF differences are bridged by re-stamping the snippet with the file's line endings, and the double-escaped-newline salvage that already guards `content` rescues escaped edit snippets too. A failed, ambiguous or missing-file match re-prompts the model through the structured-output self-repair loop (0.13.4) with the exact failure per edit - all failures in a submission collected into one re-ask, metered as repaired calls. See [Tools](docs/tools.md#built-in-tools).
+
 ## [0.13.4] - 2026-07-13
 
 ### 🚀 Added

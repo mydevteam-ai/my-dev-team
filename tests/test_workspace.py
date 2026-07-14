@@ -1,6 +1,7 @@
 import pytest
 from devteam.utils.workspace import (
     _is_excluded,
+    read_live_file,
     read_workspace_file,
     list_workspace_files,
     glob_workspace_files,
@@ -88,6 +89,27 @@ class TestReadAllFiles:
 
     def test_empty_when_no_path(self):
         assert read_all_files('') == {}
+
+
+# ---------------------------------------------------------------------------
+# read_live_file
+# ---------------------------------------------------------------------------
+
+class TestReadLiveFile:
+    def test_returns_raw_content(self, workspace_path):
+        assert read_live_file('src/main.py', workspace_path) == 'def main():\n    print("hello")\n'
+
+    def test_missing_file_returns_none(self, workspace_path):
+        assert read_live_file('nope.py', workspace_path) is None
+
+    def test_no_workspace_returns_none(self):
+        assert read_live_file('a.py', '') is None
+
+    def test_path_traversal_returns_none(self, tmp_path):
+        secret = tmp_path.parent / 'secret.txt'
+        secret.write_text('secret', encoding='utf-8')
+        path = _materialize(tmp_path / 'ws', {'a.py': 'x'})
+        assert read_live_file('../secret.txt', path) is None
 
 
 # ---------------------------------------------------------------------------

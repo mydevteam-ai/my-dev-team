@@ -237,7 +237,7 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
                 for tc, result in zip(ai_message.tool_calls, intermediate_results):
                     conversation_history.append(ToolMessage(content=result or '', tool_call_id=tc['id']))
                 continue
-            return self._parse_outputs(ai_message), conversation_history
+            return self._parse_outputs(ai_message, state), conversation_history
 
     _TOOL_ARG_MAX_LEN: int = 60
 
@@ -395,14 +395,14 @@ class BaseAgent[T: BaseModel](CommunicationLog, IntermediateTools, WithLogging):
         self.logger.debug("Tool Calls:\n%s", response.tool_calls)
         return response
 
-    def _parse_outputs(self, response) -> T:
+    def _parse_outputs(self, response, state: ProjectState = None) -> T:
         if not response.tool_calls:
             raise NoToolCallError("The model did not call any tool.")
         tool_call = response.tool_calls[0]
-        return self._map_tool_to_output(tool_call['name'], tool_call['args'])
+        return self._map_tool_to_output(tool_call['name'], tool_call['args'], state)
 
-    def _map_tool_to_output(self, tool_name: str, tool_args: dict) -> T:
-        """Map a tool call to the agent's output schema."""
+    def _map_tool_to_output(self, tool_name: str, tool_args: dict, state: ProjectState = None) -> T:
+        """Map a tool call to the agent's output schema. Raising ValidationError here re-prompts the model with the failure."""
         return self.output_schema(**tool_args)
 
     _MAX_INCLUDE_DEPTH: int = 10

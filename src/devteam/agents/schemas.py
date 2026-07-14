@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from devteam.utils.sanitizer import normalize_workspace_content
 
 # pylint: disable=line-too-long
@@ -67,12 +67,26 @@ class CodeJudgeResponse(BaseModel):
 class SubmitWinner(CodeJudgeResponse):
     """Submit the index of the best code draft after evaluating all candidates."""
 
+class FileEdit(BaseModel):
+    old_text: str = Field(
+        min_length=1,
+        description="The exact text to replace, copied verbatim from the file's current content (read it with ReadFile first). Must match exactly ONE place in the file - include enough surrounding lines to make it unique."
+    )
+    new_text: str = Field(
+        description="The text that replaces old_text."
+    )
+
 class WorkspaceFile(BaseModel):
     path: str = Field(
         description="The relative path to the file, including the filename and extension (e.g. 'src/main.py' or 'tests/test_main.py')."
     )
-    content: str = Field(
-        description="The ENTIRE, 100% complete source code or text for this file. NEVER use placeholders like '// ... existing code ...' or '# ... previous logic ...'. If you omit existing lines from a modified file, that logic will be permanently deleted."
+    content: str | None = Field(
+        default=None,
+        description="The ENTIRE, 100% complete source code or text for this file. NEVER use placeholders like '// ... existing code ...' or '# ... previous logic ...'. If you omit existing lines from a modified file, that logic will be permanently deleted. Required for new files; omit when providing `edits`."
+    )
+    edits: list[FileEdit] | None = Field(
+        default=None,
+        description="Targeted replacements applied in order to the file's existing content. Prefer this over `content` for a small change to a large existing file. Only for files that already exist in the workspace; omit when providing `content`."
     )
 
     @field_validator('content', mode='before')
@@ -81,6 +95,15 @@ class WorkspaceFile(BaseModel):
         if isinstance(value, str):
             return normalize_workspace_content(value)
         return value
+
+    @model_validator(mode='after')
+    def _exactly_one_form(self):
+        if (self.content is None) == (not self.edits):
+            raise ValueError(
+                f"file '{self.path}' must carry exactly one submission form: "
+                "either the full `content` or a non-empty `edits` list, never both"
+            )
+        return self
 
 class DeveloperResponse(BaseModel):
     workspace_files: list[WorkspaceFile] = Field(
