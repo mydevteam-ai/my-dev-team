@@ -239,6 +239,15 @@ The tracker also budgets each prompt against the routed model's `context_window`
 
 Malformed structured output is self-repaired rather than failed outright: a tool call that flunks schema validation triggers a bounded re-ask carrying the exact validation errors ("emit only the corrected tool call"). Each of these repair calls is metered - the "Repaired Calls" receipt row and the "Output Repair" diagnostic above - so you can measure how often a given model or prompt needs repair. See [Structured-output self-repair](docs/llm.md#structured-output-self-repair).
 
+Telemetry also **persists across runs**: every finished run (CLI and web dashboard alike) appends one JSON record - thread id, workflow, provider, outcome, duration, token/cost totals and the raw per-call history - to a local log at `~/.devteam/run-log.jsonl`. The log carries no prompt or workspace content and never leaves your machine; set `run_log: false` in `config.yaml` to turn it off. Roll the history up any time with:
+
+```sh
+devteam --usage-report            # everything ever logged
+devteam --usage-report --since 30 # the last 30 days
+```
+
+The report prints overall totals (tokens, USD, cache-hit and repair rates, wall-clock time) and breakdowns by outcome, agent, model, provider, workflow and day - the "cost of failed runs" line item the per-run receipt cannot show - plus cross-run trends of the diagnostics above, e.g. which agent thrashes most often across your whole history rather than in one run.
+
 ## Usage (Python API)
 
 If you want to integrate the crew into your own application, customize the LLM Factory's routing table, or override specific agent behaviors, use the clean Python API:

@@ -1,11 +1,12 @@
 import asyncio
 import logging
+import time
 import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from rich import print # pylint: disable=redefined-builtin
 from devteam import settings
 from devteam.crew import CrewFactory
-from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, add_file_handler, remove_file_handler, create_serde
+from devteam.utils import LLMFactory, StreamHandler, TelemetryTracker, generate_thread_id, add_file_handler, remove_file_handler, create_serde, write_run_record
 from devteam.utils.workspace import hydrate_workspace
 from .extensions import build_extensions
 from .request import RunHooks, RunRequest, ResumeRequest, StartRequest
@@ -89,9 +90,12 @@ async def async_main(request: RunRequest):
 
     logger.info("Starting AI Dev Team...")
     logger.info("Workspace: %s", project_folder.absolute())
+    started = time.monotonic()
+    outcome, error = 'error', None
     try:
         final_state = await run(request, thread_id, hooks)
         if final_state.abort_requested:
+            outcome = 'aborted'
             print("❌ Workflow aborted by user or validation failure.")
             return
         if final_state.failed_tasks:
@@ -99,22 +103,30 @@ async def async_main(request: RunRequest):
             for t in final_state.failed_tasks:
                 print(f"   - {t}")
         if final_state.success:
+            outcome = 'success'
             print("\n🎉 PROJECT COMPLETED SUCCESSFULLY!")
             print(final_state.final_report or "No report generated.")
             return
+        outcome = 'failed'
         print("🚨 RELEASE FAILED: Integration bugs found!")
         for bug in final_state.integration_bugs:
             print(f" - {bug}")
         print("\nNote: In a production system, these would be appended to the Phase 2 Backlog.")
     except KeyboardInterrupt:
+        outcome = 'interrupted'
         print(
             "\n\n🛑 Workflow interrupted by user (Ctrl+C)\n"
             "💡 You can resume this exact state later by running:\n"
             f"   devteam --resume {thread_id}"
         )
     except asyncio.CancelledError:
+        outcome = 'interrupted'
         print("🛑 Async execution cancelled")
+    except Exception as exc:
+        error = str(exc)
+        raise
     finally:
+        write_run_record(telemetry, request, thread_id, outcome, started, error=error)
         print()
         print(telemetry.get_receipt_panel())
         print(telemetry.get_optimization_panel())

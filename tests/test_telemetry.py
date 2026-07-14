@@ -69,6 +69,15 @@ def test_on_llm_end_accumulates_and_records_agent():
     assert t.total_cost == 0
 
 
+def test_on_llm_end_records_per_call_cost(monkeypatch):
+    t = TelemetryTracker()
+    monkeypatch.setattr('devteam.utils.telemetry.cost_per_token', lambda **kw: (0.01, 0.02))
+    resp = _make_response([[_make_generation(100, 20)]])
+    t.on_llm_end(resp, tags=['node:developer'])
+    assert t.call_history[0]['cost'] == pytest.approx(0.03)
+    assert t.total_cost == pytest.approx(0.03)
+
+
 def test_on_llm_end_unknown_agent_without_tags():
     t = TelemetryTracker()
     resp = _make_response([[_make_generation(1, 1, provider='ollama')]])
@@ -185,6 +194,13 @@ class _Opt(CostOptimization):
     def __init__(self, call_history, agent_calls):
         self.call_history = call_history
         self.agent_calls = agent_calls
+
+
+def test_collect_diagnostics_pure_function_derives_agent_calls():
+    from devteam.utils.cost_optimization import collect_diagnostics
+    history = [{'agent': 'dev', 'input_tokens': 1, 'output_tokens': 1} for _ in range(6)]
+    warnings = collect_diagnostics(history)  # no agent_calls passed
+    assert any(w['kind'] == 'thrashing' and w['agent'] == 'dev' for w in warnings)
 
 
 def test_optimization_panel_clean_run():

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.6] - 2026-07-14
+
+### 🚀 Added
+
+* **Persistent run log:** Every finished run - CLI and web dashboard alike - now appends one JSON record to `~/.devteam/run-log.jsonl` (ported from my-dev-team-vs-code's eval log): thread id, workflow, provider, outcome (`success`/`failed`/`aborted`/`interrupted`/`error`), duration, token/cost totals and the raw per-call history. Privacy by construction - no prompt, requirements or workspace content - and a failed write never breaks the run it measures. On by default; `run_log: false` in `config.yaml` turns it off. See [Telemetry & Optimization](README.md#telemetry--optimization).
+
+* **`devteam --usage-report`:** A report-and-exit mode that rolls the run log up into overall totals (tokens, USD, cache-hit and repair rates, wall-clock time) and breakdowns by outcome, agent, model, provider, workflow and day, plus cross-run trends of the optimization diagnostics - which agent thrashes, bloats or presses its context window most often across the whole history, not just within one run. `--since N` limits the report to the last N days. Per-call USD cost now rides each telemetry call record, so the by-agent and by-model buckets carry real money.
+
 ## [0.13.5] - 2026-07-13
 
 ### 🚀 Added

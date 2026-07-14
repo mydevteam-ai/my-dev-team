@@ -20,6 +20,7 @@ class CallRecord(TypedDict):
     input_tokens: int
     cached_tokens: int
     output_tokens: int
+    cost: float
     iteration: int
     context_fill: float | None
     repaired: bool
@@ -45,7 +46,8 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
         self.input_tokens += metadata['input_tokens']
         self.cached_tokens += metadata['cached_tokens']
         self.output_tokens += metadata['output_tokens']
-        self.total_cost += self._calculate_cost(metadata['model_provider'], metadata['model_name'], metadata['input_tokens'], metadata['output_tokens'])
+        cost = self._calculate_cost(metadata['model_provider'], metadata['model_name'], metadata['input_tokens'], metadata['output_tokens'])
+        self.total_cost += cost
         self.logger.debug("Accumulated: %i (%i) %i %.6f", self.input_tokens, self.cached_tokens, self.output_tokens, self.total_cost)
         tags = kwargs.get('tags', [])
         agent_name = next(
@@ -63,6 +65,7 @@ class TelemetryTracker(BaseCallbackHandler, CostOptimization, WithLogging):
             input_tokens=metadata['input_tokens'],
             cached_tokens=metadata['cached_tokens'],
             output_tokens=metadata['output_tokens'],
+            cost=cost,
             iteration=self.agent_calls[agent_name],
             context_fill=context_fill,
             repaired=repaired

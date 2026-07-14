@@ -74,6 +74,7 @@ class Settings:
     no_ask = Coerced(False, cli=True)
     no_complexity_routing = Coerced(False, cli=True)
     console = Coerced(False, cli=True)
+    run_log = Coerced(True)
 
     @cached_property
     def tools_config_dir(self) -> Path:

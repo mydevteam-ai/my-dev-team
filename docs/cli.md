@@ -12,7 +12,7 @@ Runs the autonomous AI development workflow from the terminal.
 devteam [project_file] [options]
 ```
 
-Either `project_file` or `--resume` (or `--history`) is required.
+Either `project_file` or `--resume` (or one of the report-and-exit flags `--history` and `--usage-report`) is required.
 
 ### Arguments
 
@@ -27,6 +27,8 @@ Either `project_file` or `--resume` (or `--history`) is required.
 | `--feedback` | str | - | Human feedback to inject into the state when resuming. |
 | `--as-node` | choice | `reviewer` | Which agent delivers the injected feedback. Options: `pm`, `architect`, `reviewer`, `qa`. Controls graph routing after injection. |
 | `--history` | str | - | Print the checkpoint timeline for the given thread ID and exit (e.g. `--history web_scraper_cli_20260312_083500`). |
+| `--usage-report` | flag | off | Print an aggregated usage report from the persistent run log (`~/.devteam/run-log.jsonl`) and exit: totals, cost and tokens by outcome/agent/model/provider/workflow/day, plus cross-run diagnostic trends. |
+| `--since` | int | - | Limit `--usage-report` to runs from the last N days. Requires `--usage-report`. |
 | `--checkpoint` | str | - | Checkpoint ID to rewind to before resuming or injecting feedback. |
 | `--ask-approval` | flag | off | Pause after the PM produces the Technical Specification and again after the Architect produces the task plan, waiting for interactive approval before proceeding. |
 | `--max-revisions` | int | `3` | Maximum developer revision cycles per task before the workflow moves on. |
@@ -128,6 +130,12 @@ devteam --resume web_scraper_cli_20260312_083500 \
 **Print the checkpoint timeline for a thread:**
 ```sh
 devteam --history web_scraper_cli_20260312_083500
+```
+
+**Print the aggregated usage report from the persistent run log:**
+```sh
+devteam --usage-report
+devteam --usage-report --since 30
 ```
 
 **Query RAG with a specific collection name:**

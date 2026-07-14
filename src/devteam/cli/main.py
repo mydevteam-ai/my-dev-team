@@ -26,6 +26,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--feedback', type=str, help='human feedback to inject into the state when resuming')
     parser.add_argument('--as-node', type=str, default='reviewer', choices=['pm', 'architect', 'reviewer', 'qa'], help='which agent should deliver this feedback (forces graph routing)')
     parser.add_argument('--history', type=str, metavar='THREAD_ID', help='print the timeline of checkpoints for the given thread and exit')
+    parser.add_argument('--usage-report', action='store_true', help='print an aggregated usage report from the persistent run log and exit')
+    parser.add_argument('--since', type=int, metavar='DAYS', help='limit --usage-report to runs from the last DAYS days')
     parser.add_argument('--checkpoint', type=str, help='specific checkpoint ID to rewind to before injecting feedback')
     parser.add_argument('--timeout', type=int, default=settings.llm_timeout, help='maximum time (in seconds) to wait for an LLM response (default: 120)')
     parser.add_argument('--thinking', action='store_true', help='stream raw LLM thinking output to stderr')
@@ -134,8 +136,15 @@ def main():
 
     if args.thinking and not args.console:
         parser.error('--thinking requires --console')
+    if args.since and not args.usage_report:
+        parser.error('--since requires --usage-report')
 
     setup_logging(console_level=logging.DEBUG if args.verbose else logging.INFO)
+
+    if args.usage_report:
+        from .usage_report import show_usage_report  # pylint: disable=import-outside-toplevel
+        show_usage_report(args.since)
+        return
     _apply_config(args.config)
     valid = get_valid_providers()
     if valid and args.provider not in valid:
